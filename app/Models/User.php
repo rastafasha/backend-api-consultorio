@@ -52,6 +52,7 @@ class User extends Authenticatable implements JWTSubject
         'avatar',
         'speciality_id',
         'location_id',
+        'precio_cita',
 
     ];
 

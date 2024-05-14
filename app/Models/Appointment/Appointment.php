@@ -132,6 +132,15 @@ class Appointment extends Model
         }
         return $query;
     }
+    public function scopefilterAdvanceDoctor($query, $date){
+        
+        
+
+        if($date){
+            $query->whereDate("date_appointment", Carbon::parse($date)->format("Y-m-d"));
+        }
+        return $query;
+    }
     public function scopefilterAdvancePay($query,$speciality_id, $search_doctor, $search_patient,
     $date_start,$date_end){
         

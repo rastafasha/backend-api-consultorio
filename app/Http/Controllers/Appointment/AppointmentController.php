@@ -42,6 +42,30 @@ class AppointmentController extends Controller
         ]);
 
     }
+
+    public function appointmentByDoctor(Request $request, $doctor_id)
+    {
+
+        $search = $request->search;
+        $date = $request->date;
+        
+        $doctor_is_valid = User::where("id", $request->doctor_id)->first();
+        // $patients = Patient::Where('doctor_id', $doctor_id)
+
+        $appointments = Appointment::filterAdvanceDoctor($date)
+        ->Where('doctor_id', $doctor_id)
+        ->orderBy("id", "desc")
+        ->paginate(10);
+
+        return response()->json([
+            "total"=>$appointments->total(),
+            "appointments"=> AppointmentCollection::make($appointments)
+        ]);
+
+        
+
+    }
+
     public function filter(Request $request)
     {
         $date_appointment = $request->date_appointment;
@@ -80,6 +104,7 @@ class AppointmentController extends Controller
                     "full_name"=> $doctor_q->doctor->name.' '.$doctor_q->doctor->surname,
                     "address"=> $doctor_q->doctor->address,
                     "mobile"=> $doctor_q->doctor->mobile,
+                    "precio_cita"=> $doctor_q->doctor->precio_cita,
                     "speciality"=>[
                         "id"=> $doctor_q->doctor->speciality->id,
                         "name"=>$doctor_q->doctor->speciality->name,

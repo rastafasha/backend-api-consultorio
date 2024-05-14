@@ -42,9 +42,17 @@ class PatientController extends Controller
     public function patientsByDoctor(Request $request, $doctor_id)
     {
 
+        $search = $request->search;
+        
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        $patients = Patient::Where('doctor_id', $doctor_id)
-                ->get();
+        // $patients = Patient::Where('doctor_id', $doctor_id)
+
+        $patients = Patient::where(DB::raw("CONCAT(patients.name,' ', IFNULL(patients.surname,''),' ',patients.email)"),
+        "like","%".$search."%"
+        )
+        ->Where('doctor_id', $doctor_id)
+        ->orderBy("id", "desc")
+        ->paginate(10);
 
         return response()->json([
             // "patients"=> $patients,

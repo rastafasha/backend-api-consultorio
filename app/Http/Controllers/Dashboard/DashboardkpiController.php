@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\Patient\Patient;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment\Appointment;
+use App\Http\Resources\Patient\PatientCollection;
 use App\Http\Resources\Appointment\AppointmentCollection;
 
 class DashboardkpiController extends Controller
@@ -290,6 +292,11 @@ class DashboardkpiController extends Controller
                                     ->orderBy("id", "desc")
                                     ->get();
 
+        $patientsbydoc = Patient::Where('doctor_id', $doctor_id)
+                                    ->orderBy("id", "desc")
+                                    ->take(5)
+                                    ->get();
+
         return response()->json([
             "appointments"=>AppointmentCollection::make($appointments),
             "num_appointments_current"=>$num_appointments_current,
@@ -307,6 +314,9 @@ class DashboardkpiController extends Controller
             "num_appointments_total_pending_current"=>$num_appointments_total_pending_current,
             "num_appointments_total_pending_before"=>$num_appointments_total_pending_before,
             "porcentaje_dtpn"=> round($porcentajeDTPN,2),
+
+
+            "patientsbydoc"=>PatientCollection::make($patientsbydoc)
         ]);
     }
 
