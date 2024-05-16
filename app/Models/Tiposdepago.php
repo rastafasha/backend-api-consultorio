@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Tiposdepago extends Model
 {
@@ -25,6 +26,7 @@ class Tiposdepago extends Model
         'ciorif',
         'telefono',
         'status',
+        'doctor_id',
     ];
 
     const ACTIVE = 'ACTIVE';
@@ -35,6 +37,11 @@ class Tiposdepago extends Model
         return [
             self::ACTIVE, self::INACTIVE
         ];
+    }
+
+    public function doctor()
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
     }
 
 }

@@ -38,16 +38,27 @@ class AppointmentPayController extends Controller
     public function paymentsByDoctor(Request $request, $doctor_id)
     {
 
+        
+        $search_doctor = $request->search_doctor;
+        $search_patient = $request->search_patient;
+        $date_start = $request->date_start;
+        $date_end = $request->date_end;
+        
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        $appointmentpays = Appointment::Where('doctor_id', $doctor_id)
-                ->get();
+        // $patients = Patient::Where('doctor_id', $doctor_id)
+
+        $appointmentpays = Appointment::filterAdvanceDoctorPay( $search_doctor, $search_patient,
+        $date_start,$date_end)
+        ->Where('doctor_id', $doctor_id)
+        ->orderBy("id", "desc")
+        ->paginate(10);
 
         return response()->json([
-            // "patients"=> $patients,
-            // "total"=>$payments->total(),
-            "appointmentpays"=> $appointmentpays
-            // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
+            "total"=>$appointmentpays->total(),
+            "appointmentpays"=> AppointmentPayCollection::make($appointmentpays)
         ]);
+
+        
 
     }
 
@@ -61,6 +72,7 @@ class AppointmentPayController extends Controller
     {
         $sum_total_pays = AppointmentPay::where("appointment_id",$request->appointment_id)->sum("amount");
         
+
         if(($sum_total_pays + $request->amount) > $request->appointment_total){
             return response()->json([
                 "message"=>403,

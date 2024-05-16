@@ -62,18 +62,31 @@ class AdminPaymentController extends Controller
     public function paymentsByDoctor(Request $request, $doctor_id)
     {
 
+        $search_doctor = $request->search_doctor;
+        $search_patient = $request->search_patient;
+        $date_start = $request->date_start;
+        $date_end = $request->date_end;
+        $search_referencia = $request->search_referencia;
+        
+        
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        $payments = Payment::Where('doctor_id', $doctor_id)
-                ->get();
+        // $patients = Patient::Where('doctor_id', $doctor_id)
+
+        $payments = Payment::filterAdvancePaymentDoctor(
+            $search_doctor, 
+            $search_patient,
+        $date_start,$date_end, $search_referencia)
+        ->Where('doctor_id', $doctor_id)
+        ->orderBy("id", "desc")
+        ->paginate(10);
 
         return response()->json([
-            // "patients"=> $patients,
-            // "total"=>$payments->total(),
-            "payments"=> $payments
-            // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
+            "total"=>$payments->total(),
+            "payments"=> PaymentCollection::make($payments)
         ]);
 
     }
+
 
     /**
      * Store a newly created resource in storage.

@@ -11,6 +11,11 @@ Route::get('/paymentmethods', [tiposdepagoController::class, 'index'])
 Route::get('/paymentmethods/activos', [tiposdepagoController::class, 'activos'])
     ->name('paymentmethods.activos');
 
+Route::get('/paymentmethods/bydoctor/{doctor_id}', [tiposdepagoController::class, 'byDoctor'])
+    ->name('paymentmethods.byDoctor');
+Route::get('/paymentmethods/bydoctor-activo/{doctor_id}', [tiposdepagoController::class, 'byDoctorActivo'])
+    ->name('paymentmethods.byDoctorActivo');
+
 Route::post('/paymentmethods/store', [tiposdepagoController::class, 'paymentStore'])
     ->name('paymentmethod.store');
 

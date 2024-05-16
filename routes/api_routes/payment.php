@@ -41,7 +41,7 @@ Route::get('/payment/pagosbyUser/{id}', [AdminPaymentController::class, 'pagosby
 Route::put('/payment/update/status/{payment:id}', [AdminPaymentController::class, 'updateStatus'])
     ->name('payment.updateStatus');
 
-Route::get('payment/byDoctor/{doctor_id}', [AdminPaymentController::class, 'paymentsByDoctor'])->name('paymentsByDoctor');
+Route::get('payment/byDoctor/{doctor_id}/', [AdminPaymentController::class, 'paymentsByDoctor'])->name('paymentsByDoctor');
 
 
 //Admin Pagos Softdeletes

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Tiposdepago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,45 @@ class tiposdepagoController extends Controller
             'status' => 'Listar todos los Pagos',
             'tiposdepagos' => $tiposdepagos,
         ], 200);
+    }
+
+    public function byDoctor(Request $request, $doctor_id)
+    {
+
+        
+        $doctor_is_valid = User::where("id", $request->doctor_id)->first();
+
+        $tiposdepagos = Tiposdepago::orderBy('created_at', 'DESC')
+        ->Where('doctor_id', $doctor_id)
+        ->orderBy("id", "desc")
+        ->get();
+
+        return response()->json([
+            "tiposdepagos"=> $tiposdepagos
+        ]);
+
+        
+
+    }
+
+    public function byDoctorActivo(Request $request, $doctor_id)
+    {
+
+        
+        $doctor_is_valid = User::where("id", $request->doctor_id)->first();
+
+        $tiposdepagos = Tiposdepago::orderBy('created_at', 'DESC')
+        ->Where('doctor_id', $doctor_id)
+        ->where('status', $status='ACTIVE')
+        ->orderBy("id", "desc")
+        ->get();
+
+        return response()->json([
+            "tiposdepagos"=> $tiposdepagos
+        ]);
+
+        
+
     }
 
     /**
@@ -104,6 +144,7 @@ class tiposdepagoController extends Controller
         $tipodepago->telefono = $request->telefono;
         $tipodepago->type = $request->type;
         $tipodepago->user = $request->user;
+        $tipodepago->doctor_id = $request->doctor_id;
         
         
         

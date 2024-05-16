@@ -131,4 +131,34 @@ class Payment extends Model
         // }
         return $query;
     }
+
+    public function scopefilterAdvancePaymentDoctor($query, $search_doctor, $search_patient,
+    $date_start,$date_end, $search_referencia){
+        
+        
+        if($search_doctor){
+            $query->whereHas("doctor", function($q)use($search_doctor){
+                $q->where(DB::raw("CONCAT(users.name,' ',IFNULL(users.surname,''),' ',IFNULL(users.email,''))"),"like","%".$search_doctor."%");
+                   
+            });
+        }
+        if($search_patient){
+            $query->whereHas("patient", function($q)use($search_patient){
+                $q->where(DB::raw("CONCAT(patients.name,' ',IFNULL(patients.surname,''),' ',IFNULL(patients.email,''))"),"like","%".$search_patient."%");
+                
+            });
+        }
+
+        if($date_start && $date_end){
+            $query->whereBetween("date_appointment", [
+                Carbon::parse($date_start)->format("Y-m-d"),
+                Carbon::parse($date_end)->format("Y-m-d"),
+            ]);
+        }
+
+        if($search_referencia){
+            $query->where("referencia", $search_referencia);
+        }
+        return $query;
+    }
 }

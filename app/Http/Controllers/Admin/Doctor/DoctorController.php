@@ -164,7 +164,10 @@ class DoctorController extends Controller
         $num_appointment = Appointment::where("doctor_id",$id)->count();
         $money_of_appointments = Appointment::where("doctor_id",$id)->sum("amount");
         $num_appointment_pendings = Appointment::where("doctor_id",$id)->where("status",1)->count();
-        $appointment_pendings = Appointment::where("doctor_id",$id)->where("status",1)->get();
+        $appointment_pendings = Appointment::where("doctor_id",$id)
+        ->where("status",1)
+        ->paginate(10);
+        // ->get();
         $appointments = Appointment::where("doctor_id",$id)->get();
         $data_doctor = [
             "num_appointment"=>$num_appointment,

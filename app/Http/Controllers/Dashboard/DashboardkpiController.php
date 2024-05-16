@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Models\User;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use App\Models\Patient\Patient;
 use Illuminate\Support\Facades\DB;
@@ -10,6 +11,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment\Appointment;
 use App\Http\Resources\Patient\PatientCollection;
 use App\Http\Resources\Appointment\AppointmentCollection;
+use App\Http\Resources\Appointment\Payment\PaymentCollection;
+use App\Http\Resources\Appointment\Pay\AppointmentPayCollection;
 
 class DashboardkpiController extends Controller
 {
@@ -296,6 +299,16 @@ class DashboardkpiController extends Controller
                                     ->orderBy("id", "desc")
                                     ->take(5)
                                     ->get();
+        $paymentsbydoc = Payment::Where('doctor_id', $doctor_id)
+                                    ->orderBy("id", "desc")
+                                    // ->where("status",'PENDING')
+                                    ->take(5)
+                                    ->get();
+        $appointmentpaysbydoc = Appointment::Where('doctor_id', $doctor_id)
+                                    ->orderBy("id", "desc")
+                                    ->where("status_pay",2)
+                                    ->take(5)
+                                    ->get();
 
         return response()->json([
             "appointments"=>AppointmentCollection::make($appointments),
@@ -316,7 +329,9 @@ class DashboardkpiController extends Controller
             "porcentaje_dtpn"=> round($porcentajeDTPN,2),
 
 
-            "patientsbydoc"=>PatientCollection::make($patientsbydoc)
+            "patientsbydoc"=>PatientCollection::make($patientsbydoc),
+            "paymentsbydoc"=>PaymentCollection::make($paymentsbydoc),
+            "appointmentpaysbydoc"=>AppointmentPayCollection::make($appointmentpaysbydoc)
         ]);
     }
 
