@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Patient\PatientPerson;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Appointment\Appointment;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\Patient\PatientResource;
@@ -222,10 +223,14 @@ class PatientController extends Controller
 
         $patient = Patient::create($request->all());
 
+        
+
         $request->request->add([
             "patient_id" =>$patient->id
         ]);
         PatientPerson::create($request->all());
+
+        Mail::to($patient->email)->send(new NewPatientRegisterMail($patient));
 
         return response()->json([
             "message"=>200,
