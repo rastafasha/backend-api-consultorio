@@ -39,15 +39,15 @@ class NewCurrencyRegisterJob implements ShouldQueue
      */
     public function handle()
     {
-        try {
-            Mail::to('soporte@ursigalletti.net')
-                ->send(
-                    new NewCurrencyRegisterMail(
-                    $this->currency,
-                    )
-                );
-        } catch (\Exception $exception) {
-            Log::info($exception->getMessage());
-        }
+        // try {
+        //     Mail::to('soporte@ursigalletti.net')
+        //         ->send(
+        //             new NewCurrencyRegisterMail(
+        //             $this->currency,
+        //             )
+        //         );
+        // } catch (\Exception $exception) {
+        //     Log::info($exception->getMessage());
+        // }
     }
 }

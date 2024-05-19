@@ -41,15 +41,15 @@ class AppointmentRegisterJob implements ShouldQueue
      */
     public function handle()
     {
-        try {
-            Mail::to('citasmedicas@malcolmcordova.com')
-                ->send(
-                    new NewAppointmentRegisterMail(
-                    $this->patient,
-                    )
-                );
-        } catch (\Exception $exception) {
-            Log::info($exception->getMessage());
-        }
+        // try {
+        //     Mail::to('citasmedicas@malcolmcordova.com')
+        //         ->send(
+        //             new NewAppointmentRegisterMail(
+        //             $this->patient,
+        //             )
+        //         );
+        // } catch (\Exception $exception) {
+        //     Log::info($exception->getMessage());
+        // }
     }
 }

@@ -38,15 +38,15 @@ class NewUserRegisterJob implements ShouldQueue
      */
     public function handle()
     {
-        try {
-            Mail::to('soporte@ursigalletti.net')
-                ->send(
-                    new NewUserRegisterMail(
-                    $this->user,
-                    )
-                );
-        } catch (\Exception $exception) {
-            Log::info($exception->getMessage());
-        }
+        // try {
+        //     Mail::to('soporte@ursigalletti.net')
+        //         ->send(
+        //             new NewUserRegisterMail(
+        //             $this->user,
+        //             )
+        //         );
+        // } catch (\Exception $exception) {
+        //     Log::info($exception->getMessage());
+        // }
     }
 }

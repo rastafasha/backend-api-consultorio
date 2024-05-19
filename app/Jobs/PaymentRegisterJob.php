@@ -39,15 +39,15 @@ class PaymentRegisterJob implements ShouldQueue
      */
     public function handle()
     {
-        try {
-            Mail::to('soporte@ursigalletti.net')
-                ->send(
-                    new NewPaymentRegisterMail(
-                    $this->payment,
-                    )
-                );
-        } catch (\Exception $exception) {
-            Log::info($exception->getMessage());
-        }
+        // try {
+        //     Mail::to('soporte@ursigalletti.net')
+        //         ->send(
+        //             new NewPaymentRegisterMail(
+        //             $this->payment,
+        //             )
+        //         );
+        // } catch (\Exception $exception) {
+        //     Log::info($exception->getMessage());
+        // }
     }
 }
