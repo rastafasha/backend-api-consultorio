@@ -138,7 +138,7 @@
 																								<tr>
 																									<td class="title-36 a-center pb-15" style="font-size:30px; line-height:40px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; text-align:center; padding-bottom: 15px;">
 																										<multiline>
-																											<strong>Bienvenido a la App.</strong>
+																											<strong>Bienvenido a Health Connect me.</strong>
 																										</multiline>
 																									</td>
 																								</tr>
@@ -186,11 +186,17 @@
                                                                                                                         <tr>
                                                                                                                             <td class="text-16 lh-26 a-center" style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center;">
                                                                                                                                 <multiline>
-                                                                                                                                    Registrese en nuestra versión Paciente para que comience a recibir beneficios.<br>
+                                                                                                                                    Puede Acceder a la aplicación, escaneando el cóodigo QR.<br>
                                                                                                                                     
                                                                                                                                 </multiline>
                                                                                                                             </td>
                                                                                                                         </tr>
+																														<tr>
+																															<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
+																																<img src="https://health-connect.me/variosfiles/qrapppaciente.png" width="150" height="150" editable="true" border="0" alt="" />
+																																
+																															</td>
+																														</tr>
 																														<tr>
 																															<td class="text-16" style="font-size:16px; line-height:20px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important;">
 																																<multiline>

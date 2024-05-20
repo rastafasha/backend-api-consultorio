@@ -138,7 +138,7 @@
 																								<tr>
 																									<td class="title-36 a-center pb-15" style="font-size:30px; line-height:40px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; text-align:center; padding-bottom: 15px;">
 																										<multiline>
-																											<strong>Bienvenido a la App.</strong>
+																											<strong>Bienvenido a Health Connect me.</strong>
 																										</multiline>
 																									</td>
 																								</tr>
@@ -179,7 +179,7 @@
 																														<tr>
 																															<td class="title-20 pb-10" style="font-size:20px; line-height:24px; color:#282828; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important; padding-bottom: 10px;">
 																																<multiline>
-																																	<strong>Detalles</strong>
+																																	<strong>Se ha registrado tu usuario con los datos siguientes:</strong>
 																																</multiline>
 																															</td>
 																														</tr>
@@ -196,9 +196,28 @@
 																																	{{$user->email}}
 																																	<br />
 																																	<!-- Chicago, IL 60301 -->
+																																	<strong>Contraseña: </strong>
+																																	<br />
+																																	su numero de telefono, Puede cambiarlo dentro de la app.
+																																	<br />
 																																</multiline>
 																															</td>
 																														</tr>
+																														<tr>
+																															<td align="center">
+																																<table border="0" cellspacing="0" cellpadding="0" style="min-width: 200px;">
+																																	<tr>
+																																		<td class="btn-16 c-white l-white" bgcolor="#f3189e" style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
+																																			<multiline>
+																																				<a href="https://consultorio.health-connect.me/" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
+																																					<span class="link c-white" style="text-decoration:none; color:#ffffff;">Acceder a Health Connect me</span>
+																																				</a>
+																																			</multiline>
+																																		</td>
+																																	</tr>
+																																</table>
+																															</td>
+																														</tr> 
 																													</table>
 																												</th>
 																												<th class="column-top mpb-15" valign="top" width="30" style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;"></th>
