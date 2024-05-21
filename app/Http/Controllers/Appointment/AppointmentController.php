@@ -88,7 +88,8 @@ class AppointmentController extends Controller
         //el dia, hora y especialidad
         $doctor_query = DoctorScheduleDay::where("day","like","%".$name_day."%")
                         ->whereHas("doctor", function($q) use($speciality_id){
-                            $q->where("speciality_id", $speciality_id);
+                            $q->where("speciality_id", $speciality_id)
+                            ->where("status", 'active');
                         })
                         ->whereHas("schedule_hours", function($q)use($hour){
                             $q->whereHas("doctor_schedule_hour",function($qs)use($hour){
@@ -112,10 +113,12 @@ class AppointmentController extends Controller
                     "address"=> $doctor_q->doctor->address,
                     "mobile"=> $doctor_q->doctor->mobile,
                     "precio_cita"=> $doctor_q->doctor->precio_cita,
+                    "status"=>$doctor_q->doctor->status,
                     "speciality"=>[
                         "id"=> $doctor_q->doctor->speciality->id,
                         "name"=>$doctor_q->doctor->speciality->name,
                         "price"=>$doctor_q->doctor->speciality->price,
+                        
                     ],
                 ],
                 //datos del segmento en un formato para el frontend

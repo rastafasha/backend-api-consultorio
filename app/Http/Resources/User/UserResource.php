@@ -59,6 +59,7 @@ class UserResource extends JsonResource
             "full_name"=> $this->resource->name.' '.$this->resource->surname,
             "email"=>$this->resource->email,
             "password"=>$this->resource->password,
+            "status"=>$this->resource->status,
             "rolename"=>$this->resource->rolename,
             "mobile"=>$this->resource->mobile,
             "birth_date"=>$this->resource->birth_date ? Carbon::parse($this->resource->birth_date)->format("Y/m/d") : NULL,
