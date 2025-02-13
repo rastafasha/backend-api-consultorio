@@ -151,6 +151,85 @@ class AppointmentController extends Controller
         ]);
     }
 
+    public function filterByDoctor(Request $request, $doctor_id)
+    {
+        $date_appointment = $request->date_appointment;
+        $hour = $request->hour;
+        $speciality_id = $request->speciality_id;
+        date_default_timezone_set('America/Caracas');
+        Carbon::setLocale('es');
+        DB::statement("SET lc_time_names = 'es_ES'");
+
+
+        $name_day = Carbon::parse($date_appointment)->dayName;
+        //consulta para saber que doctor cumple con la disponibilidad de atencion tendiendo en cuenta
+        //el dia, hora y especialidad
+        $doctor_query = DoctorScheduleDay::where("day","like","%".$name_day."%")
+                        ->whereHas("doctor", function($q) use($speciality_id){
+                            $q->where("speciality_id", $speciality_id)
+                            ->where("status", 'active');
+                        })
+                        ->Where('user_id', $doctor_id)
+                        ->whereHas("schedule_hours", function($q)use($hour){
+                            $q->whereHas("doctor_schedule_hour",function($qs)use($hour){
+                                $qs->where("hour", $hour);
+                            });
+                        })->get();
+        $doctors = collect([]);   
+        //iteramos entre los doctores que resultaron de la consulta
+        foreach ($doctor_query as $key => $doctor_q) {
+            //revisamos su disponibilidad para arrojar los segmentos de la hora, en intervalos de 15 min
+            $segments = DoctorScheduleJoinHour::where("doctor_schedule_day_id",$doctor_q->id)
+                                                ->whereHas("doctor_schedule_hour",function($q)use($hour){
+                                                    $q->where("hour", $hour);
+                                                })->get();
+             //armamos una lista de doctores con los segmentos de su hora(marcamos cuales se encuentran ocupados)                                   
+            $doctors->push([
+                //datos del doctor
+                "doctor"=>[
+                    "id"=> $doctor_q->doctor->id,
+                    "full_name"=> $doctor_q->doctor->name.' '.$doctor_q->doctor->surname,
+                    "address"=> $doctor_q->doctor->address,
+                    "mobile"=> $doctor_q->doctor->mobile,
+                    "precio_cita"=> $doctor_q->doctor->precio_cita,
+                    "status"=>$doctor_q->doctor->status,
+                    "speciality"=>[
+                        "id"=> $doctor_q->doctor->speciality->id,
+                        "name"=>$doctor_q->doctor->speciality->name,
+                        "price"=>$doctor_q->doctor->speciality->price,
+                        
+                    ],
+                ],
+                //datos del segmento en un formato para el frontend
+                "segments" => $segments->map(function($segment)use($date_appointment){
+                    //aca podemos averiguar si el segmento ya se encuentra ocupado por otra cita medica
+                    $appointment = Appointment::where("doctor_schedule_join_hour_id", $segment->id)
+                                                ->whereDate("date_appointment", Carbon::parse($date_appointment)->format("Y-m-d"))
+                                                ->first();
+                        return[
+                            "id" => $segment->id,
+                            "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
+                            "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
+                            "is_appointment"=> $appointment ? true : false,
+                            "format_segment"=>[
+                                "id" => $segment->doctor_schedule_hour->id,
+                                "hour_start" => $segment->doctor_schedule_hour->hour_start,
+                                "hour_end" => $segment->doctor_schedule_hour->hour_end,
+                                "format_hour_start" => Carbon::parse(date("Y-m-d").' '.$segment->doctor_schedule_hour->hour_start)->format("h:i A") ,
+                                "format_hour_end" => Carbon::parse(date("Y-m-d").' '.$segment->doctor_schedule_hour->hour_end)->format("h:i A"),
+                                "hour" => $segment->doctor_schedule_hour->hour,
+                            ],
+                        ];
+                    })
+                ]);
+        }             
+        // dd($doctors);
+
+        return response()->json([
+            "doctors"=>$doctors
+        ]);
+    }
+
     public function config()
     {
         $hours =[

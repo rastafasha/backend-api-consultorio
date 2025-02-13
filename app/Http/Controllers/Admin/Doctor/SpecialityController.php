@@ -66,6 +66,17 @@ class SpecialityController extends Controller
         ]);
     }
 
+    public function showId($id)
+    {
+        $speciality = Specialitie::findOrFail($id);
+        return response()->json([
+            "id" => $speciality->id,
+            "name" => $speciality->name,
+            "state" => $speciality->state,
+            "price" => $speciality->price
+        ]);
+    }
+
     /**
      * Update the specified resource in storage.
      */

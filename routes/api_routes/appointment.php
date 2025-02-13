@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Appointment\AppointmentController;
 
 Route::post('appointment/filter', [AppointmentController::class, 'filter'])->name('filter');
+Route::post('appointment/filterbydoctor/{doctor_id}/', [AppointmentController::class, 'filterByDoctor'])->name('filterByDoctor');
 Route::get('appointment/config', [AppointmentController::class, 'config'])->name('config');
 Route::get('appointment/patient', [AppointmentController::class, 'query_patient'])->name('query_patient');
 

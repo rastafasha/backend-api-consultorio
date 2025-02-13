@@ -68,6 +68,7 @@ class PermissionsDemoSeeder extends Seeder
         Permission::create(['guard_name' => 'api','name' => 'invoice_report']);
         Permission::create(['guard_name' => 'api','name' => 'show_payment_cobros']);
         Permission::create(['guard_name' => 'api','name' => 'show_payment_cobrar']);
+        Permission::create(['guard_name' => 'api','name' => 'view_appointment']);
 
         Permission::create(['guard_name' => 'api','name' => 'settings']);
 
