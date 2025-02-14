@@ -38,7 +38,7 @@ class Location extends Model
     public function scopefilterAdvanceLocation(
         $query,
         $client_id, $name_client, $email_client,
-        $doctor_id, $name_doctor, $email_doctor,
+        $doctor_id, $name_doctor, $email_doctor
         ){
         
         if($client_id){
@@ -47,13 +47,13 @@ class Location extends Model
         
         if($name_client){
             $query->whereHas("patient", function($q)use($name_client){
-                $q->where(DB::raw("CONCAT(patients.first_name,' ',IFNULL(patients.last_name,''),' ',IFNULL(patients.email,''))"),"like","%".$name_patient."%");
+                $q->where(DB::raw("CONCAT(patients.first_name,' ',IFNULL(patients.last_name,''),' ',IFNULL(patients.email,''))"),"like","%".$name_client."%");
                 
             });
         }
         if($email_client){
             $query->whereHas("patient", function($q)use($email_client){
-                $query->where("patientID", $patientID);
+                $q->where("patientID", $email_client);
                    
             });
         }
@@ -69,7 +69,7 @@ class Location extends Model
         }
         if($email_doctor){
             $query->whereHas("doctor", function($q)use($email_doctor){
-                $query->where("doctor_id", $doctor_id);
+                $q->where("doctor_id", $email_doctor);
                    
             });
         }

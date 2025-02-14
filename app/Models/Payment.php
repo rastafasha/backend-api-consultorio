@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use App\Models\Payment;
 use App\Jobs\PaymentRegisterJob;
 use App\Mail\NewPaymentRegisterMail;
 use Illuminate\Support\Facades\Mail;
@@ -104,11 +103,7 @@ class Payment extends Model
 
     public function scopefilterAdvancePayment($query,
     // $metodo, 
-    $search_referencia, 
-    // $bank_name, 
-    // $nombre, 
-    // $monto,
-    // $fecha,
+    $search_referencia
     ){
         
         // if($metodo){
