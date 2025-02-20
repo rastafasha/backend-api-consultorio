@@ -68,7 +68,6 @@ class PermissionsDemoSeeder extends Seeder
         Permission::create(['guard_name' => 'api','name' => 'invoice_report']);
         Permission::create(['guard_name' => 'api','name' => 'show_payment_cobros']);
         Permission::create(['guard_name' => 'api','name' => 'show_payment_cobrar']);
-        Permission::create(['guard_name' => 'api','name' => 'view_appointment']);
 
         Permission::create(['guard_name' => 'api','name' => 'settings']);
 
@@ -82,7 +81,9 @@ class PermissionsDemoSeeder extends Seeder
         // $role2->givePermissionTo('publish articles');
         // $role2->givePermissionTo('unpublish articles');
 
-        $role3 = Role::create(['guard_name' => 'api','name' => 'SUPERADMIN']);
+        // Create roles
+
+        $role = Role::create(['guard_name' => 'api','name' => 'SUPERADMIN']);
         // gets all permissions via Gate::before rule; see AuthServiceProvider
 
         // create demo users
@@ -102,12 +103,16 @@ class PermissionsDemoSeeder extends Seeder
 
         $user = \App\Models\User::factory()->create([
             'name' => 'superadmin',
+            'surname' => 'superadmin',
             'email' => 'superadmin@superadmin.com',
+            'gender' => 1,
+                'mobile' => '1234567893',
+                'n_doc' => '5421369874',
             'password' => bcrypt('password'),
             "rolename" => User::SUPERADMIN,
         ]);
 
         
-        $user->assignRole($role3);
+        $user->assignRole($role);
     }
 }
