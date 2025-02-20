@@ -25,11 +25,13 @@ class ConfirmationAppointment extends Mailable
     /**
      * Get the message envelope.
      */
+   
+
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Cita confirmada',
-        );
+        return new Envelope([
+            'subject' => 'Cita confirmada',
+        ]);
     }
 
     /**

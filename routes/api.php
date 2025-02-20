@@ -61,6 +61,7 @@ Route::group(['middleware' => 'api'], function ($router) {
     
     // appointmentpay
     require __DIR__ . '/api_routes/appointmentpay.php';
+    
     // citamedica
     require __DIR__ . '/api_routes/citamedica.php';
     
@@ -88,7 +89,9 @@ Route::group(['middleware' => 'api'], function ($router) {
     // whatsapp
     // require __DIR__ . '/api_routes/whatsapp.php';
 
-
+    // presupuesto
+    require __DIR__ . '/api_routes/presupuesto.php';
+        
 
 
     //comandos desde la url del backend
@@ -109,10 +112,17 @@ Route::group(['middleware' => 'api'], function ($router) {
     });
 
 
+    Route::get('/migrate-fresh', function () {
+        Artisan::call('migrate:refresh');
+        return "Migrate: Actualizando sin borrar";
+    });
+
+
     Route::get('/migrate-seed', function () {
         Artisan::call('migrate:refresh --seed');
-        return "Migrate seed";
+        return "Migrate: creacion con datos, para uso";
     });
+    
     
     Route::get('/send-notification', function () {
         Artisan::call('command:notification-appointments');

@@ -16,6 +16,7 @@ use App\Models\Patient\PatientPerson;
 use App\Models\Appointment\Appointment;
 use App\Mail\NewAppointmentRegisterMail;
 use App\Models\Doctor\DoctorScheduleDay;
+use App\Mail\CancellationAppointmentMail;
 use App\Models\Appointment\AppointmentPay;
 use App\Models\Doctor\DoctorScheduleJoinHour;
 use App\Http\Resources\Appointment\AppointmentResource;
@@ -529,6 +530,35 @@ class AppointmentController extends Controller
         ]);
 
     }
+    public function pendientes()
+    {
+        
+        $appointments = Appointment::
+        where('status', 1)
+        // ->orWhere('confimation', 1)
+        ->orderBy("id", "desc")
+                            ->paginate(10);
+        return response()->json([
+            "total"=>$appointments->total(),
+            "appointments"=> AppointmentCollection::make($appointments)
+        ]);
+
+    }
+
+    public function pagosPendientesShowId(Request $request, $doctor_id)
+    {
+        
+        $appointments = Appointment::
+        where("doctor_id", $doctor_id)
+        ->where('status', 1)
+        ->orderBy("id", "desc")
+                            ->paginate(10);
+        return response()->json([
+            "total"=>$appointments->total(),
+            "appointments"=> AppointmentCollection::make($appointments)
+        ]);
+
+    }
 
     public function updateConfirmation(Request $request, $id)
     {
@@ -575,5 +605,43 @@ class AppointmentController extends Controller
         
         
 
+    }
+
+    public function cancelarCita($id)
+    {
+        $appointment = Appointment::findOrFail($id);
+        
+        // Send cancellation emails
+        Mail::to($appointment->patient->email)
+            ->send(new CancellationAppointmentMail($appointment));
+            
+        Mail::to($appointment->doctor->email)
+            ->send(new CancellationAppointmentMail($appointment));
+
+        $appointment->delete();
+        return response()->json([
+            "message" => 200,
+        ]);
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        $appointment = Appointment::findOrFail($id);
+        $reason = $request->input('reason', null);
+
+        // Send cancellation emails
+        Mail::to($appointment->patient->email)
+            ->send(new CancellationAppointmentMail($appointment, $reason));
+            
+        Mail::to($appointment->doctor->email)
+            ->send(new CancellationAppointmentMail($appointment, $reason));
+
+        // Update status instead of deleting
+        $appointment->update(['status' => 3]); // 3 = cancelled status
+
+        return response()->json([
+            "message" => 200,
+            "appointment" => $appointment
+        ]);
     }
 }

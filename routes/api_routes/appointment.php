@@ -12,6 +12,13 @@ Route::get('appointment/patient', [AppointmentController::class, 'query_patient'
 Route::get('appointment', [AppointmentController::class, 'index'])->name('index');
 Route::get('appointment/byDoctor/{doctor_id}/', [AppointmentController::class, 'appointmentByDoctor'])->name('appointmentByDoctor');
 
+Route::get('appointment/atendidas/', [AppointmentController::class, 'atendidas'])->name('atendidas');
+Route::get('appointment/pendientes', [AppointmentController::class, 'pendientes'])
+->name('appointment.pendientes');
+
+Route::get('appointment/pendientesbydoctor/{doctor_id}', [AppointmentController::class, 'pagosPendientesShowId'])
+    ->name('appointment.pagosPendientesShowId');
+
 Route::post('appointment/store', [AppointmentController::class, 'store'])->name('appointment.store');
 Route::get('appointment/show/{id}', [AppointmentController::class, 'show'])->name('show');
 Route::put('appointment/update/{appointment}', [AppointmentController::class, 'update'])->name('update');
@@ -24,3 +31,8 @@ Route::post('appointment/calendar', [AppointmentController::class, 'calendar'])-
 
 Route::put('/appointment/update/cofirmation/{appointment:id}', [AppointmentController::class, 'updateConfirmation'])
     ->name('appointment.updateConfirmation');
+
+   
+
+Route::post('/appointment/{id}/cancel', [AppointmentController::class, 'cancelarCita'])
+    ->name('appointment.cancelarCita');

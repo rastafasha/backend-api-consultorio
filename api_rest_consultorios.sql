@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: localhost:8889
--- Tiempo de generación: 21-05-2024 a las 16:30:10
+-- Tiempo de generación: 20-02-2025 a las 02:38:05
 -- Versión del servidor: 5.7.34
 -- Versión de PHP: 8.0.8
 
@@ -2075,7 +2075,9 @@ INSERT INTO `appointments` (`id`, `doctor_id`, `patient_id`, `date_appointment`,
 (2019, 19, 104, '2024-05-16 21:17:24', 1, 6, 446, 104, 35, 1, 1, 2, NULL, '2024-05-16 21:16:28', '2024-05-16 21:17:24', NULL),
 (2020, 19, 104, '2024-05-16 21:27:25', 1, 6, 449, 104, 300, 2, 1, 1, NULL, '2024-05-16 21:25:24', '2024-05-17 01:27:25', '2024-05-17 01:27:25'),
 (2021, 19, 104, '2024-05-16 21:40:12', 1, 6, 451, 104, 35, 1, 1, 2, NULL, '2024-05-16 21:26:53', '2024-05-16 21:40:12', NULL),
-(2022, 27, 104, '2024-05-17 01:26:23', 1, 6, 645, 104, 50, 2, 1, 2, NULL, '2024-05-17 01:21:15', '2024-05-17 01:26:23', NULL);
+(2022, 27, 104, '2024-05-17 01:26:23', 1, 6, 645, 104, 50, 2, 1, 2, NULL, '2024-05-17 01:21:15', '2024-05-17 01:26:23', NULL),
+(2036, 19, 104, '2025-02-14 02:55:14', 1, 6, 3, 19, 10, 1, 2, 2, '2025-02-14 02:53:10', '2025-02-14 02:53:10', '2025-02-14 02:55:14', NULL),
+(2037, 19, 104, '2025-02-14 03:01:02', 1, 6, 450, 104, 23, 1, 1, 2, NULL, '2025-02-14 02:59:24', '2025-02-14 03:01:02', NULL);
 
 -- --------------------------------------------------------
 
@@ -3102,7 +3104,11 @@ INSERT INTO `appointment_attentions` (`id`, `appointment_id`, `patient_id`, `des
 (994, 443, 57, 'dsadsdsa', '[{\"uso\": \"ddasdas\", \"name_medical\": \"dsadsa\"}, {\"uso\": \"dadsa\", \"name_medical\": \"dsadas\"}]', 1, '2024-01-06 17:57:08', '2024-01-06 17:57:08', NULL),
 (995, 1, 104, 'Dolorem velit similique atque ea quaerat qui accusamus tenetur. Hic accusantium qui quia enim laudantium eius porro. Magnam nisi iusto amet nobis magnam aspernatur consequuntur repellendus.', '[{\"uso\": \"2 Tabletas diarias\", \"name_medical\": \"Acetaminofen\"}, {\"uso\": \"uso por 3 dias\", \"name_medical\": \"Teragrip noche y dia\"}]', 1, '2024-05-13 21:52:55', '2024-05-13 21:52:55', NULL),
 (996, 2018, 104, 'dasdas', '[{\"uso\": \"dsadsa\", \"name_medical\": \"asddas\"}]', 1, '2024-05-14 01:39:54', '2024-05-14 01:39:54', NULL),
-(997, 2017, 104, 'Revision completa del paciente', '[{\"uso\": \"tres veces al dia\", \"name_medical\": \"mejoramiento en alimentacion\"}]', 1, '2024-05-14 01:41:18', '2024-05-14 01:41:18', NULL);
+(997, 2017, 104, 'Revision completa del paciente', '[{\"uso\": \"tres veces al dia\", \"name_medical\": \"mejoramiento en alimentacion\"}]', 1, '2024-05-14 01:41:18', '2024-05-14 01:41:18', NULL),
+(998, 0, 104, 'dasads', '[{\"uso\": \"adsasd\", \"name_medical\": \"dasads\"}]', 1, '2025-02-13 23:31:29', '2025-02-13 23:31:29', NULL),
+(1007, 0, 104, 'asd', '[{\"uso\": \"ads\", \"name_medical\": \"asd\"}]', 1, '2025-02-14 01:35:01', '2025-02-14 01:35:01', NULL),
+(1008, 0, 104, 'das', '[{\"uso\": \"ads\", \"name_medical\": \"dsa\"}]', 1, '2025-02-14 01:39:08', '2025-02-14 01:39:08', NULL),
+(1013, 0, 104, 'ads', '[{\"uso\": \"das\", \"name_medical\": \"das\"}]', 1, '2025-02-14 02:53:10', '2025-02-14 02:53:10', NULL);
 
 -- --------------------------------------------------------
 
@@ -5182,7 +5188,9 @@ INSERT INTO `appointment_pays` (`id`, `appointment_id`, `amount`, `method_paymen
 (2054, 2021, 0, 'Pendiente', '2024-05-16 21:26:53', '2024-05-16 21:26:53', NULL),
 (2055, 2021, 35, 'transferencia', '2024-05-16 21:40:12', '2024-05-16 21:40:12', NULL),
 (2056, 2014, 300, 'transferencia', '2024-05-16 21:40:53', '2024-05-16 21:40:53', NULL),
-(2057, 2022, 0, 'Pendiente', '2024-05-17 01:21:15', '2024-05-17 01:21:15', NULL);
+(2057, 2022, 0, 'Pendiente', '2024-05-17 01:21:15', '2024-05-17 01:21:15', NULL),
+(2069, 2036, 10, 'Transferencia Dólares', '2025-02-14 02:53:10', '2025-02-14 02:53:10', NULL),
+(2070, 2037, 23, 'pagomovil', '2025-02-14 02:59:24', '2025-02-14 02:59:24', NULL);
 
 -- --------------------------------------------------------
 
@@ -6440,7 +6448,8 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_at
 (45, 'register_location', 'api', '2023-11-30 03:32:36', '2023-11-30 03:32:36'),
 (46, 'delete_payment', 'api', '2023-11-30 03:32:36', '2023-11-30 03:32:36'),
 (47, 'list_patient_doctor', 'api', '2023-11-30 03:32:36', '2023-11-30 03:32:36'),
-(48, 'list_appointment_doctor', 'api', '2023-11-30 03:32:36', '2023-11-30 03:32:36');
+(48, 'list_appointment_doctor', 'api', '2023-11-30 03:32:36', '2023-11-30 03:32:36'),
+(49, 'view_appointment', 'api', '2023-11-30 03:32:36', '2023-11-30 03:32:36');
 
 -- --------------------------------------------------------
 
@@ -6535,6 +6544,7 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (10, 2),
 (12, 2),
 (14, 2),
+(19, 2),
 (21, 2),
 (22, 2),
 (29, 2),
@@ -6543,6 +6553,7 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (34, 2),
 (46, 2),
 (47, 2),
+(49, 2),
 (6, 4),
 (10, 4),
 (11, 4),
@@ -6685,7 +6696,8 @@ INSERT INTO `tiposdepagos` (`id`, `tipo`, `ciorif`, `telefono`, `bankAccount`, `
 (11, 'pagomovil', '123456', '234567', '253453', 'Mercantil Pago M', NULL, NULL, NULL, 'ACTIVE', 19, '2024-01-16 03:17:12', '2024-01-16 03:17:16'),
 (12, 'Transferencia Bolívares', NULL, NULL, 'ZEL0101010143543', 'Venezuela', NULL, NULL, NULL, 'INACTIVE', 19, '2024-05-17 00:27:54', '2024-05-17 00:27:54'),
 (13, 'Transferencia Dólares', NULL, NULL, 'ZELDH0143543', 'Santander Santiago', NULL, NULL, NULL, 'ACTIVE', 27, '2024-05-17 05:13:27', '2024-05-17 05:15:47'),
-(14, 'pagomovil', '1223338', '234566777', NULL, 'Provincial', NULL, NULL, NULL, 'ACTIVE', 27, '2024-05-17 05:16:25', '2024-05-17 05:16:29');
+(14, 'pagomovil', '1223338', '234566777', NULL, 'Provincial', NULL, NULL, NULL, 'ACTIVE', 27, '2024-05-17 05:16:25', '2024-05-17 05:16:29'),
+(15, 'pagomovil', '323232', '324432', NULL, 'Mercantil', NULL, NULL, NULL, 'ACTIVE', 1, '2025-02-14 05:13:14', '2025-02-14 05:13:17');
 
 -- --------------------------------------------------------
 
@@ -6725,23 +6737,9 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `name`, `email`, `speciality_id`, `surname`, `mobile`, `birth_date`, `gender`, `education`, `designation`, `address`, `avatar`, `role`, `n_doc`, `location_id`, `precio_cita`, `status`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`, `deleted_at`) VALUES
 (1, 'superadmin', 'superadmin@superadmin.com', 0, NULL, NULL, NULL, 1, NULL, '', NULL, NULL, NULL, '10283340', NULL, NULL, 'inactive', '2023-11-30 03:32:36', '$2y$10$PiKCOHK3XOBlqiL0kgJwLOMILMA6uVAAS1ou7JqHsUQaH4yvPkAiC', 'guHmnxhKw1', '2023-11-30 03:32:36', '2023-11-30 03:32:36', NULL),
-(2, 'Patricia', 'doctor@doctor.com', 13, 'Gonzales', '1234567890', '1970-01-01 08:00:00', 2, 'Bucomaxilofacial', 'Cirugia Bucal', 'Av. Ppal de Mariperez', 'staffs/w3eiwsiRpa5QBtzFViXzIckMtVGbf2MqRUTmbZ4S.jpg', NULL, '324543', NULL, NULL, 'active', NULL, '$2y$10$qKLbv6rfjRuCoZelOTJsnurOI.kFa4Gn4SFyl/RHA9ysiowkSzWJm', NULL, '2023-12-02 02:17:13', '2024-05-21 16:21:15', NULL),
-(12, 'Maria', 'prueba2@prueba2.com', 0, 'Gonzales', '123234567', '2023-12-05 08:00:00', 1, 'Estudiante de enfermeria', 'prueba2', 'prueba2', 'staffs/w3eiwsiRpa5QBtzFViXzIckMtVGbf2MqRUTmbZ4S.jpg', NULL, '42334', NULL, NULL, 'inactive', NULL, '$2y$10$iA9oLfUJ7H284PUBxDP0EuCSjWoqM2yccJJpbfjOadYsrLzi7kDV2', NULL, '2023-12-03 22:12:21', '2023-12-16 03:32:44', NULL),
-(18, 'Doct', 'doctorprueba@doc.com', 7, 'prueba', '12345', '2023-12-06 08:00:00', 1, 'Gastroenterologia', 'ddsasda', 'dsadsa', 'staffs/b4VMFw1TQCspYHU3xJ6zaBGVf60QuJrZx40f1reN.jpg', NULL, '432234', NULL, NULL, 'active', NULL, '$2y$10$25VJSUkEqO2g9WSdjZgy1.GPxgBOq77fmtFThV0obg4FZwlckqqFW', NULL, '2023-12-09 02:34:01', '2024-05-21 16:21:11', NULL),
 (19, 'Malcolm', 'mercadocreativo@hotmail.com', 6, 'Cordova', '12332', '2023-12-06 08:00:00', 1, 'Dermatologia', 'das', 'Parque Central piso 19', 'staffs/WvLeeGRFhjtoOF0EsczU4BwaywYcn4rLXHhQ6xkV.jpg', NULL, '423342', NULL, 35, 'active', NULL, '$2y$10$7QQvgTVEpiZj4pd7zRDfmuk8Zuu/qwOUw3k8GO32XyOW8sOHP72u6', NULL, '2023-12-09 04:38:19', '2024-05-21 16:21:06', NULL),
-(21, 'Daniel', 'das@dasdas.com', 4, 'Gutierrez', '12324', '2023-12-06 08:00:00', 1, 'pediatria', 'dasdas', 'sdadsa', 'staffs/qNvCzJLNASCjYfCpLFAjqmnitWg9X6YdWeNF9mr2.jpg', NULL, '423432233', NULL, NULL, 'active', NULL, '$2y$10$27eDhG3dp3C7lv2SZF0RguGuHcdNDroC3o5MSTJq3rRzUnc810Rp6', NULL, '2023-12-09 19:55:41', '2024-05-21 16:21:01', NULL),
-(25, 'Roberto', 'miembro@miembro.com', 3, 'Marquez', '12231', '2023-12-07 08:00:00', 1, 'Cardiologia', 'dasdas', 'dasdsa', 'staffs/LjLwvo5GEiwveiYLFFolEgpr2E1aB0hhsBrP4vJg.jpg', NULL, '634345', NULL, NULL, 'active', NULL, '$2y$10$Vg/MPQvnDKS4VNpPLC3Qcemn91rAuZf3q2q4fL2/hXt7HiCGfR0My', NULL, '2023-12-09 20:13:54', '2024-05-21 16:20:58', NULL),
-(26, 'Manuel', 'prueba@prueba.com', 2, 'Perez', '234', '2023-12-05 08:00:00', 1, 'Estudiante de Anatomia', 'sda', 'dsasda', 'staffs/dlubYB8aBC60URV4pb7i7rmC9nS0OJwvZvIB6AWi.jpg', NULL, '4562345', NULL, NULL, 'active', NULL, '$2y$10$umBxqyPtkRiqG0HRthklausd4eUW.kK/9N4d1aFIgyN92VSIY9ARO', NULL, '2023-12-10 05:30:16', '2024-05-21 16:20:54', NULL),
-(27, 'Daniela', 'prueba3@gmail.com', 6, 'Hitman', '123325234', '1974-06-05 08:00:00', 2, 'dasdsa', 'dsads', 'Av.PPal del Bosqe, CEspecialista El Bosque, piso 5, of 55', 'staffs/IstuNWjPX8m7CCBT85t4cBVS0jDhvBCKgFCCoaUD.jpg', NULL, '2434223', NULL, 50, 'inactive', NULL, '$2y$10$XO0YykmL.xEToRaxdoX1aeqYvZ6gl/3PC4chGfleaJAQMHBRvZFUG', NULL, '2023-12-10 05:35:40', '2024-05-21 16:26:50', NULL),
-(28, 'Pepito', 'peper@gmail.com', 5, 'Perez', '12345678', '2005-07-11 16:00:00', 1, 'Estudiante de Medicina', 'Chofer', 'Av. Ppal del Cafetal', 'staffs/pe3CVaj4LxHSENb8rO1PsDGbG2XzoUOyjqgATkTj.jpg', NULL, '4323324', NULL, NULL, 'inactive', NULL, '$2y$10$xRLwu.NjHkXQ0JfqZ617mOtHU/JHi.N.g97ApPg2qS3BVgMOhh6Gu', NULL, '2023-12-16 01:36:36', '2023-12-17 02:41:22', NULL),
-(29, 'Ruben', 'rubeng@gmail.com', 15, 'Gutierrez', '1234567', '2023-12-05 16:00:00', 1, 'Fisioterapeuta', 'Fisioterapeuta', 'Av. caracas', 'staffs/HZF9GgMh43mBksRJ6XDvRw2Pzz5wJiayiJ7cL1wD.png', NULL, '423354255', NULL, NULL, 'active', NULL, '$2y$10$eZWf3YyeUWm2M3X.Juu8UuiI6lMLJ8l6NPcrzrMpwlKdhRXyXkVkS', NULL, '2023-12-16 01:41:46', '2024-05-21 16:20:46', NULL),
-(30, 'Patient', 'patient@patient.com', NULL, 'Prueba', '04242874370', '2023-12-26 08:00:00', 1, 'universitaria', 'Patient', 'Adas', 'staffs/x3NOmO8Tu0mjglh6RJQgvxJQ5rk6nNcmgoblbQMS.jpg', NULL, '423234', NULL, NULL, 'inactive', NULL, '$2y$10$a97LVBaQpZtBL2GdrGS2teZjT0fRsAiFB9zSeCkH6MGO3fBAmZApK', NULL, '2023-12-26 13:57:51', '2024-02-29 03:40:25', NULL),
-(37, 'malcolm', 'malcolm@malcolm.com', NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, 'GUEST', '1442789', NULL, NULL, 'inactive', NULL, '$2y$10$GwAPfKemLatlzjpZ9V1TZep6.6mRiD1tbsEnlD.xXjR3wN9z7Y5y.', NULL, '2023-12-27 19:06:53', '2023-12-27 19:06:53', NULL),
-(38, 'malcolm', 'otromas@otromas.com', NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, 'GUEST', '128903', NULL, NULL, 'inactive', NULL, '$2y$10$1DER5lPd6jhMnQClCw/nRONqmuHI/lPHJErUYXBNOi0cfTeI2XOr6', NULL, '2023-12-27 19:12:06', '2023-12-27 19:12:06', NULL),
-(39, 'malcolm', 'mercadocreativo@gmail.com', NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, 'GUEST', '14427389', NULL, NULL, 'inactive', NULL, '$2y$10$W8FMH1Vf2iTRlWnCAPXcgOFxGIjyhbgewUxeNa8K4Kfg9XV2WOzlm', NULL, '2023-12-28 00:08:07', '2023-12-28 00:08:07', NULL),
-(40, 'pruebapp', 'pruebaapp@prueba.com', NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, 'GUEST', '1223322', NULL, NULL, 'inactive', NULL, '$2y$10$3fS9stc5IMYjjYUVK6npQ.iMGX.ovNL2Qip5nCO5on1t3kBSNWIqO', NULL, '2023-12-28 16:26:02', '2023-12-28 16:26:02', NULL),
-(41, 'Camille', 'weber.tyson@kiehn.com', NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, 'GUEST', '700200', NULL, NULL, 'inactive', NULL, '$2y$10$kjFm1ZZWs6/r4YJNZOJvYuAq3w/hYYdPMavgLUfq3iwqiQZ3DIWp2', NULL, '2023-12-29 14:56:23', '2023-12-29 14:56:23', NULL),
-(42, 'admin', 'admin@admin.com', NULL, 'prueba', '123456878', '2024-05-09 16:00:00', 1, 'universitaria', 'ADMIN', NULL, 'staffs/S3slCf1jybQvr84L1lexipWGdsVIaHq4JJC2DtFJ.jpg', NULL, NULL, NULL, NULL, 'inactive', NULL, '$2y$10$OtGzaFrqKv9C4IlwH0VnTO6Iw9fR5jLCOEQLo42F1RP4/7ElwvWKy', NULL, '2024-05-09 22:24:20', '2024-05-09 22:24:20', NULL);
+(43, 'Alejando Cordova', 'mercadocreativo@gmail.com', NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, '14427389', NULL, NULL, 'inactive', NULL, '$2y$10$WpZzJTOo4EcoWpbHi8dlgeHE1GdyvrerlAZ4xMIdc3fFZGu9n/Vim', NULL, '2025-02-13 14:11:45', '2025-02-13 14:11:45', NULL),
+(44, 'test', 'test@test.com', NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, '12345678', NULL, NULL, 'inactive', NULL, '$2y$10$TcyKY54ce/ZirO7pYPzyQO0W.78FOjLOB9UG/D/nNzflnUO7mFo2G', NULL, '2025-02-13 14:43:02', '2025-02-13 14:43:02', NULL);
 
 --
 -- Índices para tablas volcadas
@@ -6930,19 +6928,19 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT de la tabla `appointments`
 --
 ALTER TABLE `appointments`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2023;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2038;
 
 --
 -- AUTO_INCREMENT de la tabla `appointment_attentions`
 --
 ALTER TABLE `appointment_attentions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=998;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1014;
 
 --
 -- AUTO_INCREMENT de la tabla `appointment_pays`
 --
 ALTER TABLE `appointment_pays`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2058;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2071;
 
 --
 -- AUTO_INCREMENT de la tabla `contacts`
@@ -7020,7 +7018,7 @@ ALTER TABLE `payments`
 -- AUTO_INCREMENT de la tabla `permissions`
 --
 ALTER TABLE `permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=49;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT de la tabla `personal_access_tokens`
@@ -7056,13 +7054,13 @@ ALTER TABLE `specialities`
 -- AUTO_INCREMENT de la tabla `tiposdepagos`
 --
 ALTER TABLE `tiposdepagos`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- Restricciones para tablas volcadas
