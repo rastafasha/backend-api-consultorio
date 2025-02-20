@@ -407,8 +407,25 @@ class AdminPaymentController extends Controller
     public function pagosPendientes()
     {
         
-        $payments = Payment::where('status', 'PENDING')->orderBy("id", "desc")
-                            ->paginate(10);
+        $payments = Payment::
+        where('status', 'PENDING')
+        ->orderBy("id", "desc")
+        ->paginate(10);
+
+        return response()->json([
+            "total"=>$payments->total(),
+            "payments"=> PaymentCollection::make($payments)
+        ]);
+
+    }
+    public function pagosPendientesShowId(Request $request, $doctor_id)
+    {
+        
+        $payments = Payment::where('status', 'PENDING')
+        ->where("doctor_id", $doctor_id)
+        ->orderBy("id", "desc")
+        ->paginate(10);
+        
         return response()->json([
             "total"=>$payments->total(),
             "payments"=> PaymentCollection::make($payments)

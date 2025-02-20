@@ -545,6 +545,21 @@ class AppointmentController extends Controller
 
     }
 
+    public function pagosPendientesShowId(Request $request, $doctor_id)
+    {
+        
+        $appointments = Appointment::
+        where("doctor_id", $doctor_id)
+        ->where('status', 1)
+        ->orderBy("id", "desc")
+                            ->paginate(10);
+        return response()->json([
+            "total"=>$appointments->total(),
+            "appointments"=> AppointmentCollection::make($appointments)
+        ]);
+
+    }
+
     public function updateConfirmation(Request $request, $id)
     {
         $appointment = Appointment::findOrfail($id);
