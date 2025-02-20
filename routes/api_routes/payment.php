@@ -7,13 +7,14 @@ use App\Http\Controllers\Admin\AdminPaymentSoftDeletesController;
 
 //pagos
 
-Route::resource('payment', AdminPaymentController::class);
 // Route::get('/pagos', [AdminPaymentController::class, 'index'])
 //     ->name('payments.index');
 
 Route::post('/payment/store', [AdminPaymentController::class, 'paymentStore'])
     ->name('payment.store');
 
+Route::get('/payment', [AdminPaymentController::class, 'index'])
+    ->name('payment.index');
 Route::get('/payment/show/{payment}', [AdminPaymentController::class, 'paymentShow'])
     ->name('payment.show');
 
@@ -27,6 +28,8 @@ Route::get('payment/recientes/', [AdminPaymentController::class, 'recientes'])
     ->name('payment.recientes');
 Route::get('payment/pendientes', [AdminPaymentController::class, 'pagosPendientes'])
     ->name('payment.pagosPendientes');
+
+
 Route::post('/payment/upload', [AdminPaymentController::class, 'upload'])
     ->name('payment.upload');
 
@@ -41,9 +44,6 @@ Route::get('/payment/pagosbyUser/{id}', [AdminPaymentController::class, 'pagosby
 
 Route::put('/payment/update/status/{payment:id}', [AdminPaymentController::class, 'updateStatus'])
     ->name('payment.updateStatus');
-
-Route::get('payment/byDoctor/{doctor_id}/', [AdminPaymentController::class, 'paymentsByDoctor'])->name('paymentsByDoctor');
-
 
 //Admin Pagos Softdeletes
 Route::get('/payments/delete', [AdminPaymentSoftDeletesController::class, 'index'])
