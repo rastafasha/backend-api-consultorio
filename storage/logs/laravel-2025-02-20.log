@@ -1,0 +1,12 @@
+[2025-02-20 01:14:19] local.ERROR: Uncaught ReflectionException: Class "Spatie\Permission\Middlewares\RoleMiddleware" does not exist in Command line code:1
+Stack trace:
+#0 Command line code(1): ReflectionMethod->__construct('Spatie\\Permissi...', 'handle')
+#1 {main}
+  thrown {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Uncaught ReflectionException: Class \"Spatie\\Permission\\Middlewares\\RoleMiddleware\" does not exist in Command line code:1
+Stack trace:
+#0 Command line code(1): ReflectionMethod->__construct('Spatie\\\\Permissi...', 'handle')
+#1 {main}
+  thrown at Command line code:1)
+[stacktrace]
+#0 {main}
+"} 
