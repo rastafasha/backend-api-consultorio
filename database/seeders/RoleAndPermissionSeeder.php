@@ -40,6 +40,7 @@ class RoleAndPermissionSeeder extends Seeder
         ['id' => 23, 'guard_name' => 'api','name' => 'list_appointment'],
         ['id' => 24, 'guard_name' => 'api','name' => 'edit_appointment'],
         ['id' => 25, 'guard_name' => 'api','name' => 'delete_appointment'],
+        
 
         ['id' => 26, 'guard_name' => 'api','name' => 'register_specialty'],
         ['id' => 27, 'guard_name' => 'api','name' => 'list_specialty'],
@@ -65,8 +66,19 @@ class RoleAndPermissionSeeder extends Seeder
         
         ['id' => 43, 'guard_name' => 'api','name' => 'list_publicidad'],
         ['id' => 44, 'guard_name' => 'api','name' => 'list_specialty_patient'],
+
         ['id' => 45, 'guard_name' => 'api','name' => 'register_location'],
         ['id' => 46, 'guard_name' => 'api','name' => 'list_location'],
+        
+        ['id' => 47, 'guard_name' => 'api','name' => 'view_patient'],
+        ['id' => 48, 'guard_name' => 'api','name' => 'list_presupuesto'],
+        ['id' => 49, 'guard_name' => 'api','name' => 'register_presupuesto'],
+
+        ['id' => 50, 'guard_name' => 'api','name' => 'list_patient_doctor'],
+        ['id' => 51, 'guard_name' => 'api','name' => 'cancel_appointment'],
+        ['id' => 52, 'guard_name' => 'api','name' => 'view_notification'],
+        ['id' => 53, 'guard_name' => 'api','name' => 'view_notification_appointment'],
+        ['id' => 54, 'guard_name' => 'api','name' => 'view_notification_pagos'],
         ];
 
         foreach ($permissions as $permission) {

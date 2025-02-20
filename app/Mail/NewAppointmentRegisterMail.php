@@ -30,8 +30,11 @@ class NewAppointmentRegisterMail extends Mailable
      */
     public function build()
     {
-        return $this->from('citasmedicas@malcolmcordova.com', 'Registro de una nueva cita desde Health Connect')
-            ->subject('Registro de una nueva cita')
-            ->markdown('emails.admin.new_appointment_register' , ['appointment' => $this->appointment]);
+        // return $this->from('citasmedicas@malcolmcordova.com', 'Registro de una nueva cita desde Health Connect')
+        //     ->subject('Registro de una nueva cita')
+        //     ->markdown('emails.admin.new_appointment_register' , ['appointment' => $this->appointment]);
+
+            return $this->view('emails.admin.new_appointment_register',['appointment' => $this->appointment]);
+        
     }
 }

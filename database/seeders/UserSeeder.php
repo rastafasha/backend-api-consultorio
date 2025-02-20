@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
                 'location_id' => 1,
                 'mobile' => '1234567893',
                 'n_doc' => '5421369874',
-                "password" => bcrypt("password"),
+                "password" => bcrypt("superadmin"),
                 'roles' => [
                     [
                         "id"=> 1,

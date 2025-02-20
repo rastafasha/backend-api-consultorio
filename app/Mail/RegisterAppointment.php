@@ -34,7 +34,7 @@ class RegisterAppointment extends Mailable
         date_default_timezone_set('America/Caracas');
         //fecha simulada
 
-        $simulate_hour_number =date("2023-12-20 08:30:00"); //strtotime(date("2023-12-15 8:00:35"));
+        // $simulate_hour_number =date("2023-12-20 08:30:00"); //strtotime(date("2023-12-15 8:00:35"));
         // $appointments = Appointment::whereDate("date_appointment", "2023-12-20")//now()->format("Y-m-d")
         //fecha simulada
         
@@ -57,7 +57,7 @@ class RegisterAppointment extends Mailable
             //fecha real
             $hour_start = strtotime(Carbon::parse(date("Y-m-d")." ".$hour_start)->subHour());
             $hour_end = strtotime(Carbon::parse(date("Y-m-d")." ".$hour_end)->subHour());
-            error_log($hour_start.' '.$hour_end.' '.$simulate_hour_number );
+            // error_log($hour_start.' '.$hour_end.' '.$simulate_hour_number );
             if( $hour_start <= $now_time_number && $hour_end >= $now_time_number ){
                 $patients->push([
                     "name"=> $appointment->patient->name,
@@ -83,10 +83,10 @@ class RegisterAppointment extends Mailable
     /**
      * Get the message envelope.
      */
-    public function envelope(): Envelope
-    {
-        return new Envelope(
-            subject: 'Register Appointment',
-        );
-    }
+    // public function envelope(): Envelope
+    // {
+    //     return new Envelope(
+    //         subject: 'Register Appointment',
+    //     );
+    // }
 }
