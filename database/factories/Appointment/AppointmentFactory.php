@@ -31,14 +31,16 @@ class AppointmentFactory extends Factory
         $status = $this->faker->randomElement([1, 2]);
         
         $doctor_schedule_day =  DoctorScheduleDay::where("user_id",$doctor->id)->inRandomOrder()->first();
-        $doctor_schedule_join_hour = DoctorScheduleJoinHour::where("doctor_schedule_day_id",$doctor_schedule_day->id)->inRandomOrder()->first();
-
+        $doctor_schedule_join_hour = $doctor_schedule_day ? 
+            DoctorScheduleJoinHour::where("doctor_schedule_day_id",$doctor_schedule_day->id)->inRandomOrder()->first() : 
+            null;
+        
         return [
             "doctor_id" => $doctor->id,
             "patient_id" => Patient::inRandomOrder()->first()->id,
             "date_appointment" => $date_appointment,
             "speciality_id" => Specialitie::all()->random()->id,
-            "doctor_schedule_join_hour_id" => $doctor_schedule_join_hour->id,
+            "doctor_schedule_join_hour_id" => $doctor_schedule_join_hour ? $doctor_schedule_join_hour->id : null,
             "user_id" => User::all()->random()->id,
             "amount" => $this->faker->randomElement([100,150,200,250,80,120,95,75,160,230,110]),
             "status" => $status,

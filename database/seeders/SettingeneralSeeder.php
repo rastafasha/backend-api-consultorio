@@ -15,7 +15,7 @@ class SettingeneralSeeder extends Seeder
         $settings = [
             [
                 'id' => 1,
-                'name' => 'Clinica DEMO-HCME',
+                'name' => 'Consultorio DEMO-HCME',
                 'address' => 'AV. Ppal',
                 'phone' => '12324354677',
                 'city' => 'Caracas',
