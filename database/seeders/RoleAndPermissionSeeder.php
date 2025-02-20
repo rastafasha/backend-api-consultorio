@@ -79,6 +79,13 @@ class RoleAndPermissionSeeder extends Seeder
         ['id' => 52, 'guard_name' => 'api','name' => 'view_notification'],
         ['id' => 53, 'guard_name' => 'api','name' => 'view_notification_appointment'],
         ['id' => 54, 'guard_name' => 'api','name' => 'view_notification_pagos'],
+        ['id' => 55, 'guard_name' => 'api','name' => 'view_appointment'],
+        ['id' => 56, 'guard_name' => 'api','name' => 'local_appointment'],
+        ['id' => 57, 'guard_name' => 'api','name' => 'list_appointment_doctor'],
+        ['id' => 58, 'guard_name' => 'api','name' => 'export_pdf'],
+        ['id' => 59, 'guard_name' => 'api','name' => 'export_text'],
+        ['id' => 60, 'guard_name' => 'api','name' => 'export_csv'],
+        ['id' => 61, 'guard_name' => 'api','name' => 'export_xsl'],
         ];
 
         foreach ($permissions as $permission) {

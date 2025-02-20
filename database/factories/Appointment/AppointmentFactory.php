@@ -23,9 +23,7 @@ class AppointmentFactory extends Factory
      */
     public function definition(): array
     {
-        $doctor = User::whereHas("roles",function($q){
-            $q->where("name","like","%DOCTOR%");
-        })->inRandomOrder()->first();
+        $doctor = User::role('DOCTOR')->inRandomOrder()->first();
         
         $date_appointment = $this->faker->dateTimeBetween("2023-01-01 00:00:00", "2023-12-25 23:59:59");
         $status = $this->faker->randomElement([1, 2]);
@@ -36,11 +34,11 @@ class AppointmentFactory extends Factory
             null;
         
         return [
-            "doctor_id" => $doctor->id,
+            "doctor_id" => User::role('DOCTOR')->inRandomOrder()->first()->id,
             "patient_id" => Patient::inRandomOrder()->first()->id,
             "date_appointment" => $date_appointment,
             "speciality_id" => Specialitie::all()->random()->id,
-            "doctor_schedule_join_hour_id" => $doctor_schedule_join_hour ? $doctor_schedule_join_hour->id : null,
+            "doctor_schedule_join_hour_id" => $doctor_schedule_join_hour ? $doctor_schedule_join_hour->id : 1,
             "user_id" => User::all()->random()->id,
             "amount" => $this->faker->randomElement([100,150,200,250,80,120,95,75,160,230,110]),
             "status" => $status,

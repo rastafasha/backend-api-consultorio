@@ -2,6 +2,7 @@
 
 namespace Database\Factories\Patient;
 
+use App\Models\User;
 use App\Models\Patient\Patient;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,8 +19,11 @@ class PatientFactory extends Factory
      */
     public function definition(): array
     {
+        $doctor = User::role('DOCTOR')->inRandomOrder()->first();
+        
         return [
             "name" => $this->faker->name(),
+            "doctor_id" => User::role('DOCTOR')->inRandomOrder()->first()->id,
             "surname" => $this->faker->lastName(),
             "phone" => $this->faker->phoneNumber(),
             "email" => $this->faker->email(),
