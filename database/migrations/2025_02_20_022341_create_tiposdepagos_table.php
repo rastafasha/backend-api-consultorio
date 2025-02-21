@@ -28,7 +28,7 @@ class CreateTiposdepagosTable extends Migration
                 ])->default('INACTIVE');
 
             
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('doctor_id')->nullable();
             
             $table->timestamps();
             $table->softDeletes();
