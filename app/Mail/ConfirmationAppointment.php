@@ -42,6 +42,7 @@ class ConfirmationAppointment extends Mailable
     public function build()
     {
         $appointment = $this->appointment;
-        return $this->view('emails.appointment_confirmation');
+        return $this ->subject('Cita Confirmada')
+        ->view('emails.appointment_confirmation');
     }
 }

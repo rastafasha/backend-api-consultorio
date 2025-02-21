@@ -22,7 +22,7 @@
 	<!--[if !mso]><!-->
 	<link href="https://fonts.googleapis.com/css?family=PT+Sans:400,400i,700,700i&display=swap" rel="stylesheet" />
 	<!--<![endif]-->
-	<title>Register Cita Médica</title>
+	<title>Registro Nueva Cita Médica</title>
 	<!--[if gte mso 9]>
 	<style type="text/css" media="all">
 		sup { font-size: 100% !important; }
@@ -293,8 +293,8 @@
 																												ha
 																												registrado
 																												una
-																												nueva
-																												cita.</strong>
+																												Nueva
+																												Cita.</strong>
 																										</multiline>
 																									</td>
 																								</tr>
@@ -419,12 +419,12 @@
 																															<td class="text-16"
 																																style="font-size:16px; line-height:20px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important;">
 																																<multiline>
-																																	<em><strong>Especialidad:</strong>
+																																	{{-- <em><strong>Especialidad:</strong>
 																																		{{$appointment->speciality->name}}</em>
 																																	<br>
 																																	<em><strong>Doctor:</strong>
 																																		{{$appointment->doctor->name . ' ' . $appointment->doctor->surname}}</em>
-																																	<br>
+																																	<br> --}}
 																																	<em><strong>Fecha
 																																			de
 																																			la
@@ -432,10 +432,10 @@
 																																		<br>
 																																		{{$appointment->date_appointment}}</em>
 																																	<br>
-																																	<!-- <em>"Hora de Inicio: {{$appointment->hour_start_format}}"</em> 
+																																	<em>"Hora de Inicio: {{$appointment->hour_start_format}}"</em> 
                                                                                                                                     <br>
 																																	<em>"Hora de Fin: {{$appointment->hour_end_format}}"</em>
-																																	<br>  -->
+																																	<br> 
 																																	<em><strong>creada:</strong>
 																																		{{$appointment->created_at}}</em>
 																																</multiline>
@@ -496,114 +496,6 @@
 																											cellspacing="0"
 																											cellpadding="0">
 																											<tr>
-																												<th class="column-top"
-																													valign="top"
-																													width="230"
-																													style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;">
-																													<table
-																														width="100%"
-																														border="0"
-																														cellspacing="0"
-																														cellpadding="0">
-																														<tr>
-																															<td class="title-20 pb-10"
-																																style="font-size:20px; line-height:24px; color:#282828; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important; padding-bottom: 10px;">
-																																<multiline>
-																																	<strong>Payment
-																																		method</strong>
-																																</multiline>
-																															</td>
-																														</tr>
-																														<tr>
-																															<td class="text-16"
-																																style="font-size:16px; line-height:20px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important;">
-																																<multiline>
-																																	<!-- {{$appointment->method_payment}} -->
-																																	Pending
-																																</multiline>
-																															</td>
-																														</tr>
-																													</table>
-																												</th>
-																												<th class="column-top mpb-15"
-																													valign="top"
-																													width="30"
-																													style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;">
-																												</th>
-																												<th class="column-top"
-																													valign="top"
-																													width="230"
-																													style="font-size:0pt; line-height:0pt; padding:0; margin:0; font-weight:normal; vertical-align:top;">
-																													<table
-																														width="100%"
-																														border="0"
-																														cellspacing="0"
-																														cellpadding="0">
-																														<!-- <tr>
-																															<td align="right" class="pb-15" style="padding-bottom: 15px;">
-																																<table border="0" cellspacing="0" cellpadding="0" class="mw-100p">
-																																	<tr>
-																																		<td class="title-20 lh-30 a-right mt-left mw-auto" width="100" style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 30px; text-align:right;">
-																																			<multiline>
-																																				<strong>Cita:</strong>
-																																			</multiline>
-																																		</td>
-																																		<td class="img mw-15" width="20" style="font-size:0pt; line-height:0pt; text-align:left;"></td>
-																																		<td class="title-20 lh-30 mt-right" style="font-size:20px; color:#282828; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important; line-height: 30px;">
-																																			<multiline>
-																																				${{$appointment->amount}}
-																																			</multiline>
-																																		</td>
-																																	</tr>
-																																</table>
-																															</td>
-																														</tr> -->
-																														<tr>
-																															<td
-																																align="right">
-																																<!-- Button -->
-																																<table
-																																	border="0"
-																																	cellspacing="0"
-																																	cellpadding="0"
-																																	class="mw-100p"
-																																	style="min-width: 200px;">
-																																	<tr>
-																																		<td class="btn-20 btn-secondary c-white l-white"
-																																			bgcolor="#f3189e"
-																																			style="font-size:20px; line-height:24px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; min-width:auto !important; border-radius:10px; background:linear-gradient(to right, #9028df 0%,#f3189e 100%); color:#ffffff;">
-																																			<multiline>
-																																				<a href="#"
-																																					target="_blank"
-																																					class="link c-white"
-																																					style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
-																																					<span
-																																						class="link c-white"
-																																						style="text-decoration:none; color:#ffffff;">Cita:
-																																						${{$appointment->amount}}</span>
-																																				</a>
-																																			</multiline>
-																																		</td>
-																																	</tr>
-																																</table>
-																																<!-- END Button -->
-																															</td>
-																														</tr>
-																													</table>
-																												</th>
-																											</tr>
-																										</table>
-																									</td>
-																								</tr>
-																								<tr>
-																									<td class="pb-30"
-																										style="padding-bottom: 30px;">
-																										<table
-																											width="100%"
-																											border="0"
-																											cellspacing="0"
-																											cellpadding="0">
-																											<tr>
 																												<td class="img"
 																													height="1"
 																													bgcolor="#ebebeb"
@@ -614,7 +506,7 @@
 																										</table>
 																									</td>
 																								</tr>
-																								{{-- <tr>
+																								<tr>
 																									<td class="text-16 lh-26 a-center pb-25"
 																										style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center; padding-bottom: 25px;">
 																										<multiline>
@@ -640,7 +532,7 @@
 																													bgcolor="#f3189e"
 																													style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
 																													<multiline>
-																														<a href="https://csdleondeccs.malcolmcordova.com"
+																														<a href="https://consultorio.health-connect.me/appointments"
 																															target="_blank"
 																															class="link c-white"
 																															style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
@@ -654,7 +546,7 @@
 																											</tr>
 																										</table>
 																									</td>
-																								</tr> --}}
+																								</tr>
 																							</table>
 																						</td>
 																					</tr>

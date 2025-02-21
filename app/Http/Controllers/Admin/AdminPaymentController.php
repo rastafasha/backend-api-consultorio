@@ -129,7 +129,6 @@ class AdminPaymentController extends Controller
         
         return response()->json([
             "message"=>200,
-            "payment"=>$payment,
         ]);
     }
 

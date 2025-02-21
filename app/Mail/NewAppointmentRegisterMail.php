@@ -34,7 +34,9 @@ class NewAppointmentRegisterMail extends Mailable
         //     ->subject('Registro de una nueva cita')
         //     ->markdown('emails.admin.new_appointment_register' , ['appointment' => $this->appointment]);
 
-            return $this->view('emails.admin.new_appointment_register',['appointment' => $this->appointment]);
+            return $this
+            ->subject('HealthConnectMe: Nueva Cita Médica')
+            ->view('emails.admin.new_appointment_register',['appointment' => $this->appointment]);
         
     }
 }
