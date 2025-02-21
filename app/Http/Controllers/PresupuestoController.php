@@ -10,6 +10,7 @@ use App\Models\Patient\Patient;
 use App\Mail\Registerpresupuesto;
 use App\Models\Doctor\Specialitie;
 use App\Http\Controllers\Controller;
+use App\Mail\UpdatedPresupuestoMail;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\Confirmationpresupuesto;
 use App\Mail\NewpresupuestoRegisterMail;
@@ -108,30 +109,16 @@ class PresupuestoController extends Controller
             "amount" =>$request->amount,
         ]);
 
-        
-        
-        
-        // if($request->doctor_id){
-        //     $doctor = User::findOrFail($id);
 
-        //     return response()->json([
-        //         "doctor"=>[
-        //                 "id"=> $doctor->doctor_id,
-        //                 "email"=> $doctor->email,
-        //                 "full_name" =>$doctor->name.' '.$doctor->user->surname,
-        //             ]
-        //         ]);
-        // }
-
-        // Mail::to($presupuesto->patient->email)->send(new Registerpresupuesto($presupuesto));
+        Mail::to($presupuesto->patient->email)->send(new NewPresupuestoRegisterMail($presupuesto));
         // Mail::to($doctor->email)->send(new NewpresupuestoRegisterMail($presupuesto));
 
         return response()->json([
             "message" => 200,
             "presupuesto" => $presupuesto,
             "amount" =>$request->amount,
-            "paymentmethod" =>$request->method_payment,
-            "amountadd" =>$request->amount_add,
+            // "paymentmethod" =>$request->method_payment,
+            // "amountadd" =>$request->amount_add,
             "date_presupuesto" => Carbon::parse($presupuesto->date_presupuesto)->format('d-m-Y'),
             "patient"=>$presupuesto->patient_id ? 
                     [
@@ -208,6 +195,8 @@ class PresupuestoController extends Controller
         "amount" =>$request->amount,
     ]);
 
+    Mail::to($presupuesto->patient->email)->send(new UpdatedPresupuestoMail($presupuesto));
+        
 
         return response()->json([
             "message" => 200,
