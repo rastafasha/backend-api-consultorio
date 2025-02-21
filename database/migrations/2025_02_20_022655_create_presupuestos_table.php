@@ -16,6 +16,7 @@ class CreatePresupuestosTable extends Migration
         Schema::create('presupuestos', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->double('amount', 250);
+            // $table->string('amount')->nullable();
             $table->text('description');
             
             $table->tinyInteger('confimation')->default(1);

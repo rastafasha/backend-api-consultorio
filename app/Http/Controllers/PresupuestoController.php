@@ -123,8 +123,8 @@ class PresupuestoController extends Controller
         //         ]);
         // }
 
-        Mail::to($presupuesto->patient->email)->send(new Registerpresupuesto($presupuesto));
-        Mail::to($doctor->email)->send(new NewpresupuestoRegisterMail($presupuesto));
+        // Mail::to($presupuesto->patient->email)->send(new Registerpresupuesto($presupuesto));
+        // Mail::to($doctor->email)->send(new NewpresupuestoRegisterMail($presupuesto));
 
         return response()->json([
             "message" => 200,
@@ -139,7 +139,6 @@ class PresupuestoController extends Controller
                         "email" =>$presupuesto->patient->email,
                         "full_name" =>$presupuesto->patient->name.' '.$presupuesto->patient->surname,
                     ]: NULL,
-            "speciality"=>$presupuesto->speciality,
             "speciality"=>$presupuesto->speciality ? 
                 [
                     "id"=> $presupuesto->speciality->id,
@@ -187,24 +186,32 @@ class PresupuestoController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  int  $e
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-       
-        $presupuesto = Presupuesto::findOrFail($id);
+        \Log::info('Update request data:', $request->all()); // Log the incoming request data
+    // Corrected logging statement to use the Log facade
+        
+    $request->validate([
+        'amount' => 'required|numeric', // Ensure amount is present and is a number
+    ]);
 
+    $presupuesto = Presupuesto::findOrFail($id);
 
-        $presupuesto->update([
-            "doctor_id" =>$request->doctor_id,
-            "speciality_id" => $request->speciality_id,
-            "description" =>$request->description,
-            "amount" =>$request->amount,
-        ]);
+    $presupuesto->update([
+        "doctor_id" =>$request->doctor_id,
+        "patient_id" =>$request->patient_id,
+        "speciality_id" => $request->speciality_id,
+        "description" =>$request->description,
+        "amount" =>$request->amount,
+    ]);
+
 
         return response()->json([
             "message" => 200,
+            "presupuesto" => PresupuestoResource::make($presupuesto),
         ]);
     }
 

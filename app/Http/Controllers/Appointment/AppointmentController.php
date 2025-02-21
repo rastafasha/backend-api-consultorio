@@ -300,12 +300,15 @@ class AppointmentController extends Controller
             "message"=>200,
             "id"=>$patient->id,
             "name"=>$patient->name,
+            "email"=>$patient->email,
             "surname"=>$patient->surname,
             "phone"=>$patient->phone,
             "n_doc"=>$patient->n_doc,
         ]);
 
     }
+
+    
 
     public function calendar(Request $request){
         $speciality_id = $request->speciality_id;
