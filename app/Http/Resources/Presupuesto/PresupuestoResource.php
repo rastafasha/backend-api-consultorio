@@ -60,14 +60,12 @@ class PresupuestoResource extends JsonResource
                 "full_name" => $this->resource->doctor->name. ' '.$this->resource->doctor->surname
             ]: NULL,
             "amount" =>$this->resource->amount,
-            // "deuda" =>$this->resource->deuda,
             "status" =>$this->resource->status,
             "laboratory" =>$this->resource->laboratory,
             "confimation" =>$this->resource->confimation,
-            // "medical" =>$this->resource->medical,
             "medical" =>$this->resource->medical ? json_decode($this->resource->medical) : NULL,
             "description" =>$this->resource->description,
-            
+
             "created_at"=>$this->resource->created_at ? Carbon::parse($this->resource->created_at)->format("Y-m-d h:i A") : NULL,
         ];
     }
