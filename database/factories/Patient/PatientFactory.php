@@ -35,7 +35,7 @@ class PatientFactory extends Factory
             "antecedent_personal" => $this->faker->text($maxNbChars = 200),
             "antecedent_alerg" => $this->faker->text($maxNbChars = 150),
             "current_desease" => $this->faker->text($maxNbChars = 100),
-            "n_doc" => $this->faker->randomDigit(),
+            "n_doc" => $this->faker->randomDigitNotZero(10),
             "created_at" => $this->faker->dateTimeBetween("2023-01-01 00:00:00", "2023-12-25 23:59:59"),
         ];
     }

@@ -17,7 +17,9 @@ class CreatePresupuestosTable extends Migration
             $table->bigIncrements('id');
             $table->double('amount', 250);
             // $table->string('amount')->nullable();
-            $table->text('description');
+            $table->text('description')->nullable();
+            $table->text('diagnostico')->nullable();
+            $table->json('medical')->nullable();
             
             $table->tinyInteger('confimation')->default(1);
             $table->tinyInteger('status')->default(1);

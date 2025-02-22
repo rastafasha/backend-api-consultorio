@@ -43,8 +43,6 @@ class PresupuestoResource extends JsonResource
                     "n_doc" =>$this->resource->patient->n_doc,
                     "email" =>$this->resource->patient->email,
                     "antecedent_alerg" =>$this->resource->patient->antecedent_alerg,
-                    "name_companion" =>$this->resource->patient->person->name_companion,
-                    "surname_companion" =>$this->resource->patient->person->surname_companion,
                 ]: NUll,
             "date_presupuesto" =>$this->resource->date_presupuesto,
             "date_presupuesto_format" =>Carbon::parse($this->resource->date_presupuesto)->format("Y-m-d"),
@@ -66,6 +64,8 @@ class PresupuestoResource extends JsonResource
             "status" =>$this->resource->status,
             "laboratory" =>$this->resource->laboratory,
             "confimation" =>$this->resource->confimation,
+            // "medical" =>$this->resource->medical,
+            "medical" =>$this->resource->medical ? json_decode($this->resource->medical) : NULL,
             "description" =>$this->resource->description,
             
             "created_at"=>$this->resource->created_at ? Carbon::parse($this->resource->created_at)->format("Y-m-d h:i A") : NULL,
