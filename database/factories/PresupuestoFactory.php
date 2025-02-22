@@ -33,9 +33,16 @@ class PresupuestoFactory extends Factory
             "doctor_id" => User::role('DOCTOR')->inRandomOrder()->first()->id,
             "patient_id" => Patient::count() > 0 ? Patient::inRandomOrder()->first()->id : null,
             "description" => $this->faker->text($maxNbChars = 300),
+            "diagnostico" => $this->faker->text($maxNbChars = 300),
+            "medical" => json_encode([
+                    [
+                        "name_medical" => $this->faker->word(),
+                        "precio" =>  $this->faker->randomElement([100,150,200,250,80,120,95,75,160,230,110]),
+                    ],
+                ]),
             "speciality_id" => Specialitie::count() > 0 ? Specialitie::all()->random()->id : null,
             "user_id" => User::count() > 0 ? User::all()->random()->id : null,
-            "amount" => $this->faker->randomElement([100,150,200,250,80,120,95,75,160,230,110]),
+            "amount" => $this->faker->randomnumber(2),
             "status" => $status,
         ];
     }
