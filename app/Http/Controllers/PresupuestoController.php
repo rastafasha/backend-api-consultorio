@@ -81,8 +81,9 @@ class PresupuestoController extends Controller
         $patient = Patient::where("n_doc", $request->n_doc)->first();
         $doctor = User::where("id", $request->doctor_id)->first();
 
-        $request->request->add(["medical" => $request->medical]);
-
+        // $request->request->add(["medical" => $request->medical]);
+        $request->request->add(["medical"=>json_encode($request->medical)]);
+        
         if(!$patient){
             $patient = Patient::create([
                 "name"=>$request->name,
@@ -158,14 +159,8 @@ class PresupuestoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // $presupuesto = Presupuesto::where("id", "=", $request->presupuesto_id)->first();
-
         $presupuesto = Presupuesto::findOrFail($id );
         
-        // $request->request->add(["medical" => $request->medical]);
-
-        // \Log::info('Update request data:', $request->all()); // Log the incoming request data
-      
         $request->validate([
             'amount' => 'required|numeric', // Ensure amount is present and is a number
             'medical' => 'required|array', // Ensure medical is present and is an array
@@ -173,9 +168,7 @@ class PresupuestoController extends Controller
 
         $request->request->add(["medical"=>json_encode($request->medical)]);
         
-
-        \Log::info('Updating presupuesto with data:', $request->all()); // Log the incoming request data
-$presupuesto->update([
+        $presupuesto->update([
             "doctor_id" =>$request->doctor_id,
             "patient_id" =>$request->patient_id,
             "speciality_id" => $request->speciality_id,
