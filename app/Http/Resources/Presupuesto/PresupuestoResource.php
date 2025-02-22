@@ -44,7 +44,6 @@ class PresupuestoResource extends JsonResource
                     "email" =>$this->resource->patient->email,
                     "antecedent_alerg" =>$this->resource->patient->antecedent_alerg,
                 ]: NUll,
-            "date_presupuesto" =>$this->resource->date_presupuesto,
             "date_presupuesto_format" =>Carbon::parse($this->resource->date_presupuesto)->format("Y-m-d"),
             "speciality_id" =>$this->resource->speciality_id,
             "speciality"=>$this->resource->speciality ? 
@@ -54,20 +53,13 @@ class PresupuestoResource extends JsonResource
                     "price"=> $this->resource->speciality->price,
                 ]: NULL,
             
-            "user_id" =>$this->resource->user_id,
-            "user" => $this->resource->user ? [
-                "id" => $this->resource->doctor->id,
-                "full_name" => $this->resource->doctor->name. ' '.$this->resource->doctor->surname
-            ]: NULL,
-            "amount" =>$this->resource->amount,
             "status" =>$this->resource->status,
-            "laboratory" =>$this->resource->laboratory,
             "confimation" =>$this->resource->confimation,
-            // "medical" =>$this->resource->medical,
-            "medical" =>$this->resource->medical ? json_decode($this->resource->medical) : NULL,
             "description" =>$this->resource->description,
             "diagnostico" =>$this->resource->diagnostico,
-
+            "medical" =>$this->resource->medical ? json_decode($this->resource->medical) : NULL,
+            "amount" =>$this->resource->amount,
+            
             "created_at"=>$this->resource->created_at ? Carbon::parse($this->resource->created_at)->format("Y-m-d h:i A") : NULL,
         ];
     }

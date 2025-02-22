@@ -91,27 +91,24 @@ class PresupuestoController extends Controller
                 "n_doc"=>$request->n_doc,
                 "phone"=>$request->phone,
             ]);
-        }else{
-            $patient->person->update([
-                'name_companion' => $request->name_companion,
-                'surname_companion' => $request->surname_companion,
-            ]);
         }
+        // else{
+        //     $patient->person->update([
+        //         'name_companion' => $request->name_companion,
+        //         'surname_companion' => $request->surname_companion,
+        //     ]);
+        // }
 
         
-        // $user = auth('api')->user();//lo coloco para saber si viene o no
-        // error_log($doctor);
-
-$presupuesto = Presupuesto::create([
-    "doctor_id" =>$request->doctor_id,
-    "patient_id" =>$patient->id,
-    "speciality_id" => $request->speciality_id,
-    "description" => $request->description,
-    "diagnostico" => $request->diagnostico,
-    "user_id" => $request->user_id,
-    "amount" =>$request->amount,
-    "medical" => $request->medical, // Ensure this is updated correctly
-]);
+            $presupuesto = Presupuesto::create([
+                "doctor_id" =>$request->doctor_id,
+                "patient_id" =>$patient->id,
+                "speciality_id" => $request->speciality_id,
+                "description" => $request->description,
+                "diagnostico" => $request->diagnostico,
+                "amount" =>$request->amount,
+                "medical" => $request->medical, // Ensure this is updated correctly
+            ]);
 
 
 
@@ -121,29 +118,6 @@ $presupuesto = Presupuesto::create([
         return response()->json([
             "message" => 200,
             "presupuesto" => $presupuesto,
-            // "amount" =>$request->amount,
-            // "medical" =>$request->medical,
-            // // "paymentmethod" =>$request->method_payment,
-            // // "amountadd" =>$request->amount_add,
-            // "date_presupuesto" => Carbon::parse($presupuesto->date_presupuesto)->format('d-m-Y'),
-            // "patient"=>$presupuesto->patient_id ? 
-            //         [
-            //             "id"=> $presupuesto->patient->id,
-            //             "email" =>$presupuesto->patient->email,
-            //             "full_name" =>$presupuesto->patient->name.' '.$presupuesto->patient->surname,
-            //         ]: NULL,
-            // "speciality"=>$presupuesto->speciality ? 
-            //     [
-            //         "id"=> $presupuesto->speciality->id,
-            //         "name"=> $presupuesto->speciality->name,
-            //     ]: NULL,
-            // "doctor_id" => $presupuesto->doctor_id,
-            // "doctor"=>$presupuesto->doctor_id ? 
-            //             [
-            //                 "id"=> $doctor->id,
-            //                 "email"=> $doctor->email,
-            //                 "full_name" =>$doctor->name.' '.$doctor->surname,
-            //             ]: NULL,
             
         ]);
     }
@@ -184,21 +158,29 @@ $presupuesto = Presupuesto::create([
      */
     public function update(Request $request, $id)
     {
-        \Log::info('Update request data:', $request->all()); // Log the incoming request data
+        // $presupuesto = Presupuesto::where("id", "=", $request->presupuesto_id)->first();
+
+        $presupuesto = Presupuesto::findOrFail($id );
         
+        // $request->request->add(["medical" => $request->medical]);
+
+        // \Log::info('Update request data:', $request->all()); // Log the incoming request data
+      
         $request->validate([
             'amount' => 'required|numeric', // Ensure amount is present and is a number
+            'medical' => 'required|array', // Ensure medical is present and is an array
         ]);
 
         $request->request->add(["medical"=>json_encode($request->medical)]);
+        
 
-        $presupuesto = Presupuesto::findOrFail($id);
-
-        $presupuesto->update([
+        \Log::info('Updating presupuesto with data:', $request->all()); // Log the incoming request data
+$presupuesto->update([
             "doctor_id" =>$request->doctor_id,
             "patient_id" =>$request->patient_id,
             "speciality_id" => $request->speciality_id,
             "description" =>$request->description,
+            "diagnostico" =>$request->diagnostico,
             "amount" =>$request->amount,
             "medical" =>$request->medical, // Ensure this is updated correctly
         ]);
@@ -245,7 +227,7 @@ $presupuesto = Presupuesto::create([
         $presupuesto->update();
         
         if($request->confimation === '2'){
-            Mail::to($presupuesto->patient->email)->send(new Confirmationpresupuesto($presupuesto));
+            // Mail::to($presupuesto->patient->email)->send(new Confirmationpresupuesto($presupuesto));
         }
         
         return response()->json([

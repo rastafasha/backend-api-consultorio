@@ -37,11 +37,10 @@ class PresupuestoFactory extends Factory
             "medical" => json_encode([
                     [
                         "name_medical" => $this->faker->word(),
-                        "precio" =>  $this->faker->randomElement([100,150,200,250,80,120,95,75,160,230,110]),
+                        "precio" =>  $this->faker->randomElement([100.00,150.00,200.00,250.00,80.00,120.00,95.00,75.00,160.00,230.00,110.00]),
                     ],
                 ]),
             "speciality_id" => Specialitie::count() > 0 ? Specialitie::all()->random()->id : null,
-            "user_id" => User::count() > 0 ? User::all()->random()->id : null,
             "amount" => $this->faker->randomnumber(2),
             "status" => $status,
         ];

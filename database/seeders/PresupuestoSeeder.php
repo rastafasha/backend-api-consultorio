@@ -29,14 +29,17 @@ class PresupuestoSeeder extends Seeder
                 'speciality_id' => 1,
                 'description'=> 'Presupuesto para la atención del paciente 9',
                 'diagnostico'=> 'Presupuesto para la atención del paciente 9',
-                'user_id' => 9,
                 "medical" => json_encode([
                     [
                         "name_medical" => "Consulta",
-                        "precio" => 200,
+                        "precio" => 200.00,
+                    ],
+                    [
+                        "name_medical" => "Consulta",
+                        "precio" => 145.50,
                     ],
                 ]),
-                'amount' => 200,
+                'amount' => 345.50,
                 'created_at' => '2025-02-16 20:41:51',
                 'updated_at' => '2025-02-16 20:41:51',
                 'deleted_at' => null
