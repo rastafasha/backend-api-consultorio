@@ -32,9 +32,8 @@ class NewPaymentRegisterMail extends Mailable
     public function build()
     {
         return $this->
-        from('notifications@healthconnect.com', 'Health Connect: Sistema Automatizado de Envio de Notificaciones por correo')
+        from('noresponse@health-connect.me', 'Health Connect Me: Registro de un nuevo pago')
         // ->to($this->payment->email_doctor)
-            ->subject('Registro de un nuevo pago')
             ->markdown('emails.admin.new_payment_register', ['payment' => $this->payment]);
     }
 }

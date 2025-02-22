@@ -24,7 +24,7 @@ class CancellationAppointmentMail extends Mailable
     public function build()
     {
         $appointment = $this->appointment;
-        return $this->subject('Appointment Cancellation Notification')
+        return $this->subject('Notificación de cancelación de cita')
                    ->view('emails.cancellation_appointment');
     }
 }
