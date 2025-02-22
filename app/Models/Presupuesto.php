@@ -26,6 +26,8 @@ class Presupuesto extends Model
         "status",
         "confimation",
         "description",
+        "diagnostico",
+        "medical",
 
     ];
     
