@@ -42,8 +42,6 @@ class NotificationAppointments extends Command
     public function handle()
     {
         date_default_timezone_set('America/Caracas');
-        $simulate_hour_number =date("2023-12-20 08:30:00"); //strtotime(date("2023-12-15 8:00:35"));
-        // $appointments = Appointment::whereDate("date_appointment", "2023-12-20")//now()->format("Y-m-d")
         $appointments = Appointment::whereDate("date_appointment", now()->format("Y-m-d"))
                                     ->where("status",1)
                                     ->where("cron_state",1)
@@ -68,8 +66,8 @@ class NotificationAppointments extends Command
                 $patients->push([
                     "name"=> $appointment->patient->name,
                     "surname"=> $appointment->patient->surname,
-                    // "avatar"=> $appointment->avatar ? env("APP_URL")."storage/".$this->resource->avatar : null,
-                    "avatar"=> $appointment->avatar ? env("APP_URL").$this->resource->avatar : null,
+            "avatar"=> $appointment->patient->avatar ? env("APP_URL")."storage/".$appointment->patient->avatar : null,
+
                     "email"=> $appointment->patient->email,
                     "speciality_name"=> $appointment->speciality->name,
                     "phone"=> $appointment->patient->phone,
@@ -80,11 +78,17 @@ class NotificationAppointments extends Command
                 $appointment->update(["cron_state"=>2]);
             }
         }
-        foreach ($patients as $key => $patient) {
-            Mail::to($patient["email"])->send(new NotificationAppoint($patient));
+        if ($patients->count() > 0) {
+            foreach ($patients as $key => $patient) {
+                try {
+                    Mail::to($patient["email"])->send(new NotificationAppoint($patient));
+                    $this->info('Notification sent to: ' . $patient["email"]);
+                } catch (\Exception $e) {
+                    $this->error('Failed to send notification to: ' . $patient["email"] . ' - ' . $e->getMessage());
+                }
+            }
+        } else {
+            $this->info('No appointments require notifications at this time.');
         }
-        
-        // dd($patients)->count();
-        // dd("vaa");
     }
 }

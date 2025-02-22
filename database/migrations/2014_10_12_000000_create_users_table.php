@@ -28,6 +28,7 @@ class CreateUsersTable extends Migration
             $table->tinyInteger('status')->default(1);
             $table->longtext('education')->nullable();
             $table->longtext('designation')->nullable();
+            $table->string('precio_cita')->nullable();
             $table->text('address')->nullable();
             $table->string('avatar')->nullable();
             $table->string('n_doc', 50)->unique()->nullable();

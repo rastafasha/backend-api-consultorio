@@ -175,7 +175,7 @@ Notificaciones automatizadas desde la app
 																								<tr>
 																									<td class="text-16 lh-26 a-center" style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center;">
 																										<multiline>
-																											Le informamos que se ha generado un pago a travez de nuestra app, favor verifique los datos
+																											Le informamos que se ha generado un pago, favor verifique los datos, y confirme en la aplicación
 																										</multiline>
 																									</td>
 																								</tr>
@@ -237,7 +237,7 @@ Notificaciones automatizadas desde la app
 																																<multiline>
                                                                                                                                      Tipo de Pago {{ $payment->metodo}}
                                                                                                                                     <br>
-                                                                                                                                     Método de pago {{ $payment->referencia}}
+                                                                                                                                     Referencia {{ $payment->referencia}}
                                                                                                                                     <br>
                                                                                                                                      Nombre del banco {{ $payment->bank_name}}
                                                                                                                                     <br>
@@ -256,15 +256,46 @@ Notificaciones automatizadas desde la app
 																									</td>
 																								</tr>
 																								<tr>
-																									<td class="pb-40" style="padding-bottom: 40px;">
-																										<table width="100%" border="0" cellspacing="0" cellpadding="0">
+																									<td class="text-16 lh-26 a-center pb-25"
+																										style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center; padding-bottom: 25px;">
+																										<multiline>
+																											<em>Puedes
+																												revisar
+																												la cita
+																												por el
+																												siguiente
+																												enlace.
+																											</em>
+																										</multiline>
+																									</td>
+																								</tr>
+																								<tr>
+																									<td align="center">
+																										<table
+																											border="0"
+																											cellspacing="0"
+																											cellpadding="0"
+																											style="min-width: 200px;">
 																											<tr>
-																												<td class="img" height="1" bgcolor="#ebebeb" style="font-size:0pt; line-height:0pt; text-align:left;">&nbsp;</td>
+																												<td class="btn-16 c-white l-white"
+																													bgcolor="#f3189e"
+																													style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
+																													<multiline>
+																														<a href="https://consultorio.health-connect.me/"
+																															target="_blank"
+																															class="link c-white"
+																															style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
+																															<span
+																																class="link c-white"
+																																style="text-decoration:none; color:#ffffff;">Ver
+																																Cita</span>
+																														</a>
+																													</multiline>
+																												</td>
 																											</tr>
 																										</table>
 																									</td>
 																								</tr>
-																								
 																								<tr>
 																									<td class="pb-30" style="padding-bottom: 30px;">
 																										<table width="100%" border="0" cellspacing="0" cellpadding="0">

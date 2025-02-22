@@ -201,7 +201,7 @@
 																																	{{-- La contraseña inicial teporal con el que se registró.<br>  --}}
 																																	Puede cambiarlo dentro de la aplicación, en el area Editar Perfil en el menú arriba a la derecha.
 																																	Para mejor una mejor experiencia desde computador de escritorio acceder por el navegador Chrome,
-																																	en dispositivos moviles usar su navegador de preferencia 
+																																	en dispositivos móviles usar su navegador de preferencia 
 																																	<br />
 																																</multiline>
 																															</td>
@@ -209,15 +209,7 @@
 																														<tr>
 																															<td align="center">
 																																<table border="0" cellspacing="0" cellpadding="0" style="min-width: 200px;">
-																																	<tr>
-																																		<td class="btn-16 c-white l-white" bgcolor="#f3189e" style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
-																																			<multiline>
-																																				<a href="https://clinica.health-connect.me/" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
-																																					<span class="link c-white" style="text-decoration:none; color:#ffffff;">Acceder a Health Connect me</span>
-																																				</a>
-																																			</multiline>
-																																		</td>
-																																	</tr>
+																																	
 																																	<tr>
                                                                                                                                         <td class="text-16 lh-26 a-center" style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center;">
                                                                                                                                             <multiline>
@@ -228,10 +220,19 @@
                                                                                                                                     </tr>
             																														<tr>
             																															<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
-            																																<img src="https://clinica.health-connect.me/QR/HC-AramayR-Clinica.png" width="150" height="150" editable="true" border="0" alt="" />
+            																																<img src="https://consultorio.health-connect.me/QR/consultoriohcme.png" width="150" height="150" editable="true" border="0" alt="" />
             																																
             																															</td>
             																														</tr>
+																																	<tr>
+																																		<td class="btn-16 c-white l-white" bgcolor="#f3189e" style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
+																																			<multiline>
+																																				<a href="https://consultorio.health-connect.me/" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
+																																					<span class="link c-white" style="text-decoration:none; color:#ffffff;">Acceder a Health Connect me</span>
+																																				</a>
+																																			</multiline>
+																																		</td>
+																																	</tr>
 																																</table>
 																															</td>
 																														</tr> 

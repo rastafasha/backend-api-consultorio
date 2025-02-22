@@ -46,6 +46,7 @@ class NotificationAppoint extends Mailable
     public function build()
     {
         $patient = $this->patient;
-        return $this->view('emails.appointment_notification');
+        return $this->subject('Notificación de Cita Médica')
+        ->view('emails.appointment_notification');
     }
 }
