@@ -253,7 +253,13 @@ class PresupuestoController extends Controller
     public function presupuestoByDoctor(Request $request, $doctor_id)
     {
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
+        if(!$doctor_is_valid){
+            return response()->json([
+                "message"=>'403',
+            ]);
+        }
         $presupuestos = Presupuesto::where('doctor_id', $doctor_id)->get();
+
 
         return response()->json([
             "presupuestos"=> $presupuestos
