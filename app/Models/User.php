@@ -8,10 +8,12 @@ use App\Models\Location;
 use App\Traits\HavePermission;
 use App\Models\Patient\Patient;
 use App\Jobs\NewUserRegisterJob;
+use App\Mail\NewUserRegisterMail;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Doctor\Specialitie;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use App\Models\Doctor\DoctorScheduleDay;
@@ -143,6 +145,24 @@ class User extends Authenticatable implements JWTSubject
     public function patients()
     {
         return $this->hasMany(Patient::class);
+    }
+
+    //envia los pagos a un solo correo
+    protected static function boot(){
+
+        parent::boot();
+
+        static::created(function($user){
+
+            // userRegisterJob::dispatch(
+            //     $user
+            // )->onQueue("high");
+
+        Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
+
+        });
+
+
     }
 
     
