@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             DoctorScheduleDaySeeder::class,
             DoctorScheduleHourSeeder::class,
             DoctorScheduleJoinHourSeeder::class,
+            PresupuestoSeeder::class,
 
 
 

@@ -40,6 +40,7 @@ class RoleAndPermissionSeeder extends Seeder
         ['id' => 23, 'guard_name' => 'api','name' => 'list_appointment'],
         ['id' => 24, 'guard_name' => 'api','name' => 'edit_appointment'],
         ['id' => 25, 'guard_name' => 'api','name' => 'delete_appointment'],
+        
 
         ['id' => 26, 'guard_name' => 'api','name' => 'register_specialty'],
         ['id' => 27, 'guard_name' => 'api','name' => 'list_specialty'],
@@ -65,8 +66,31 @@ class RoleAndPermissionSeeder extends Seeder
         
         ['id' => 43, 'guard_name' => 'api','name' => 'list_publicidad'],
         ['id' => 44, 'guard_name' => 'api','name' => 'list_specialty_patient'],
+
         ['id' => 45, 'guard_name' => 'api','name' => 'register_location'],
         ['id' => 46, 'guard_name' => 'api','name' => 'list_location'],
+        
+        ['id' => 47, 'guard_name' => 'api','name' => 'view_patient'],
+        ['id' => 48, 'guard_name' => 'api','name' => 'list_presupuesto'],
+        ['id' => 49, 'guard_name' => 'api','name' => 'register_presupuesto'],
+
+        ['id' => 50, 'guard_name' => 'api','name' => 'list_patient_doctor'],
+        ['id' => 51, 'guard_name' => 'api','name' => 'cancel_appointment'],
+        ['id' => 52, 'guard_name' => 'api','name' => 'view_notification'],
+        ['id' => 53, 'guard_name' => 'api','name' => 'view_notification_appointment'],
+        ['id' => 54, 'guard_name' => 'api','name' => 'view_notification_pagos'],
+        ['id' => 55, 'guard_name' => 'api','name' => 'view_appointment'],
+        ['id' => 56, 'guard_name' => 'api','name' => 'local_appointment'],
+        ['id' => 57, 'guard_name' => 'api','name' => 'list_appointment_doctor'],
+        ['id' => 58, 'guard_name' => 'api','name' => 'export_pdf'],
+        ['id' => 59, 'guard_name' => 'api','name' => 'export_text'],
+        ['id' => 60, 'guard_name' => 'api','name' => 'export_csv'],
+        ['id' => 61, 'guard_name' => 'api','name' => 'export_xsl'],
+        ['id' => 62, 'guard_name' => 'api','name' => 'edit_presupuesto'],
+        ['id' => 63, 'guard_name' => 'api','name' => 'add_cita_doctor'],
+        ['id' => 64, 'guard_name' => 'api','name' => 'pago_doctor'],
+        ['id' => 65, 'guard_name' => 'api','name' => 'transferencia_doctor'],
+        ['id' => 66, 'guard_name' => 'api','name' => 'payment_settings'],
         ];
 
         foreach ($permissions as $permission) {
@@ -107,11 +131,13 @@ class RoleAndPermissionSeeder extends Seeder
         $laboratorioRole = Role::find(5);
         $asistenteRole = Role::find(6);
         $enfermeraRole = Role::find(7);
+        $guestRole = Role::find(9);
         // $personaladicionalRole = Role::find(5);
 
         // Assign permissions based on the provided SQL dump
-        $adminRole->givePermissionTo([2,5,8,9,10,12,13.14,18,19,20,22,23,24,26,27,28,29,30,35,38,40,41,42,44]);
-        $doctorRole->givePermissionTo([3,12,14,22,23]); // doctor specific permissions
+        $adminRole->givePermissionTo([2,5,8,9,10,12,13.14,15,17,18,19,20,22,23,24,26,27,28,29,30,35,38,40,41,42,44,52,53,54]);
+        $doctorRole->givePermissionTo([3,10,12,15,17,26,27,28,50,52,53,54,55,56,63,64,65,66]); // doctor specific permissions
+        $guestRole->givePermissionTo([12,20]); // doctor specific permissions
         $recepcionRole->givePermissionTo([2,9,13,14,18,19,22,23,24,26,27,30,35,38,40,41,44]);
         $laboratorioRole->givePermissionTo([12,41,42]); // doctor specific permissions
         $asistenteRole->givePermissionTo([3,10,12,13,14,22,23,24,30,35,38]); // doctor specific permissions

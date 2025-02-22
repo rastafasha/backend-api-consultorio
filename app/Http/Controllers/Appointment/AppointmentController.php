@@ -16,6 +16,7 @@ use App\Models\Patient\PatientPerson;
 use App\Models\Appointment\Appointment;
 use App\Mail\NewAppointmentRegisterMail;
 use App\Models\Doctor\DoctorScheduleDay;
+use App\Mail\CancellationAppointmentMail;
 use App\Models\Appointment\AppointmentPay;
 use App\Models\Doctor\DoctorScheduleJoinHour;
 use App\Http\Resources\Appointment\AppointmentResource;
@@ -88,8 +89,7 @@ class AppointmentController extends Controller
         //el dia, hora y especialidad
         $doctor_query = DoctorScheduleDay::where("day","like","%".$name_day."%")
                         ->whereHas("doctor", function($q) use($speciality_id){
-                            $q->where("speciality_id", $speciality_id)
-                            ->where("status", 'active');
+                            $q->where("speciality_id", $speciality_id);
                         })
                         ->whereHas("schedule_hours", function($q)use($hour){
                             $q->whereHas("doctor_schedule_hour",function($qs)use($hour){
@@ -110,15 +110,9 @@ class AppointmentController extends Controller
                 "doctor"=>[
                     "id"=> $doctor_q->doctor->id,
                     "full_name"=> $doctor_q->doctor->name.' '.$doctor_q->doctor->surname,
-                    "address"=> $doctor_q->doctor->address,
-                    "mobile"=> $doctor_q->doctor->mobile,
-                    "precio_cita"=> $doctor_q->doctor->precio_cita,
-                    "status"=>$doctor_q->doctor->status,
                     "speciality"=>[
                         "id"=> $doctor_q->doctor->speciality->id,
                         "name"=>$doctor_q->doctor->speciality->name,
-                        "price"=>$doctor_q->doctor->speciality->price,
-                        
                     ],
                 ],
                 //datos del segmento en un formato para el frontend
@@ -156,48 +150,50 @@ class AppointmentController extends Controller
         $date_appointment = $request->date_appointment;
         $hour = $request->hour;
         $speciality_id = $request->speciality_id;
+        
         date_default_timezone_set('America/Caracas');
         Carbon::setLocale('es');
         DB::statement("SET lc_time_names = 'es_ES'");
 
-
         $name_day = Carbon::parse($date_appointment)->dayName;
-        //consulta para saber que doctor cumple con la disponibilidad de atencion tendiendo en cuenta
-        //el dia, hora y especialidad
         $doctor_query = DoctorScheduleDay::where("day","like","%".$name_day."%")
-                        ->whereHas("doctor", function($q) use($speciality_id){
-                            $q->where("speciality_id", $speciality_id)
-                            ->where("status", 'active');
+                        ->whereHas("doctor", function($q) use($doctor_id, $speciality_id){
+                            $q->where("id", $doctor_id)
+                              ->where("speciality_id", $speciality_id);
                         })
-                        ->Where('user_id', $doctor_id)
                         ->whereHas("schedule_hours", function($q)use($hour){
                             $q->whereHas("doctor_schedule_hour",function($qs)use($hour){
                                 $qs->where("hour", $hour);
                             });
                         })->get();
-        $doctors = collect([]);   
-        //iteramos entre los doctores que resultaron de la consulta
+        
+        // Get the specific doctor's details
+        $doctor = User::find($doctor_id);
+        
+        // Iterate through the doctor's schedule
         foreach ($doctor_query as $key => $doctor_q) {
-            //revisamos su disponibilidad para arrojar los segmentos de la hora, en intervalos de 15 min
+            // Get available time segments
             $segments = DoctorScheduleJoinHour::where("doctor_schedule_day_id",$doctor_q->id)
                                                 ->whereHas("doctor_schedule_hour",function($q)use($hour){
                                                     $q->where("hour", $hour);
                                                 })->get();
-             //armamos una lista de doctores con los segmentos de su hora(marcamos cuales se encuentran ocupados)                                   
-            $doctors->push([
-                //datos del doctor
+             // Build doctor's schedule with available segments
+            $doctor = User::find($doctor_id);
+            if (!$doctor) {
+                return response()->json([
+                    "message" => "Doctor not found",
+                    "doctors" => []
+                ], 404);
+            }
+
+            $doctorDetails = [
+                // Doctor details
                 "doctor"=>[
-                    "id"=> $doctor_q->doctor->id,
-                    "full_name"=> $doctor_q->doctor->name.' '.$doctor_q->doctor->surname,
-                    "address"=> $doctor_q->doctor->address,
-                    "mobile"=> $doctor_q->doctor->mobile,
-                    "precio_cita"=> $doctor_q->doctor->precio_cita,
-                    "status"=>$doctor_q->doctor->status,
+                    "id"=> $doctor->id,
+                    "full_name"=> $doctor->name.' '.$doctor->surname,
                     "speciality"=>[
-                        "id"=> $doctor_q->doctor->speciality->id,
-                        "name"=>$doctor_q->doctor->speciality->name,
-                        "price"=>$doctor_q->doctor->speciality->price,
-                        
+                        "id"=> $doctor->speciality->id,
+                        "name"=>$doctor->speciality->name,
                     ],
                 ],
                 //datos del segmento en un formato para el frontend
@@ -221,13 +217,19 @@ class AppointmentController extends Controller
                             ],
                         ];
                     })
-                ]);
+                ];
         }             
-        // dd($doctors);
 
         return response()->json([
-            "doctors"=>$doctors
+            "doctor"=>$doctorDetails,
         ]);
+
+
+        
+
+
+
+
     }
 
     public function config()
@@ -298,12 +300,15 @@ class AppointmentController extends Controller
             "message"=>200,
             "id"=>$patient->id,
             "name"=>$patient->name,
+            "email"=>$patient->email,
             "surname"=>$patient->surname,
             "phone"=>$patient->phone,
             "n_doc"=>$patient->n_doc,
         ]);
 
     }
+
+    
 
     public function calendar(Request $request){
         $speciality_id = $request->speciality_id;
@@ -381,7 +386,7 @@ class AppointmentController extends Controller
         $appointment = Appointment::create([
             "doctor_id" =>$request->doctor_id,
             "patient_id" =>$patient->id,
-            "date_appointment" => Carbon::parse($request->date_appointment)->format("Y-m-d h:i:s"),
+            "date_appointment" => Carbon::parse($request->date_appointment)->setTimezone('America/Caracas')->format("Y-m-d H:i:s"),
             "speciality_id" => $request->speciality_id,
             "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
             // "user_id" => auth("api")->user()->id, aqui lo comente porque no reconoce el id.. 
@@ -529,12 +534,42 @@ class AppointmentController extends Controller
         ]);
 
     }
+    public function pendientes()
+    {
+        
+        $appointments = Appointment::
+        where('status', 1)
+        // ->orWhere('confimation', 1)
+        ->orderBy("id", "desc")
+                            ->paginate(10);
+        return response()->json([
+            "total"=>$appointments->total(),
+            "appointments"=> AppointmentCollection::make($appointments)
+        ]);
+
+    }
+
+    public function pagosPendientesShowId(Request $request, $doctor_id)
+    {
+        
+        $appointments = Appointment::
+        where("doctor_id", $doctor_id)
+        ->where('status', 1)
+        ->orderBy("id", "desc")
+                            ->paginate(10);
+        return response()->json([
+            "total"=>$appointments->total(),
+            "appointments"=> AppointmentCollection::make($appointments)
+        ]);
+
+    }
 
     public function updateConfirmation(Request $request, $id)
     {
         $appointment = Appointment::findOrfail($id);
         $doctor = User::where("id", $request->doctor_id)->first();
 
+        // Update confirmation status without modifying appointment time
         $appointment->confimation = $request->confimation;
         $appointment->update();
         
@@ -557,7 +592,6 @@ class AppointmentController extends Controller
                         "email" =>$appointment->patient->email,
                         "full_name" =>$appointment->patient->name.' '.$appointment->patient->surname,
                     ]: NULL,
-            "speciality"=>$appointment->speciality,
             "speciality"=>$appointment->speciality ? 
                 [
                     "id"=> $appointment->speciality->id,
@@ -576,4 +610,42 @@ class AppointmentController extends Controller
         
 
     }
-}
+
+    public function cancelarCita($id)
+    {
+        $appointment = Appointment::findOrFail($id);
+        
+        // Send cancellation emails
+        Mail::to($appointment->patient->email)
+            ->send(new CancellationAppointmentMail($appointment));
+            
+        Mail::to($appointment->doctor->email)
+            ->send(new CancellationAppointmentMail($appointment));
+
+        $appointment->delete();
+        return response()->json([
+            "message" => 200,
+        ]);
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        $appointment = Appointment::findOrFail($id);
+        $reason = $request->input('reason', null);
+
+        // Send cancellation emails
+        Mail::to($appointment->patient->email)
+            ->send(new CancellationAppointmentMail($appointment, $reason));
+            
+        Mail::to($appointment->doctor->email)
+            ->send(new CancellationAppointmentMail($appointment, $reason));
+
+        // Update status instead of deleting
+        $appointment->update(['status' => 3]); // 3 = cancelled status
+
+        return response()->json([
+            "message" => 200,
+            "appointment" => $appointment
+        ]);
+    }
+    }
