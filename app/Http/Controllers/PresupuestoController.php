@@ -91,6 +91,7 @@ class PresupuestoController extends Controller
                 "email"=>$request->email,
                 "n_doc"=>$request->n_doc,
                 "phone"=>$request->phone,
+                "doctor_id"=>$request->doctor_id,
             ]);
         }
         // else{
