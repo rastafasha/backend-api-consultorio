@@ -11,7 +11,7 @@ Route::post('doctors/store', [DoctorController::class, 'store'])->name('doctor.s
 Route::get('doctors/show/{id}', [DoctorController::class, 'show'])->name('doctor.show');
 Route::post('doctors/update/{id}', [DoctorController::class, 'update'])->name('doctor.update');
 Route::delete('doctors/destroy/{id}', [DoctorController::class, 'destroy'])->name('doctor.destroy');
-Route::put('/doctorupdate/status/{id}', [DoctorController::class, 'updateStatus'])
+Route::put('/doctors/update/status/{id}', [DoctorController::class, 'updateStatus'])
     ->name('doctor.updateStatus');
 Route::get('doctors/profile/{id}', [DoctorController::class, 'profile'])->name('doctor.profile');
 
