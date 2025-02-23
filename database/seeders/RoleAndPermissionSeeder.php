@@ -93,9 +93,7 @@ class RoleAndPermissionSeeder extends Seeder
         ['id' => 66, 'guard_name' => 'api','name' => 'payment_settings'],
         ];
 
-        foreach ($permissions as $permission) {
-            Permission::create($permission);
-        }
+        Permission::insert($permissions);
 
         // Create roles
         $roles = [
@@ -110,28 +108,26 @@ class RoleAndPermissionSeeder extends Seeder
             ['id' => 9, 'name' => 'GUEST', 'guard_name' => 'api'],
         ];
 
-        foreach ($roles as $role) {
-            Role::create($role);
-        }
+        Role::insert($roles);
 
         
         // Give all permissions to SUPERADMIN
         // $role3 = Role::create(['guard_name' => 'api','name' => 'SUPERADMIN']);
-        $superadminRole = Role::find(1);
+        $superadminRole = Role::firstOrCreate(['id' => 1], ['name' => 'SUPERADMIN', 'guard_name' => 'api']);
         
         $superadminRole->givePermissionTo(Permission::all());
 
         // Give all permissions to ADMIN
-        $adminRole = Role::find(2);
+        $adminRole = Role::firstOrCreate(['id' => 2], ['name' => 'ADMIN', 'guard_name' => 'api']);
         // $adminRole->givePermissionTo(Permission::all());
 
         // Assign specific permissions to other roles
-        $doctorRole = Role::find(3);
-        $recepcionRole = Role::find(4);
-        $laboratorioRole = Role::find(5);
-        $asistenteRole = Role::find(6);
-        $enfermeraRole = Role::find(7);
-        $guestRole = Role::find(9);
+        $doctorRole = Role::firstOrCreate(['id' => 3], ['name' => 'DOCTOR', 'guard_name' => 'api']);
+        $recepcionRole = Role::firstOrCreate(['id' => 4], ['name' => 'RECEPCION', 'guard_name' => 'api']);
+        $laboratorioRole = Role::firstOrCreate(['id' => 5], ['name' => 'LABORATORIO', 'guard_name' => 'api']);
+        $asistenteRole = Role::firstOrCreate(['id' => 6], ['name' => 'ASISTENTE', 'guard_name' => 'api']);
+        $enfermeraRole = Role::firstOrCreate(['id' => 7], ['name' => 'ENFERMERA', 'guard_name' => 'api']);
+        $guestRole = Role::firstOrCreate(['id' => 9], ['name' => 'GUEST', 'guard_name' => 'api']);
         // $personaladicionalRole = Role::find(5);
 
         // Assign permissions based on the provided SQL dump

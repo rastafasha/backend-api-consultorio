@@ -18,7 +18,7 @@ class PresupuestoSeeder extends Seeder
     {
         // Create specific appointment
         $faker = Faker::create();
-        $presupuesto = Presupuesto::firstOrCreate(
+        $presupuesto = Presupuesto::updateOrCreate(
             ['id' => 1],
             [
                 
@@ -48,7 +48,17 @@ class PresupuestoSeeder extends Seeder
 
         // Create additional random presupuestos for testing
         Presupuesto::factory()->count(2)->create()->each(function($p) use ($faker) {
-            $faker = Faker::create();
+            $p->status = $faker->randomElement([1, 0]);
+            $p->confimation = $faker->randomElement([1, 0]);
+            $p->patient_id = $faker->numberBetween(1, 10);
+            $p->doctor_id = $faker->numberBetween(1, 5);
+            $p->speciality_id = $faker->numberBetween(1, 3);
+            $p->description = $faker->sentence;
+            $p->diagnostico = $faker->sentence;
+            $p->amount = $faker->randomFloat(2, 100, 500);
+            $p->created_at = now();
+            $p->updated_at = now();
+            $p->save();
             
         });
         // php artisan db:seed --class=presupuestoSeeder
