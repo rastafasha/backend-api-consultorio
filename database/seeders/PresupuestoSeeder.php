@@ -33,11 +33,7 @@ class PresupuestoSeeder extends Seeder
                     [
                         "name_medical" => "Consulta",
                         "precio" => 200.00,
-                    ],
-                    [
-                        "name_medical" => "Consulta",
-                        "precio" => 145.50,
-                    ],
+                    ]
                 ]),
                 'amount' => 345.50,
                 'created_at' => '2025-02-16 20:41:51',
