@@ -357,9 +357,9 @@ class AppointmentController extends Controller
     {
         
         $patient = null;
-        $patient = Patient::where("n_doc", $request->n_doc)->first();
         $doctor = User::where("id", $request->doctor_id)->first();
-
+        
+        $patient = Patient::where("n_doc", $request->n_doc)->first();
         if(!$patient){
             $patient = Patient::create([
                 "name"=>$request->name,
