@@ -148,22 +148,22 @@ class User extends Authenticatable implements JWTSubject
     }
 
     //envia los pagos a un solo correo
-    protected static function boot(){
+    // protected static function boot(){
 
-        parent::boot();
+    //     parent::boot();
 
-        static::created(function($user){
+    //     static::created(function($user){
 
-            // userRegisterJob::dispatch(
-            //     $user
-            // )->onQueue("high");
+    //         // userRegisterJob::dispatch(
+    //         //     $user
+    //         // )->onQueue("high");
 
-        Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
+    //     Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
 
-        });
+    //     });
 
 
-    }
+    // }
 
     
     
