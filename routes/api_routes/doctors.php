@@ -15,3 +15,4 @@ Route::put('/doctors/update/status/{id}', [DoctorController::class, 'updateStatu
     ->name('doctors.updateStatus');
 Route::get('doctors/profile/{id}', [DoctorController::class, 'profile'])->name('doctor.profile');
 
+
