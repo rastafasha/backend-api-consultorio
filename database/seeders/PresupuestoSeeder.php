@@ -17,17 +17,29 @@ class PresupuestoSeeder extends Seeder
     public function run(): void
     {
         // Create specific appointment
+        $faker = Faker::create();
         $presupuesto = Presupuesto::firstOrCreate(
             ['id' => 1],
             [
-                'amount' => 30,
+                
                 'status' => 1,
                 'confimation' => 1,
                 'patient_id' => 9,
                 'doctor_id' => 3,
                 'speciality_id' => 1,
                 'description'=> 'Presupuesto para la atención del paciente 9',
-                'user_id' => 9,
+                'diagnostico'=> 'Presupuesto para la atención del paciente 9',
+                "medical" => json_encode([
+                    [
+                        "name_medical" => "Consulta",
+                        "precio" => 200.00,
+                    ],
+                    [
+                        "name_medical" => "Consulta",
+                        "precio" => 145.50,
+                    ],
+                ]),
+                'amount' => 345.50,
                 'created_at' => '2025-02-16 20:41:51',
                 'updated_at' => '2025-02-16 20:41:51',
                 'deleted_at' => null

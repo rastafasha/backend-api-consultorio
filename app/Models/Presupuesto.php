@@ -22,10 +22,12 @@ class Presupuesto extends Model
         "date_appointment",
         "speciality_id",
         "user_id",
-        "amount",
         "status",
         "confimation",
         "description",
+        "diagnostico",
+        "medical",
+        "amount",
 
     ];
     
