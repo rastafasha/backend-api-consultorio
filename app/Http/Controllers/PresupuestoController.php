@@ -112,7 +112,6 @@ class PresupuestoController extends Controller
             ]);
 
 
-
         // Mail::to($presupuesto->patient->email)->send(new NewPresupuestoRegisterMail($presupuesto));
         // Mail::to($doctor->email)->send(new NewpresupuestoRegisterMail($presupuesto));
 
