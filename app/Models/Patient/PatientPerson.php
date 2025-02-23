@@ -20,7 +20,7 @@ class PatientPerson extends Model
         'relationship_responsable',
     ];
 
-    protected $table = "patien_persons";
+    protected $table = "patient_persons";
 
     public function setCreateAttribute($value){
         date_default_timezone_set("America/Caracas"); 

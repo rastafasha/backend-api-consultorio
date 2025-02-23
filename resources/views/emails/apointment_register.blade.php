@@ -325,7 +325,7 @@
 																								<tr>
 																									<td class="text-16 lh-26 a-center pb-25" style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center; padding-bottom: 25px;">
 																										<multiline>
-																											<em>Gracias por haber pautado una cita con nosotros, estaremos recordandole la cita una hora antes. </em>
+																											<em>Gracias por haber pautado una cita con nosotros, estaremos recordandole la cita. </em>
 																										</multiline>
 																									</td>
 																								</tr>
@@ -394,35 +394,58 @@
 																	</td>
 																</tr>
 																<tr>
-																<td class="text-14 lh-24 a-center c-white l-white pb-20" style="font-size:14px; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 24px; text-align:center; color:#ffffff; padding-bottom: 20px;">
-																		<multiline>
-																		Clínica Santiago de Leon.<br>
-																		Av Libertador, entre calle Negrín y Las Delicias, Edif. Clínica Santiago de León
-																			<br />
-																			<a cm_dontconvertlink href="tel:+212-308-1900" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">(0212)308-1900</span></a> 
-																			<!-- <a cm_dontconvertlink href="tel:+13697181973" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">(369) 22233</span></a> -->
-																			<br />
-																			<!-- <a href="mailto:info@website.com" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">info@website.com</span></a> - <a href="https://malcolmcordova.com" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">malcolmcordova.com</span></a><br> -->
-																			<span class="link c-white" style="text-decoration:none; color:#ffffff;">Desarrollado por:</span>
-                                                                            
-																		</multiline>
-																	</td>
-																</tr>
-																<tr>
-																	<td align="center">
-																		<!-- Download App -->
-																		<table border="0" cellspacing="0" cellpadding="0">
-																			<tr>
-																				
-																				<td class="img" width="117" style="font-size:0pt; line-height:0pt; text-align:center; ">
-                                                                                    
-																					<a href="https://malcolmcordova.com/" target="_blank"><img src="https://malcolmcordova.com/Firma_files/logotipo.png" width="150" height="43" editable="true" border="0" alt="" /></a>
-																				</td>
-																			</tr>
-																		</table>
-																		<!-- END Download App -->
-																	</td>
-																</tr>
+																{{-- <tr>
+																<td class="text-14 lh-24 a-center c-white l-white pb-20"
+																	style="font-size:14px; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 24px; text-align:center; color:#ffffff; padding-bottom: 20px;">
+																	<multiline>
+																		 Clínica Santiago de Leon.<br>
+																		Av Libertador, entre calle Negrín y Las
+																		Delicias, Edif. Clínica Santiago de León 
+																		<br />
+																		<a cm_dontconvertlink href="tel:+212-308-1900"
+																			target="_blank" class="link c-white"
+																			style="text-decoration:none; color:#ffffff;"><span
+																				class="link c-white"
+																				style="text-decoration:none; color:#ffffff;">(0212)308-1900</span></a>
+																		<a cm_dontconvertlink href="tel:+13697181973" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">(369) 22233</span></a> 
+																		<br />
+																		<a href="mailto:info@website.com" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">info@website.com</span></a> - <a href="https://malcolmcordova.com" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">malcolmcordova.com</span></a><br> 
+																		 <span class="link c-white"
+																			style="text-decoration:none; color:#ffffff;">Desarrollado
+																			por:</span> 
+
+																	</multiline>
+																</td>
+															</tr> --}}
+															<tr>
+																<td class="text-16 lh-26 a-center pb-25"
+																	style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center; padding-bottom: 25px;">
+																	<multiline>
+																		<em>Gracias por ser parte del equipo. </em>
+																	</multiline>
+																</td>
+															</tr>
+															<tr>
+																<td align="center">
+																	<!-- Download App -->
+																	<table border="0" cellspacing="0" cellpadding="0">
+																		<tr>
+
+																			<td class="img" width="117"
+																				style="font-size:0pt; line-height:0pt; text-align:center; ">
+																				<a href="https://health-connect.me/"
+																					target="_blank"><img
+																						src="https://health-connect.me/varios/logoHealthConnect-01.png"
+																						width="75" height="50"
+																						editable="true" border="0"
+																						alt="" /></a>
+
+																			</td>
+																		</tr>
+																	</table>
+																	<!-- END Download App -->
+																</td>
+															</tr>
 															</table>
 														</td>
 													</tr>

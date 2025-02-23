@@ -17,7 +17,13 @@ class NotificationAppoint extends Mailable
      * @return void
      */
     public $patient;
-    public function __construct($patient)
+    
+    /**
+     * Create a new message instance.
+     *
+     * @param mixed $patient The patient information for the appointment
+     */
+    public function __construct(mixed $patient = null)
     {
         $this->patient = $patient;
     }
@@ -27,9 +33,9 @@ class NotificationAppoint extends Mailable
      */
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Recordatorio de Cita Médica',
-        );
+        return new Envelope([
+            'subject' => 'Recordatorio de Cita Médica',
+        ]);
     }
 
     /**
@@ -40,6 +46,7 @@ class NotificationAppoint extends Mailable
     public function build()
     {
         $patient = $this->patient;
-        return $this->view('emails.appointment_notification');
+        return $this->subject('Notificación de Cita Médica')
+        ->view('emails.appointment_notification');
     }
 }

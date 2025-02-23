@@ -23,6 +23,7 @@ class AppointmentResource extends JsonResource
                 [
                     "id" =>$this->resource->doctor->id,
                     "address" =>$this->resource->doctor->address,
+                    "email" =>$this->resource->doctor->email,
                     "precio_cita" =>$this->resource->doctor->precio_cita,
                     "full_name" =>$this->resource->doctor->name.' '.$this->resource->doctor->surname,
                     // "avatar"=> $this->resource->doctor->avatar ? env("APP_URL")."storage/".$this->resource->doctor->avatar : null,
