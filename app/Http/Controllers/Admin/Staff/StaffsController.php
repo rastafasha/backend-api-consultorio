@@ -170,6 +170,7 @@ class StaffsController extends Controller
         }
         
         $user->update($request->all());
+        
 
         return response()->json([
             "message"=>200,
