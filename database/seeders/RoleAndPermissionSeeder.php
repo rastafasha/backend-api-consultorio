@@ -91,6 +91,7 @@ class RoleAndPermissionSeeder extends Seeder
         ['id' => 64, 'guard_name' => 'api','name' => 'pago_doctor'],
         ['id' => 65, 'guard_name' => 'api','name' => 'transferencia_doctor'],
         ['id' => 66, 'guard_name' => 'api','name' => 'payment_settings'],
+        ['id' => 67, 'guard_name' => 'api','name' => 'list_presupuesto_doctor'],
         ];
 
         foreach ($permissions as $permission) {

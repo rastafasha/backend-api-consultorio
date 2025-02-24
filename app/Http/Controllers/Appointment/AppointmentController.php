@@ -340,8 +340,8 @@ class AppointmentController extends Controller
 
         return response()->json([
             // "patients"=> $patients,
-            // "total"=>$payments->total(),
-            "appointmens"=> $appointmens
+            "appointmens"=> $appointmens,
+            "total"=>$appointmens->total(),
             // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
         ]);
 

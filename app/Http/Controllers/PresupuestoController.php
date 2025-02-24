@@ -263,7 +263,9 @@ class PresupuestoController extends Controller
 
 
         return response()->json([
-            "presupuestos"=> $presupuestos
+            // "presupuestos"=> $presupuestos,
+            "presupuestos"=> PresupuestoCollection::make($presupuestos)
+            // "total"=>$appointments->total(),
         ]);
     }
 }
