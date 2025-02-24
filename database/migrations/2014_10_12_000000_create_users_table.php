@@ -26,7 +26,6 @@ class CreateUsersTable extends Migration
             $table->timestamp('birth_date')->nullable();
             $table->tinyInteger('gender')->nullable();
             $table->tinyInteger('status')->default(1);
-            $table->longtext('education')->nullable();
             $table->longtext('designation')->nullable();
             $table->string('precio_cita')->nullable();
             $table->text('address')->nullable();
