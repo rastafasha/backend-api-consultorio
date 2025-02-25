@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin\Staff;
 use Carbon\Carbon;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Mail\NewUserRegisterMail;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\User\UserResource;
 use App\Http\Resources\User\UserCollection;
@@ -171,6 +173,7 @@ class StaffsController extends Controller
         
         $user->update($request->all());
         
+        Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
 
         return response()->json([
             "message"=>200,
