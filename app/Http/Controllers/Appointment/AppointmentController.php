@@ -340,8 +340,8 @@ class AppointmentController extends Controller
 
         return response()->json([
             // "patients"=> $patients,
-            // "total"=>$payments->total(),
-            "appointmens"=> $appointmens
+            "appointmens"=> $appointmens,
+            "total"=>$appointmens->total(),
             // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
         ]);
 
@@ -357,9 +357,9 @@ class AppointmentController extends Controller
     {
         
         $patient = null;
-        $patient = Patient::where("n_doc", $request->n_doc)->first();
         $doctor = User::where("id", $request->doctor_id)->first();
-
+        
+        $patient = Patient::where("n_doc", $request->n_doc)->first();
         if(!$patient){
             $patient = Patient::create([
                 "name"=>$request->name,

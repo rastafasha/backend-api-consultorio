@@ -85,7 +85,6 @@ class UserSeeder extends Seeder
                 'speciality_id' => 1,
                 'mobile' => '1234567893',
                 'n_doc' => '5421369872',
-                "education"=> "universitaria",
                 'roles' => [
                     [
                         "id"=> 3,
@@ -116,7 +115,6 @@ class UserSeeder extends Seeder
                 'speciality_id' => 2,
                 'mobile' => '1234567893',
                 'n_doc' => '5421369850',
-                "education"=> "universitaria",
                 'roles' => [
                     [
                         "id"=> 3,
