@@ -137,7 +137,7 @@ class RoleAndPermissionSeeder extends Seeder
 
         // Assign permissions based on the provided SQL dump
         $adminRole->givePermissionTo([2,5,8,9,10,12,13.14,15,17,18,19,20,22,23,24,26,27,28,29,30,35,38,40,41,42,44,52,53,54]);
-        $doctorRole->givePermissionTo([3,10,12,15,17,49,50,52,53,54,55,56,62,63,64,65,66,67]); // doctor specific permissions
+        $doctorRole->givePermissionTo([3,10,12,15,17,49,50,52,53,54,55,56,62,63,64,65,66]); // doctor specific permissions
         $guestRole->givePermissionTo([12,20]); // doctor specific permissions
         $recepcionRole->givePermissionTo([2,9,13,14,18,19,22,23,24,26,27,30,35,38,40,41,44]);
         $laboratorioRole->givePermissionTo([12,41,42]); // doctor specific permissions
