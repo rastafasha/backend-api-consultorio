@@ -6,13 +6,14 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Location;
 use Illuminate\Http\Request;
+use App\Mail\UpdateStatusMail;
 use App\Mail\NewUserRegisterMail;
-use Illuminate\Support\Facades\Mail;
 use App\Models\Doctor\Specialitie;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use App\Models\Appointment\Appointment;
 use Illuminate\Support\Facades\Storage;
@@ -507,6 +508,8 @@ class DoctorController extends Controller
         $user = User::findOrfail($id);
         $user->status = $request->status;
         $user->update();
+        // Mail::to($user->email)->send(new UpdateStatusMail($user));
+
         return $user;
         
     }

@@ -119,7 +119,7 @@
 																	<table width="100%" border="0" cellspacing="0" cellpadding="0">
 																		<tr>
 																			<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
-																				<a href="#" target="_blank"><img src="https://malcolmcordova.com/health-connect-items/logoHealthConnect-01.png" width="150" height="100" editable="true" border="0" alt="" /></a>
+																				<a href="#" target="_blank"><img src="https://health-connect.me/varios/logoHealthConnect-01.png" width="150" height="100" editable="true" border="0" alt="" /></a>
 																			</td>
 																		</tr>
 																	</table>
@@ -183,7 +183,7 @@
 																																</multiline>
 																															</td>
 																														</tr>
-                                                                                                                        <tr>
+                                                                                                                        {{-- <tr>
                                                                                                                             <td class="text-16 lh-26 a-center" style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center;">
                                                                                                                                 <multiline>
                                                                                                                                     Puede Acceder a la aplicación, escaneando el cóodigo QR.<br>
@@ -193,9 +193,32 @@
                                                                                                                         </tr>
 																														<tr>
 																															<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
-																																<img src="https://health-connect.me/variosfiles/qrapppaciente.png" width="150" height="150" editable="true" border="0" alt="" />
+																																<img src="https://health-connect.me/varios/pacientehcApp-1024.jpeg" width="150" height="150" editable="true" border="0" alt="" />
 																																
 																															</td>
+																														</tr> --}}
+																														<tr>
+                                                                                                                            <td class="text-16 lh-26 a-center" style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center;">
+                                                                                                                                <multiline>
+                                                                                                                                    Puede Acceder a la aplicaci贸n, escaneando el c贸odigo QR.<br>
+                                                                                                                                    
+                                                                                                                                </multiline>
+                                                                                                                            </td>
+                                                                                                                        </tr>
+																														<tr>
+																															<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
+																																<img src="https://consultorio.health-connect.me/QR/pacientehcAppConsultorio-1024.jpeg" width="150" height="150" editable="true" border="0" alt="" />
+																																
+																															</td>
+																														</tr>
+																														<tr>
+																														    <td class="btn-16 c-white l-white" bgcolor="#f3189e" style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
+																																			<multiline>
+																																				<a href="https://paciente.health-connect.me/" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
+																																					<span class="link c-white" style="text-decoration:none; color:#ffffff;">Acceder a Health Connect me Pacientes App</span>
+																																				</a>
+																																			</multiline>
+																																		</td>
 																														</tr>
 																														<tr>
 																															<td class="text-16" style="font-size:16px; line-height:20px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; text-align:left; min-width:auto !important;">
@@ -210,6 +233,8 @@
 																																	{{$patient->email}}
 																																	<br />
 																																	<!-- Chicago, IL 60301 -->
+																																	Para mejor una mejor experiencia desde computador de escritorio acceder por el navegador Chrome,
+																																	en dispositivos moviles usar su navegador de preferencia 
 																																</multiline>
 																															</td>
 																														</tr>
@@ -256,8 +281,26 @@
 																											<em>Gracias por ser parte del equipo. </em>
 																										</multiline>
 																									</td>
+																									
 																								</tr>
 																							</table>
+																						
+																		
+																						</td>
+																					</tr>
+																					<tr>
+																						<td align="center">
+																							<!-- Download App -->
+																							<table border="0" cellspacing="0" cellpadding="0">
+																								<tr>
+																									
+																									<td class="img" width="117" style="font-size:0pt; line-height:0pt; text-align:center; ">
+																										<a href="https://health-connect.me/" target="_blank"><img src="https://health-connect.me/varios/logoHealthConnect-01.png" width="75" height="50" editable="true" border="0" alt="" /></a>
+																										
+																									</td>
+																								</tr>
+																							</table>
+																							<!-- END Download App -->
 																						</td>
 																					</tr>
 																				</table>

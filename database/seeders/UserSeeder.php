@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
                 'location_id' => 1,
                 'mobile' => '1234567893',
                 'n_doc' => '5421369874',
-                "password" => bcrypt("password"),
+                "password" => bcrypt("superadmin"),
                 'roles' => [
                     [
                         "id"=> 1,
@@ -77,7 +77,7 @@ class UserSeeder extends Seeder
             ],
             [
                 // "rolename" => User::DOCTOR,
-                "name" => "doctor",
+                "name" => "Jhon",
                 'surname' => 'Johnson',
                 "email" => "doctor@doctor.com",
                 'gender' => 1,
@@ -85,7 +85,36 @@ class UserSeeder extends Seeder
                 'speciality_id' => 1,
                 'mobile' => '1234567893',
                 'n_doc' => '5421369872',
-                "education"=> "universitaria",
+                'roles' => [
+                    [
+                        "id"=> 3,
+                        "name"=> "DOCTOR",
+                        "guard_name"=> "api",
+                        "created_at"=> "2025-02-16T06:49:18.000000Z",
+                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
+                    ],
+                    'pivot' => [
+                        [
+                            "model_id"=> 2,
+                            "role_id"=> 3,
+                            "model_type"=> "App\\Models\\User"
+                        ]
+                    ],
+                ],
+                "password" => bcrypt("password"),
+                "email_verified_at" => now(),
+                "created_at" => now(),
+            ],
+            [
+                // "rolename" => User::DOCTOR,
+                "name" => "Jane",
+                'surname' => 'Johnson',
+                "email" => "doctora@doctora.com",
+                'gender' => 1,
+                'location_id' => 2,
+                'speciality_id' => 2,
+                'mobile' => '1234567893',
+                'n_doc' => '5421369850',
                 'roles' => [
                     [
                         "id"=> 3,

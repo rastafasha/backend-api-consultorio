@@ -25,11 +25,13 @@ class ConfirmationAppointment extends Mailable
     /**
      * Get the message envelope.
      */
+   
+
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Cita confirmada',
-        );
+        return new Envelope([
+            'subject' => 'Cita confirmada',
+        ]);
     }
 
     /**
@@ -40,6 +42,7 @@ class ConfirmationAppointment extends Mailable
     public function build()
     {
         $appointment = $this->appointment;
-        return $this->view('emails.appointment_confirmation');
+        return $this ->subject('Cita Confirmada')
+        ->view('emails.appointment_confirmation');
     }
 }

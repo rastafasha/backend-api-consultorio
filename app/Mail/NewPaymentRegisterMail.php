@@ -13,6 +13,7 @@ class NewPaymentRegisterMail extends Mailable
     use Queueable, SerializesModels;
 
     public $payment;
+
     /**
      * Create a new message instance.
      *
@@ -30,8 +31,9 @@ class NewPaymentRegisterMail extends Mailable
      */
     public function build()
     {
-        return $this->from('soporte@ursigalletti.net', 'Sistema Automatizado de Envio de Notificaciones por correo')
-            ->subject('Registro de un nuevo pago')
-            ->markdown('emails.admin.new_payment_register' , ['payment' => $this->payment]);
+        return $this->
+        from('noresponse@health-connect.me', 'Health Connect Me: Registro de un nuevo pago')
+        // ->to($this->payment->email_doctor)
+            ->markdown('emails.admin.new_payment_register', ['payment' => $this->payment]);
     }
 }

@@ -8,10 +8,12 @@ use App\Models\Location;
 use App\Traits\HavePermission;
 use App\Models\Patient\Patient;
 use App\Jobs\NewUserRegisterJob;
+use App\Mail\NewUserRegisterMail;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Doctor\Specialitie;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use App\Models\Doctor\DoctorScheduleDay;
@@ -46,7 +48,6 @@ class User extends Authenticatable implements JWTSubject
         'mobile',
         'birth_date',
         'gender',
-        'education',
         'designation',
         'address',
         'avatar',
@@ -144,6 +145,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Patient::class);
     }
+
 
     
     

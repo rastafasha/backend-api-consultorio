@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\Patient\Patient;
 use App\Http\Controllers\Controller;
+use App\Models\Patient\PatientPerson;
 use App\Models\Appointment\Appointment;
 use App\Models\Appointment\AppointmentPay;
 use App\Models\Appointment\AppointmentAttention;
@@ -57,7 +58,26 @@ class AppointmentAttentionController extends Controller
 
         $doctor = User::where("id", $request->doctor_id)->first();
 
-        
+        $patient = Patient::where("n_doc", $request->n_doc)->first();
+        if(!$patient){
+            $patient = Patient::create([
+                "name"=>$request->name,
+                "surname"=>$request->surname,
+                "n_doc"=>$request->n_doc,
+                "phone"=>$request->phone,
+            ]);
+            PatientPerson::create([
+                'patient_id' => $patient->id,
+                'name_companion' => $request->name_companion,
+                'surname_companion' => $request->surname_companion,
+            ]);
+        }else{
+            $patient->person->update([
+                'name_companion' => $request->name_companion,
+                'surname_companion' => $request->surname_companion,
+            ]);
+        }
+
 
         $appointment = Appointment::create([
             "doctor_id" =>$request->doctor_id,

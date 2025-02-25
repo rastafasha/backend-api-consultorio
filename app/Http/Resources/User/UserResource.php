@@ -64,7 +64,6 @@ class UserResource extends JsonResource
             "mobile"=>$this->resource->mobile,
             "birth_date"=>$this->resource->birth_date ? Carbon::parse($this->resource->birth_date)->format("Y/m/d") : NULL,
             "gender"=>$this->resource->gender,
-            "education"=>$this->resource->education,
             "location_id"=>$this->resource->location_id,
             "precio_cita"=>$this->resource->precio_cita,
             "designation"=>$this->resource->designation,

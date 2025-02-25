@@ -6,11 +6,13 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Mail\NewUserRegisterMail;
 use App\Http\Requests\AuthRequest;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\AuthLoginRequest;
 use Illuminate\Support\Facades\Validator;
@@ -100,6 +102,8 @@ class AuthController extends Controller
         ]);
 
         $token = JWTAuth::fromUser($user);
+
+        Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
 
         return response()->json([
             'message' => 'User registered successfully',

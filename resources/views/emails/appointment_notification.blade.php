@@ -19,7 +19,7 @@
 	<!--[if !mso]><!-->
 	<link href="https://fonts.googleapis.com/css?family=PT+Sans:400,400i,700,700i&display=swap" rel="stylesheet" />
 	<!--<![endif]-->
-	<title>Email Template</title>
+	<title>Notificación de Cita</title>
 	<!--[if gte mso 9]>
 	<style type="text/css" media="all">
 		sup { font-size: 100% !important; }
@@ -106,13 +106,6 @@
 									<tr>
 										<td class="mpx-10">
 											<!-- Top -->
-											<!--<table width="100%" border="0" cellspacing="0" cellpadding="0">-->
-											<!--		<tr>-->
-											<!--			<td class="text-12 c-grey l-grey a-right py-20" style="font-size:12px; line-height:16px; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; color:#6e6e6e; text-align:right; padding-top: 20px; padding-bottom: 20px;">-->
-											<!--				<webversion class="link c-grey" style="text-decoration:none; color:#6e6e6e;"><span class="link c-grey" style="text-decoration:none; color:#6e6e6e;">View this email in your browser</span></webversion>-->
-											<!--			</td>-->
-											<!--		</tr>-->
-											<!--	</table>											<!-- END Top -->-->
 											
 											<!-- Container -->
 											<table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -125,7 +118,7 @@
 																	<table width="100%" border="0" cellspacing="0" cellpadding="0">
 																		<tr>
 																			<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
-																				<a href="#" target="_blank"><img src="https://malcolmcordova.com/health-connect-items/logoHealthConnect-01.png" width="150" height="100" editable="true" border="0" alt="" /></a>
+																				<a href="https://health-connect.me/" target="_blank"><img src="https://health-connect.me/varios/logoHealthConnect-01.png" width="150" height="100" editable="true" border="0" alt="" /></a>
 																			</td>
 																		</tr>
 																	</table>
@@ -151,7 +144,7 @@
 																								<tr>
 																									<td class="title-36 a-center pb-35" style="font-size:36px; line-height:40px; color:#282828; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; text-align:center; padding-bottom: 35px;">
 																										<multiline>
-																											<strong>New Message From "Clinica"</strong>
+																											<strong>Notificación de Cita</strong>
 																										</multiline>
 																									</td>
 																								</tr>
@@ -161,21 +154,7 @@
 																											<tr>
 																												<td class="py-35 px-50 mpx-15" style="border-radius: 10px; padding-top: 35px; padding-bottom: 35px; padding-left: 50px; padding-right: 50px;" bgcolor="#f4ecfa">
 																													<table width="100%" border="0" cellspacing="0" cellpadding="0">
-																														<!--<tr>-->
-																														<!--	<td>-->
-																														<!--		<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: -90px;">-->
-																														<!--			<tr>-->
-																														<!--				<td class="img-center pb-20" style="font-size:0pt; line-height:0pt; text-align:center; padding-bottom: 20px;">-->
-																														<!--					@if($patient ["avatar"])-->
-                              <!--                                                                                                              <img src="https://citasmedicas.malcolmcordova.com/backend-api-citas/storage/app/public/{{$patient ['avatar']}}" width="110" height="110" editable="true" border="0" alt="" />-->
-                              <!--                                                                                                              @else-->
-                              <!--                                                                                                              <img src="https://citasmedicas.malcolmcordova.com/backend-api-citas/storage/app/public/no-image.jpg" width="110" height="110" editable="true" border="0" alt="" />-->
-                              <!--                                                                                                              @endif-->
-																														<!--				</td>-->
-																														<!--			</tr>-->
-																														<!--		</table>-->
-																														<!--	</td>-->
-																														<!--</tr>-->
+																														
 																														<tr>
 																															<td class="text-18 a-center c-purple pb-15" style="font-size:18px; line-height:22px; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; text-align:center; color:#9128df; padding-bottom: 15px;">
 																																<multiline>
@@ -200,23 +179,6 @@
 																										</table>
 																									</td>
 																								</tr>
-																								<tr>
-																									<td align="center">
-																										<!-- Button -->
-																										<!--<table border="0" cellspacing="0" cellpadding="0" style="min-width: 200px;">-->
-																										<!--	<tr>-->
-																										<!--		<td class="btn-16 c-white l-white" bgcolor="#f3189e" style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">-->
-																										<!--			<multiline>-->
-																										<!--				<a href="#" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">-->
-																										<!--					<span class="link c-white" style="text-decoration:none; color:#ffffff;">REPLY NOW</span>-->
-																										<!--				</a>-->
-																										<!--			</multiline>-->
-																										<!--		</td>-->
-																										<!--	</tr>-->
-																										<!--</table>-->
-																										<!-- END Button -->
-																									</td>
-																								</tr>
 																							</table>
 																						</td>
 																					</tr>
@@ -239,74 +201,43 @@
 													<tr>
 														<td class="p-50 mpx-15" bgcolor="#949196" style="border-radius: 0 0 10px 10px; padding: 50px;">
 															<table width="100%" border="0" cellspacing="0" cellpadding="0">
-																<tr>
-																	<td align="center" class="pb-20" style="padding-bottom: 20px;">
-																		<!-- Socials -->
-																		<!-- <table border="0" cellspacing="0" cellpadding="0">
-																			<tr>
-																				<td class="img" width="34" style="font-size:0pt; line-height:0pt; text-align:left;">
-																					<a href="https://facebok.com/" target="_blank"><img src="https://malcolmcordova.com/Firma_files/transp-facebook.png" width="34" height="34" editable="true" border="0" alt="" /></a>
-																				</td>
-																				<td class="img" width="15" style="font-size:0pt; line-height:0pt; text-align:left;"></td>
-																				<td class="img" width="34" style="font-size:0pt; line-height:0pt; text-align:left;">
-																					<a href="https://instagram.com/" target="_blank"><img src="https://malcolmcordova.com/Firma_files/transp-instagram.png" width="34" height="34" editable="true" border="0" alt="" /></a>
-																				</td>
-																				<td class="img" width="15" style="font-size:0pt; line-height:0pt; text-align:left;"></td>
-																				<td class="img" width="34" style="font-size:0pt; line-height:0pt; text-align:left;">
-																					<a href="https://twitter.com/" target="_blank"><img src="https://malcolmcordova.com/Firma_files/transp-twitter.png" width="34" height="34" editable="true" border="0" alt="" /></a>
-																				</td>
-																				<td class="img" width="15" style="font-size:0pt; line-height:0pt; text-align:left;"></td>
-																				<td class="img" width="34" style="font-size:0pt; line-height:0pt; text-align:left;">
-																					<a href="#" target="_blank"><img src="https://malcolmcodova.com/Firma_files/pinterest.png" width="34" height="34" editable="true" border="0" alt="" /></a>
-																				</td>
-																			</tr>
-																		</table> -->
-																		<!-- END Socials -->
-																	</td>
-																</tr>
-																<tr>
-																	<td class="text-14 lh-24 a-center c-white l-white pb-20" style="font-size:14px; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 24px; text-align:center; color:#ffffff; padding-bottom: 20px;">
-																		<multiline>
-																		Clínica Santiago de Leon.<br>
-																		Av Libertador, entre calle Negrín y Las Delicias, Edif. Clínica Santiago de León
-																			<br />
-																			<a cm_dontconvertlink href="tel:+212-308-1900" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">(0212)308-1900</span></a> 
-																			<!-- <a cm_dontconvertlink href="tel:+13697181973" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">(369) 22233</span></a> -->
-																			<br />
-																			<!-- <a href="mailto:info@website.com" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">info@website.com</span></a> - <a href="https://malcolmcordova.com" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">malcolmcordova.com</span></a><br> -->
-																			<span class="link c-white" style="text-decoration:none; color:#ffffff;">Desarrollado por:</span>
-                                                                            
-																		</multiline>
-																	</td>
-																</tr>
-																<tr>
-																	<td align="center">
-																		<!-- Download App -->
-																		<table border="0" cellspacing="0" cellpadding="0">
-																			<tr>
-																				
-																				<td class="img" width="117" style="font-size:0pt; line-height:0pt; text-align:center; ">
-                                                                                    
-																					<a href="https://malcolmcordova.com/" target="_blank"><img src="https://malcolmcordova.com/Firma_files/logotipo.png" width="150" height="43" editable="true" border="0" alt="" /></a>
-																				</td>
-																			</tr>
-																		</table>
-																		<!-- END Download App -->
-																	</td>
-																</tr>
+																
+															<tr>
+																<td class="text-16 lh-26 a-center pb-25"
+																	style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center; padding-bottom: 25px;">
+																	<multiline>
+																		<em>Gracias por ser parte del equipo. </em>
+																	</multiline>
+																</td>
+															</tr>
+															<tr>
+																<td align="center">
+																	<!-- Download App -->
+																	<table border="0" cellspacing="0" cellpadding="0">
+																		<tr>
+
+																			<td class="img" width="117"
+																				style="font-size:0pt; line-height:0pt; text-align:center; ">
+																				<a href="https://health-connect.me/"
+																					target="_blank"><img
+																						src="https://health-connect.me/varios/logoHealthConnect-01.png"
+																						width="75" height="50"
+																						editable="true" border="0"
+																						alt="" /></a>
+
+																			</td>
+																		</tr>
+																	</table>
+																	<!-- END Download App -->
+																</td>
+															</tr>
 															</table>
 														</td>
 													</tr>
 												</table>											<!-- END Footer -->
 											
 											<!-- Bottom -->
-											<!--<table width="100%" border="0" cellspacing="0" cellpadding="0">-->
-											<!--		<tr>-->
-											<!--			<td class="text-12 lh-22 a-center c-grey- l-grey py-20" style="font-size:12px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 22px; text-align:center; padding-top: 20px; padding-bottom: 20px;">-->
-											<!--				<unsubscribe class="link c-grey" style="text-decoration:none; color:#6e6e6e;"><span class="link c-grey" style="white-space: nowrap; text-decoration:none; color:#6e6e6e;">UNSUBSCRIBE</span></unsubscribe> &nbsp;|&nbsp; <webversion class="link c-grey" style="text-decoration:none; color:#6e6e6e;"><span class="link c-grey" style="white-space: nowrap; text-decoration:none; color:#6e6e6e;">WEB VERSION</span></webversion> &nbsp;|&nbsp; <forwardtoafriend class="link c-grey" style="text-decoration:none; color:#6e6e6e;"><span class="link c-grey" style="white-space: nowrap; text-decoration:none; color:#6e6e6e;">SEND TO A FRIEND</span></forwardtoafriend>-->
-											<!--			</td>-->
-											<!--		</tr>-->
-											<!--	</table>											<!-- END Bottom -->-->
+											
 										</td>
 									</tr>
 								</table>

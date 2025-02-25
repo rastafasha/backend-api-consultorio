@@ -19,7 +19,7 @@
 	<!--[if !mso]><!-->
 	<link href="https://fonts.googleapis.com/css?family=PT+Sans:400,400i,700,700i&display=swap" rel="stylesheet" />
 	<!--<![endif]-->
-	<title>Email Template</title>
+	<title>Confirmación de Cita</title>
 	<!--[if gte mso 9]>
 	<style type="text/css" media="all">
 		sup { font-size: 100% !important; }
@@ -125,7 +125,7 @@
 																	<table width="100%" border="0" cellspacing="0" cellpadding="0">
 																		<tr>
 																			<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
-																				<a href="#" target="_blank"><img src="https://malcolmcordova.com/health-connect-items/logoHealthConnect-01.png" width="150" height="100" editable="true" border="0" alt="" /></a>
+																				<a href="https://health-connect.me/" target="_blank"><img src="https://health-connect.me/varios/logoHealthConnect-01.png" width="150" height="100" editable="true" border="0" alt="" /></a>
 																			</td>
 																		</tr>
 																	</table>
@@ -174,6 +174,17 @@
 																																	<em>Puede entrar en la app de paciente y pagar la cita, si lo desea</em>
                                                                                                                                     <!-- <br>
 																																	<em>"Hora de Fin: {{$appointment ["hour_end_format"]}}"</em> -->
+																																	<em>"Hora: {{$appointment->hour_start_format}}"</em> 
+																																</multiline>
+																															</td>
+																														</tr>
+																														<tr>
+																															<td class="text-16 lh-26 a-center pb-25" style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center; padding-bottom: 25px;">
+																																<multiline>
+																																	<em>Health-connect.me no es entidad financiera, las trasnferencias se hacen directo entre la cuenta creada, que se puede ver en la app paciente, de las cuentas bancarias la clínica o consultorio. </em>
+																																	<p> La App Health Connect solo es un medio de comunicación entre el paciente y el doctor,
+																																		no somos entidades de salud, no somos entidad financiera.
+																																	</p>
 																																</multiline>
 																															</td>
 																														</tr>
@@ -181,23 +192,6 @@
 																												</td>
 																											</tr>
 																										</table>
-																									</td>
-																								</tr>
-																								<tr>
-																									<td align="center">
-																										<!-- Button -->
-																										<!--<table border="0" cellspacing="0" cellpadding="0" style="min-width: 200px;">-->
-																										<!--	<tr>-->
-																										<!--		<td class="btn-16 c-white l-white" bgcolor="#f3189e" style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">-->
-																										<!--			<multiline>-->
-																										<!--				<a href="#" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">-->
-																										<!--					<span class="link c-white" style="text-decoration:none; color:#ffffff;">REPLY NOW</span>-->
-																										<!--				</a>-->
-																										<!--			</multiline>-->
-																										<!--		</td>-->
-																										<!--	</tr>-->
-																										<!--</table>-->
-																										<!-- END Button -->
 																									</td>
 																								</tr>
 																							</table>
@@ -250,14 +244,7 @@
 																<tr>
 																<td class="text-14 lh-24 a-center c-white l-white pb-20" style="font-size:14px; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 24px; text-align:center; color:#ffffff; padding-bottom: 20px;">
 																		<multiline>
-																		Clínica Santiago de Leon.<br>
-																		Av Libertador, entre calle Negrín y Las Delicias, Edif. Clínica Santiago de León
-																			<br />
-																			<a cm_dontconvertlink href="tel:+212-308-1900" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">(0212)308-1900</span></a> 
-																			<!-- <a cm_dontconvertlink href="tel:+13697181973" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">(369) 22233</span></a> -->
-																			<br />
-																			<!-- <a href="mailto:info@website.com" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">info@website.com</span></a> - <a href="https://malcolmcordova.com" target="_blank" class="link c-white" style="text-decoration:none; color:#ffffff;"><span class="link c-white" style="text-decoration:none; color:#ffffff;">malcolmcordova.com</span></a><br> -->
-																			<span class="link c-white" style="text-decoration:none; color:#ffffff;">Desarrollado por:</span>
+																		<span class="link c-white" style="text-decoration:none; color:#ffffff;">Gracias por ser parte del equipo.</span>
                                                                             
 																		</multiline>
 																	</td>
@@ -270,7 +257,7 @@
 																				
 																				<td class="img" width="117" style="font-size:0pt; line-height:0pt; text-align:center; ">
                                                                                     
-																					<a href="https://malcolmcordova.com/" target="_blank"><img src="https://malcolmcordova.com/Firma_files/logotipo.png" width="150" height="43" editable="true" border="0" alt="" /></a>
+																					<a href="https://health-connect.me/" target="_blank"><img src="https://health-connect.me/varios/logoHealthConnect-01.png" width="75" height="50" editable="true" border="0" alt="" /></a>
 																				</td>
 																			</tr>
 																		</table>
