@@ -74,6 +74,11 @@ class Presupuesto extends Model
     {
         return $this->belongsTo(Patient::class);
     }
+
+    public function presupuestoitems()
+    {
+        return $this->hasMany(PresupuestoItem::class);
+    }
     
 
 

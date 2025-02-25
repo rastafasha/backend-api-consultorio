@@ -15,7 +15,12 @@ Route::get('presupuesto', [PresupuestoController::class, 'index'])->name('presup
 Route::post('presupuesto/store', [PresupuestoController::class, 'store'])->name('presupuesto.store');
 Route::get('presupuesto/show/{id}', [PresupuestoController::class, 'show'])->name('presupuesto.show');
 Route::put('presupuesto/update/{id}', [PresupuestoController::class, 'update'])->name('presupuesto.update');
+
 Route::delete('presupuesto/destroy/{id}', [PresupuestoController::class, 'destroy'])->name('presupuesto.destroy');
+
+Route::delete('presupuesto/destroy/item/{presupuesto_id}/{presupuestoitem_id}', [PresupuestoController::class, 'destroyitem'])
+->name('presupuesto.destroyitem');
+
 
 
 Route::get('presupuesto/pendientesbydoctor/{doctor_id}', [PresupuestoController::class, 'presupuestoByDoctor'])

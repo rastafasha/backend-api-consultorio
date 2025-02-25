@@ -19,7 +19,6 @@ class CreatePresupuestosTable extends Migration
             // $table->string('amount')->nullable();
             $table->text('description')->nullable();
             $table->text('diagnostico')->nullable();
-            $table->json('medical')->nullable();
             
             $table->tinyInteger('confimation')->default(1);
             $table->tinyInteger('status')->default(1);

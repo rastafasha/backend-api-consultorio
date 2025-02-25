@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Presupuesto;
 use Illuminate\Http\Request;
 use App\Models\Patient\Patient;
+use App\Models\PresupuestoItem;
 use App\Mail\Registerpresupuesto;
 use App\Models\Doctor\Specialitie;
 use App\Http\Controllers\Controller;
@@ -111,6 +112,13 @@ class PresupuestoController extends Controller
                 "medical" => $request->medical, // Ensure this is updated correctly
             ]);
 
+            PresupuestoItem::create([
+                "presupuesto_id"=>$presupuesto->id,
+                'name' => $request->name,
+                    'cantidad' => $request->cantidad,
+                    'precio' => $request->precio,
+            ]);
+
 
 
         // Mail::to($presupuesto->patient->email)->send(new NewPresupuestoRegisterMail($presupuesto));
@@ -135,13 +143,14 @@ class PresupuestoController extends Controller
     public function show($id)
     {
         $presupuesto = Presupuesto::findOrFail($id);
+        $presupuestoitems = PresupuestoItem::where('presupuesto_id', $id)->get();
         // $sum_total_pays = presupuestoPay::where("presupuesto_id",$id)->sum("amount");
         $costo = $presupuesto->amount;
         // $deuda = ($costo - $sum_total_pays); 
 
         return response()->json([
             "costo" => $costo,
-            // "deuda" => $deuda,
+            "presupuestoitems" => $presupuestoitems,
             "presupuesto" => PresupuestoResource::make($presupuesto),
         ]);
 
@@ -159,11 +168,11 @@ class PresupuestoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $presupuesto = Presupuesto::findOrFail($id );
+        $presupuesto = Presupuesto::findOrFail($id);
+        $presupuestoitems = PresupuestoItem::where("presupuesto_id", $id)->get();
         
         $request->validate([
             'amount' => 'required|numeric', // Ensure amount is present and is a number
-            'medical' => 'required|array', // Ensure medical is present and is an array
         ]);
 
         $request->request->add(["medical"=>json_encode($request->medical)]);
@@ -175,12 +184,37 @@ class PresupuestoController extends Controller
             "description" =>$request->description,
             "diagnostico" =>$request->diagnostico,
             "amount" =>$request->amount,
-            "medical" =>$request->medical, // Ensure this is updated correctly
         ]);
+
+        //si viene presupuestoitem en la request lo actualizamas
+        if($request->has("presupuestoitem")){
+            foreach($request->presupuestoitem as $item){
+                $presupuestoitem = PresupuestoItem::where("id",$item["id"]
+                )->update([
+                    "name" =>$item["name"],
+                    "cantidad" =>$item["cantidad"],
+                    "precio" =>$item["precio"],
+                    ]);
+                    }
+                    }
+                    //si no viene presupuestoitem en la request lo creas
+                    else{
+                        foreach($presupuestoitems as $item){
+                            $presupuestoitem = new PresupuestoItem();
+                            $presupuestoitem->name = $item->name;
+                            $presupuestoitem->cantidad = $item->cantidad;
+                            $presupuestoitem->precio = $item->precio;
+                            $presupuestoitem->presupuesto_id = $id;
+                            $presupuestoitem->save();
+                            }
+                            }
+
+
 
         return response()->json([
             "message" => 200,
             "presupuesto" => PresupuestoResource::make($presupuesto),
+            "presupuestoitems" => $presupuestoitems,
         ]);
     }
 
@@ -197,6 +231,22 @@ class PresupuestoController extends Controller
         return response()->json([
             "message" => 200,
         ]);
+    }
+    public function destroyitem(request  $presupuesto_id, $presupuestoitem_id)
+    {
+        //obtenemos el id de cada uno   
+        $presupuesto = Presupuesto::findOrFail($presupuesto_id);
+        $presupuestoitem = PresupuestoItem::findOrFail($presupuestoitem_id);
+
+        //unimos la request presupuesto con el presupuestoitem
+        $presupuesto->presupuestoitems()->detach($presupuestoitem_id);
+        $presupuestoitem->delete();
+        return response()->json([
+            "message" => 200,
+            ]);
+
+
+        
     }
     
      public function atendidas()

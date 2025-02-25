@@ -170,11 +170,13 @@
 																																	<em>"Doctor: {{$appointment->doctor->name.' '.$appointment->doctor->surname}}"</em>
                                                                                                                                     <br>
 																																	<em>"Para el día": {{$appointment->date_appointment}}"</em>
+                                                                                                                                    
+																																	<em>"Hora de Inicio: {{$appointment->hour_start_format}}"</em> 
+                                                                                                                                    <br>
+																																	<em>"Hora de Fin: {{$appointment->hour_end_format}}"</em>
+                                                                                                                                    <br>
                                                                                                                                     <br>
 																																	<em>Puede entrar en la app de paciente y pagar la cita, si lo desea</em>
-                                                                                                                                    <!-- <br>
-																																	<em>"Hora de Fin: {{$appointment ["hour_end_format"]}}"</em> -->
-																																	<em>"Hora: {{$appointment->hour_start_format}}"</em> 
 																																</multiline>
 																															</td>
 																														</tr>

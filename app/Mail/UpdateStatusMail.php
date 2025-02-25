@@ -31,12 +31,12 @@ class UpdateStatusMail extends Mailable
     /**
      * Get the message envelope.
      */
-    public function envelope(): Envelope
-    {
-        return new Envelope([
-            'subject' => 'Recordatorio de Cita Médica',
-        ]);
-    }
+    // public function envelope(): Envelope
+    // {
+    //     return new Envelope([
+    //         'subject' => 'Recordatorio de Cita Médica',
+    //     ]);
+    // }
 
     /**
      * Build the message.
@@ -46,7 +46,7 @@ class UpdateStatusMail extends Mailable
     public function build()
     {
         $user = $this->user;
-        return $this->subject('Notificación de Cita Médica')
-        ->view('emails.update_status');
+        return $this->subject('Perfil Activado')
+        ->view('emails.admin.update_status');
     }
 }

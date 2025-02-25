@@ -4,10 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Presupuesto;
 use Faker\Factory as Faker;
+use App\Models\PresupuestoItem;
 use Illuminate\Database\Seeder;
-use App\Models\Appointment\AppointmentPay;
-use App\Models\Appointment\AppointmentAttention;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class PresupuestoSeeder extends Seeder
 {
@@ -21,7 +19,6 @@ class PresupuestoSeeder extends Seeder
         $presupuesto = Presupuesto::firstOrCreate(
             ['id' => 1],
             [
-                
                 'status' => 1,
                 'confimation' => 1,
                 'patient_id' => 9,
@@ -29,16 +26,6 @@ class PresupuestoSeeder extends Seeder
                 'speciality_id' => 1,
                 'description'=> 'Presupuesto para la atención del paciente 9',
                 'diagnostico'=> 'Presupuesto para la atención del paciente 9',
-                "medical" => json_encode([
-                    [
-                        "name_medical" => "Consulta",
-                        "precio" => 200.00,
-                    ],
-                    [
-                        "name_medical" => "Consulta",
-                        "precio" => 145.50,
-                    ],
-                ]),
                 'amount' => 345.50,
                 'created_at' => '2025-02-16 20:41:51',
                 'updated_at' => '2025-02-16 20:41:51',
@@ -47,14 +34,32 @@ class PresupuestoSeeder extends Seeder
         );
 
         // Create related records for the specific presupuesto
-        $faker = Faker::create();
-        
+        if ($presupuesto) {
+            PresupuestoItem::create([
+                "presupuesto_id" => $presupuesto->id,
+                "name" => 'Presupuesto para la atención del paciente 9',
+                'cantidad' => 4,
+                'precio' => 345.50,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'deleted_at' => null,
+            ]);
+        } 
 
         // Create additional random presupuestos for testing
-        Presupuesto::factory()->count(2)->create()->each(function($p) use ($faker) {
-            $faker = Faker::create();
-            
+        $presupuestos = Presupuesto::factory()->count(2)->create()->each(function($p) use ($faker) {
+            // Create related PresupuestoItems for each presupuesto
+            for ($i = 0; $i < 3; $i++) {
+                PresupuestoItem::create([
+                    "presupuesto_id" => $p->id,
+                    "name" => $faker->text(50),
+                    'cantidad' => $faker->numberBetween(1, 10),
+                    'precio' => $faker->randomFloat(2, 10, 1000),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                    'deleted_at' => null,
+                ]);
+            }
         });
-        // php artisan db:seed --class=presupuestoSeeder
     }
 }

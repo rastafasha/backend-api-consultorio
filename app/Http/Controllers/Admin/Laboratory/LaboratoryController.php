@@ -92,7 +92,7 @@ class LaboratoryController extends Controller
     public function show($id)
     {
         $appointment = Appointment::findOrFail($id);
-        $laboratory = Laboratory::findOrFail($request->appointment_id);
+        $laboratory = Laboratory::findOrFail($id);
         $appointment_attention = $appointment->attention;
         if($appointment_attention){
             return response()->json([

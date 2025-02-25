@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class PresupuestoFactory extends Factory
 {
     protected $model = Presupuesto::class;
+
     /**
      * Define the model's default state.
      *
@@ -21,28 +22,23 @@ class PresupuestoFactory extends Factory
      */
     public function definition(): array
     {
-        $doctor = User::whereHas("roles",function($q){
-            $q->where("name","like","%DOCTOR%");
+        $doctor = User::whereHas("roles", function($q) {
+            $q->where("name", "like", "%DOCTOR%");
         })->inRandomOrder()->first();
-        
+
         $date_presupuesto = $this->faker->dateTimeBetween("2024-01-01 00:00:00", "2024-12-25 23:59:59");
         $status = $this->faker->randomElement([1, 2]);
-        
 
         return [
-            "doctor_id" => User::role('DOCTOR')->inRandomOrder()->first()->id,
+            "doctor_id" => $doctor->id,
             "patient_id" => Patient::count() > 0 ? Patient::inRandomOrder()->first()->id : null,
-            "description" => $this->faker->text($maxNbChars = 300),
-            "diagnostico" => $this->faker->text($maxNbChars = 300),
-            "medical" => json_encode([
-                    [
-                        "name_medical" => $this->faker->word(),
-                        "precio" =>  $this->faker->randomElement([100.00,150.00,200.00,250.00,80.00,120.00,95.00,75.00,160.00,230.00,110.00]),
-                    ],
-                ]),
+            "description" => $this->faker->text(300),
+            "diagnostico" => $this->faker->text(300),
             "speciality_id" => Specialitie::count() > 0 ? Specialitie::all()->random()->id : null,
-            "amount" => $this->faker->randomnumber(2),
+            "amount" => $this->faker->randomFloat(2, 10, 1000), // Example for amount
             "status" => $status,
+            "created_at" => $date_presupuesto,
+            "updated_at" => $date_presupuesto,
         ];
     }
 }
