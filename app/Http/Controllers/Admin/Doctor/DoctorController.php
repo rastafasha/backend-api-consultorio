@@ -508,7 +508,7 @@ class DoctorController extends Controller
         $user = User::findOrfail($id);
         $user->status = $request->status;
         $user->update();
-        // Mail::to($user->email)->send(new UpdateStatusMail($user));
+        Mail::to($user->email)->send(new UpdateStatusMail($user));
 
         return $user;
         
