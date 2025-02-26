@@ -200,21 +200,21 @@
 																														<tr>
                                                                                                                             <td class="text-16 lh-26 a-center" style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center;">
                                                                                                                                 <multiline>
-                                                                                                                                    Puede Acceder a la aplicaci贸n, escaneando el c贸odigo QR.<br>
+                                                                                                                                    Puede Acceder a la aplicación, escaneando el cóodigo QR.<br>
                                                                                                                                     
                                                                                                                                 </multiline>
                                                                                                                             </td>
                                                                                                                         </tr>
 																														<tr>
 																															<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
-																																<img src="https://consultorio.health-connect.me/QR/pacientehcAppConsultorio-1024.jpeg" width="150" height="150" editable="true" border="0" alt="" />
+																																<img src="https://consultorio.health-connect.me/QR/pacientehcAppConsultorio-1024.png" width="150" height="150" editable="true" border="0" alt="" />
 																																
 																															</td>
 																														</tr>
 																														<tr>
 																														    <td class="btn-16 c-white l-white" bgcolor="#f3189e" style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
 																																			<multiline>
-																																				<a href="https://paciente.health-connect.me/" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
+																																				<a href="https://pconsultorio.health-connect.me/" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
 																																					<span class="link c-white" style="text-decoration:none; color:#ffffff;">Acceder a Health Connect me Pacientes App</span>
 																																				</a>
 																																			</multiline>
