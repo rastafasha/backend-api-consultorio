@@ -37,7 +37,7 @@ class PresupuestoSeeder extends Seeder
         if ($presupuesto) {
             PresupuestoItem::create([
                 "presupuesto_id" => $presupuesto->id,
-                "name" => 'Presupuesto para la atención del paciente 9',
+                "name_medical" => 'Presupuesto para la atención del paciente 9',
                 'cantidad' => 4,
                 'precio' => 345.50,
                 'created_at' => now(),
@@ -52,7 +52,7 @@ class PresupuestoSeeder extends Seeder
             for ($i = 0; $i < 3; $i++) {
                 PresupuestoItem::create([
                     "presupuesto_id" => $p->id,
-                    "name" => $faker->text(50),
+                    "name_medical" => $faker->text(50),
                     'cantidad' => $faker->numberBetween(1, 10),
                     'precio' => $faker->randomFloat(2, 10, 1000),
                     'created_at' => now(),

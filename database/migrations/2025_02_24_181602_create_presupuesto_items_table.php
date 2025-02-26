@@ -15,7 +15,7 @@ class CreatePresupuestoItemsTable extends Migration
     {
         Schema::create('presupuesto_items', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('name')->nullable();
+            $table->text('name_medical')->nullable();
             $table->string('cantidad')->nullable();
             $table->double('precio', 250)->nullable();
             

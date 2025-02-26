@@ -12,7 +12,7 @@ class PresupuestoItem extends Model
     use SoftDeletes;
     protected $fillable=[
         "presupuesto_id",
-        "name",
+        "name_medical",
         "cantidad",
         "precio",
 

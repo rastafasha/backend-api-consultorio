@@ -83,7 +83,7 @@ class PresupuestoController extends Controller
         $doctor = User::where("id", $request->doctor_id)->first();
 
         // $request->request->add(["medical" => $request->medical]);
-        $request->request->add(["medical"=>json_encode($request->medical)]);
+        // $request->request->add(["medical"=>json_encode($request->medical)]);
         
         if(!$patient){
             $patient = Patient::create([
@@ -94,13 +94,6 @@ class PresupuestoController extends Controller
                 "phone"=>$request->phone,
             ]);
         }
-        // else{
-        //     $patient->person->update([
-        //         'name_companion' => $request->name_companion,
-        //         'surname_companion' => $request->surname_companion,
-        //     ]);
-        // }
-
         
             $presupuesto = Presupuesto::create([
                 "doctor_id" =>$request->doctor_id,
@@ -108,16 +101,27 @@ class PresupuestoController extends Controller
                 "speciality_id" => $request->speciality_id,
                 "description" => $request->description,
                 "diagnostico" => $request->diagnostico,
-                "amount" =>$request->amount,
-                "medical" => $request->medical, // Ensure this is updated correctly
+                "amount" =>$request->amount, // Ensure this is updated correctly
             ]);
 
-            PresupuestoItem::create([
-                "presupuesto_id"=>$presupuesto->id,
-                'name' => $request->name,
-                    'cantidad' => $request->cantidad,
-                    'precio' => $request->precio,
-            ]);
+            if (is_array($request->presupuestoitems)) {
+                foreach ($request->presupuestoitems as $item) {
+                    $presupuestoitems = PresupuestoItem::create([
+                        "presupuesto_id" => $presupuesto->id,
+                        'name_medical' => $item['name_medical'],
+                        'cantidad' => $item['cantidad'],
+                        'precio' => $item['precio'],
+                    ]);
+                }
+            } else {
+                $presupuestoitems = PresupuestoItem::create([
+                    "presupuesto_id" => $presupuesto->id,
+                    'name_medical' => $request->presupuestoitems['name_medical'],
+                    'cantidad' => $request->presupuestoitems['cantidad'],
+                    'precio' => $request->presupuestoitems['precio'],
+                ]);
+            }
+
 
 
 
@@ -127,6 +131,7 @@ class PresupuestoController extends Controller
         return response()->json([
             "message" => 200,
             "presupuesto" => $presupuesto,
+            "presupuestoitems" => $presupuestoitems,
             
         ]);
     }
@@ -175,7 +180,7 @@ class PresupuestoController extends Controller
             'amount' => 'required|numeric', // Ensure amount is present and is a number
         ]);
 
-        $request->request->add(["medical"=>json_encode($request->medical)]);
+        // $request->request->add(["medical"=>json_encode($request->medical)]);
         
         $presupuesto->update([
             "doctor_id" =>$request->doctor_id,
@@ -186,28 +191,25 @@ class PresupuestoController extends Controller
             "amount" =>$request->amount,
         ]);
 
-        //si viene presupuestoitem en la request lo actualizamas
-        if($request->has("presupuestoitem")){
-            foreach($request->presupuestoitem as $item){
-                $presupuestoitem = PresupuestoItem::where("id",$item["id"]
-                )->update([
-                    "name" =>$item["name"],
-                    "cantidad" =>$item["cantidad"],
-                    "precio" =>$item["precio"],
-                    ]);
-                    }
-                    }
-                    //si no viene presupuestoitem en la request lo creas
-                    else{
-                        foreach($presupuestoitems as $item){
-                            $presupuestoitem = new PresupuestoItem();
-                            $presupuestoitem->name = $item->name;
-                            $presupuestoitem->cantidad = $item->cantidad;
-                            $presupuestoitem->precio = $item->precio;
-                            $presupuestoitem->presupuesto_id = $id;
-                            $presupuestoitem->save();
-                            }
-                            }
+        if (is_array($request->presupuestoitems)) {
+            foreach ($request->presupuestoitems as $item) {
+                $presupuestoitem = PresupuestoItem::findOrFail($item['id']);
+                $presupuestoitem->update([
+                    "presupuesto_id" => $presupuesto->id,
+                    'name_medical' => $item['name_medical'],
+                    'cantidad' => $item['cantidad'],
+                    'precio' => $item['precio'],
+                ]);
+            }
+        } else {
+            $presupuestoitem = PresupuestoItem::findOrFail($request->presupuestoitems['id']);
+            $presupuestoitem->update([
+                "presupuesto_id" => $presupuesto->id,
+                'name_medical' => $request->presupuestoitems['name_medical'],
+                'cantidad' => $request->presupuestoitems['cantidad'],
+                'precio' => $request->presupuestoitems['precio'],
+            ]);
+        }
 
 
 
@@ -234,13 +236,16 @@ class PresupuestoController extends Controller
     }
     public function destroyitem(request  $presupuesto_id, $presupuestoitem_id)
     {
-        //obtenemos el id de cada uno   
-        $presupuesto = Presupuesto::findOrFail($presupuesto_id);
-        $presupuestoitem = PresupuestoItem::findOrFail($presupuestoitem_id);
+        $presupuestoitem = PresupuestoItem::where('id', $presupuestoitem_id)->first();
+        if (!$presupuestoitem) {
+            return response()->json(["message" => "Presupuesto item not found."], 404);
+        }
+        $presupuestoitem = PresupuestoItem::where('presupuesto_id', $presupuesto_id)
+        ->where('id', $presupuestoitem_id)->first();
 
         //unimos la request presupuesto con el presupuestoitem
-        $presupuesto->presupuestoitems()->detach($presupuestoitem_id);
-        $presupuestoitem->delete();
+        // $presupuesto->presupuestoitem()->detach($presupuestoitem_id);
+        $presupuestoitem->delete(); 
         return response()->json([
             "message" => 200,
             ]);
