@@ -214,7 +214,7 @@
 																														<tr>
 																														    <td class="btn-16 c-white l-white" bgcolor="#f3189e" style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
 																																			<multiline>
-																																				<a href="https://paciente.health-connect.me/" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
+																																				<a href="https://pconsultorio.health-connect.me/" target="_blank" class="link c-white" style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
 																																					<span class="link c-white" style="text-decoration:none; color:#ffffff;">Acceder a Health Connect me Pacientes App</span>
 																																				</a>
 																																			</multiline>
