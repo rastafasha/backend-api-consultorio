@@ -184,7 +184,7 @@
                                                                                                                         </tr>
 																														<tr>
 																															<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
-																																<img src="https://clinica.health-connect.me/QR/PacienteClinicaDemo.png" width="150" height="150" editable="true" border="0" alt="" />
+																																<img src="https://consultorio.health-connect.me/QR/ConsultorioHc.png" width="150" height="150" editable="true" border="0" alt="" />
 																																
 																															</td>
 																														</tr>
