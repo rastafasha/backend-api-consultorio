@@ -54,8 +54,9 @@ class PresupuestoResource extends JsonResource
                 ]: NULL,
             
             "status" =>$this->resource->status,
-            "confimation" =>$this->resource->confimation,
             "description" =>$this->resource->description,
+            "confimation" =>$this->resource->confimation,
+            "n_doc" =>$this->resource->n_doc,
             "diagnostico" =>$this->resource->diagnostico,
             "medical" =>$this->resource->medical ? json_decode($this->resource->medical) : NULL,
             "amount" =>$this->resource->amount,

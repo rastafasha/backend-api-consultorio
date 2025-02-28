@@ -28,6 +28,7 @@ class Presupuesto extends Model
         "diagnostico",
         "medical",
         "amount",
+        "n_doc",
 
     ];
     

@@ -415,8 +415,8 @@ class AppointmentController extends Controller
         //         ]);
         // }
 
-        Mail::to($appointment->patient->email)->send(new RegisterAppointment($appointment));
-        Mail::to($doctor->email)->send(new NewAppointmentRegisterMail($appointment));
+        // Mail::to($appointment->patient->email)->send(new RegisterAppointment($appointment));
+        // Mail::to($doctor->email)->send(new NewAppointmentRegisterMail($appointment));
 
         return response()->json([
             "message" => 200,
