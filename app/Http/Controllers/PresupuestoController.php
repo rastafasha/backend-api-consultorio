@@ -113,7 +113,7 @@ class PresupuestoController extends Controller
 
 
 
-        // Mail::to($presupuesto->patient->email)->send(new NewPresupuestoRegisterMail($presupuesto));
+        Mail::to($presupuesto->patient->email)->send(new NewPresupuestoRegisterMail($presupuesto));
         // Mail::to($doctor->email)->send(new NewpresupuestoRegisterMail($presupuesto));
 
         return response()->json([
@@ -268,4 +268,28 @@ class PresupuestoController extends Controller
             // "total"=>$appointments->total(),
         ]);
     }
+
+    public function bypatient(Request $request, $n_doc)
+        {
+            $patient = Patient::where("n_doc", $n_doc)->first();
+
+            if (!$patient) {
+                return response()->json([
+                    'code' => 404,
+                    'status' => 'error',
+                    'message' => 'Patient not found',
+                ], 404);
+            }
+
+            $presupuestos = Presupuesto::where("patient_id", '=', $patient->id)
+                ->orderBy('created_at', 'DESC')
+                ->get();
+
+            return response()->json([
+                'code' => 200,
+                'status' => 'success',
+                // 'presupuestos' => $presupuestos,
+                 "presupuestos"=> PresupuestoCollection::make($presupuestos)
+            ], 200);
+        }
 }

@@ -12,14 +12,17 @@ Route::get('presupuesto/config', [PresupuestoController::class, 'config'])->name
 Route::get('presupuesto/patient', [PresupuestoController::class, 'query_patient'])->name('presupuesto.query_patient');
 
 Route::get('presupuesto', [PresupuestoController::class, 'index'])->name('presupuesto.index');
-Route::post('presupuesto/store', [PresupuestoController::class, 'store'])->name('presupuesto.store');
 Route::get('presupuesto/show/{id}', [PresupuestoController::class, 'show'])->name('presupuesto.show');
-Route::put('presupuesto/update/{id}', [PresupuestoController::class, 'update'])->name('presupuesto.update');
-Route::delete('presupuesto/destroy/{id}', [PresupuestoController::class, 'destroy'])->name('presupuesto.destroy');
 
+Route::get('presupuesto/bypatient/{n_doc}', [PresupuestoController::class, 'bypatient'])
+->name('presupuesto.bypatient');
 
 Route::get('presupuesto/pendientesbydoctor/{doctor_id}', [PresupuestoController::class, 'presupuestoByDoctor'])
 ->name('presupuesto.pendientesbydoctor');
 
 Route::put('/presupuesto/update/cofirmation/{presupuesto:id}', [PresupuestoController::class, 'updateConfirmation'])
 ->name('presupuesto.updateConfirmation');
+
+Route::post('presupuesto/store', [PresupuestoController::class, 'store'])->name('presupuesto.store');
+Route::put('presupuesto/update/{id}', [PresupuestoController::class, 'update'])->name('presupuesto.update');
+Route::delete('presupuesto/destroy/{id}', [PresupuestoController::class, 'destroy'])->name('presupuesto.destroy');
