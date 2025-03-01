@@ -357,13 +357,14 @@ class AppointmentController extends Controller
     {
         
         $patient = null;
-        $doctor = User::where("id", $request->doctor_id)->first();
-        
         $patient = Patient::where("n_doc", $request->n_doc)->first();
+        $doctor = User::where("id", $request->doctor_id)->first();
+
         if(!$patient){
             $patient = Patient::create([
                 "name"=>$request->name,
                 "surname"=>$request->surname,
+                "email"=>$request->email,
                 "n_doc"=>$request->n_doc,
                 "phone"=>$request->phone,
             ]);
@@ -386,7 +387,7 @@ class AppointmentController extends Controller
         $appointment = Appointment::create([
             "doctor_id" =>$request->doctor_id,
             "patient_id" =>$patient->id,
-            "date_appointment" => Carbon::parse($request->date_appointment)->setTimezone('America/Caracas')->format("Y-m-d H:i:s"),
+            "date_appointment" => Carbon::parse($request->date_appointment)->format("Y-m-d h:i:s"),
             "speciality_id" => $request->speciality_id,
             "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
             // "user_id" => auth("api")->user()->id, aqui lo comente porque no reconoce el id.. 
