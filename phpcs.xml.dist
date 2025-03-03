@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<ruleset name="PHP_CodeSniffer">
+    <description>The PSR12 coding standard for the project.</description>
+    
+    <!-- Use PSR12 as the base standard -->
+    <rule ref="PSR12"/>
+    
+    <!-- Include the whole project -->
+    <file>app</file>
+    <file>routes</file>
+    <file>tests</file>
+    
+    <!-- Exclude some directories/files if needed -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/storage/*</exclude-pattern>
+    <exclude-pattern>*/bootstrap/cache/*</exclude-pattern>
+    
+    <!-- Custom rules can be added here if needed -->
+    <!-- Increase line length limit to 160 characters -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="160"/>
+            <property name="absoluteLineLimit" value="0"/>
+        </properties>
+    </rule>
+
+    <!-- Basic PSR12 configuration with increased line length -->
+    <rule ref="PSR12">
+        <exclude name="Generic.Files.LineLength"/>
+    </rule>
+    
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="160"/>
+            <property name="absoluteLineLimit" value="0"/>
+        </properties>
+    </rule>
+</ruleset>

@@ -7,7 +7,6 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-
     /**
      * The Artisan commands provided by your application.
      *
@@ -28,7 +27,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('command:notification-appointments')->timezone('America/Caracas')->everyMinutes();
         // $schedule->command('command:notification-appointment-whatsapp')->timezone('America/Caracas')->everyMinutes();
-        
+
         $schedule->command('send:notification')->everyMinute(); //para envio al admin cuando se registra un nuevo appointment
     }
 

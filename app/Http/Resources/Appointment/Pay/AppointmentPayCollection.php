@@ -15,7 +15,7 @@ class AppointmentPayCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            "data"=> AppointmentPayResource::collection($this->collection)
+            "data" => AppointmentPayResource::collection($this->collection)
         ];
     }
 }

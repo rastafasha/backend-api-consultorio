@@ -10,7 +10,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class UpdatedPresupuestoMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     public $presupuesto;
     /**
@@ -36,7 +37,6 @@ class UpdatedPresupuestoMail extends Mailable
 
             return $this
             ->subject('HealthConnectMe: Presupuesto Actualizado')
-            ->view('emails.admin.new_presupuesto_register',['presupuesto' => $this->presupuesto]);
-        
+            ->view('emails.admin.new_presupuesto_register', ['presupuesto' => $this->presupuesto]);
     }
 }

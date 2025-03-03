@@ -15,7 +15,7 @@ class LocationCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            "data"=> LocationResource::collection($this->collection)
+            "data" => LocationResource::collection($this->collection)
         ];
     }
 }

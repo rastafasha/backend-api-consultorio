@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Faker\Factory as Faker; // Add Faker import
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
@@ -16,6 +17,12 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        $faker = Faker::create(); // Create a new Faker instance
+
+
+
+
+    {
         $users = [
             [
                 // "rolename" => User::SUPERADMIN,
@@ -25,7 +32,7 @@ class UserSeeder extends Seeder
                 'gender' => 1,
                 'location_id' => 1,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369874',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 "password" => bcrypt("superadmin"),
                 'roles' => [
                     [
@@ -54,7 +61,7 @@ class UserSeeder extends Seeder
                 'gender' => 1,
                 'location_id' => 1,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369871',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 "password" => bcrypt("password"),
                 'roles' => [
                     [
@@ -84,7 +91,7 @@ class UserSeeder extends Seeder
                 'location_id' => 1,
                 'speciality_id' => 1,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369872',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 'roles' => [
                     [
                         "id"=> 3,
@@ -114,7 +121,7 @@ class UserSeeder extends Seeder
                 'location_id' => 2,
                 'speciality_id' => 2,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369850',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 'roles' => [
                     [
                         "id"=> 3,
@@ -143,7 +150,7 @@ class UserSeeder extends Seeder
                 'gender' => 1,
                 'location_id' => 1,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369873',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 "password" => bcrypt("password"),
                 'roles' => [
                     [
@@ -172,7 +179,7 @@ class UserSeeder extends Seeder
                 'gender' => 1,
                 'location_id' => 1,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369875',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 "password" => bcrypt("password"),
                 'roles' => [
                     [
@@ -201,7 +208,7 @@ class UserSeeder extends Seeder
                 'gender' => 1,
                 'location_id' => 1,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369876',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 "password" => bcrypt("password"),
                 'roles' => [
                     [
@@ -230,7 +237,7 @@ class UserSeeder extends Seeder
                 'gender' => 1,
                 'location_id' => 1,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369878',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 "password" => bcrypt("password"),
                 'roles' => [
                     [
@@ -259,7 +266,7 @@ class UserSeeder extends Seeder
                 'gender' => 1,
                 'location_id' => 1,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369877',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 "password" => bcrypt("password"),
                 'roles' => [
                     [
@@ -288,7 +295,7 @@ class UserSeeder extends Seeder
                 'gender' => 1,
                 'location_id' => 1,
                 'mobile' => '1234567893',
-                'n_doc' => '5421369870',
+                'n_doc' => $faker->unique()->numerify('54213698##'), // Generate unique n_doc
                 "password" => bcrypt("password"),
                 'roles' => [
                     [
@@ -316,12 +323,16 @@ class UserSeeder extends Seeder
             $roles = $user['roles'] ?? null;
             unset($user['roles']);
             
-            // Create user
+            // Create user and log the creation
+            \Log::info('Creating user: ', ['email' => $user['email']]);
             //si no tiene asignado un rol, se le asigna el rol de invitado
             if (!$roles) {
                 $createdUser->assignRole(User::GUEST);
                     } 
-            $createdUser = User::create($user);
+            $createdUser = User::firstOrCreate(
+                ['email' => $user['email']], // Check for existing user by email
+                $user // Attributes to create if not exists
+            );
             
             // Attach roles if they exist
             if ($roles) {
@@ -330,4 +341,5 @@ class UserSeeder extends Seeder
             }
         }
     }
+}
 }

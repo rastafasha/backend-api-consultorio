@@ -21,14 +21,13 @@ class ForgotPasswordController extends Controller
      */
     public function forgotPassword(Request $request)
     {
-        
+
         if (!$this->validateEmail($request->email)) {
             return response()->json([
                 'code' => 404,
                 'message' => 'El correo no existe o tiene algún error, verifica por favor....'
             ], 404);
         } else {
-            
             $this->sendMail($request->email);
 
             return response()->json([
@@ -73,7 +72,8 @@ class ForgotPasswordController extends Controller
         if ($isOtherToken) {
             return $isOtherToken->token;
         }
-        $token = Str::random(80);;
+        $token = Str::random(80);
+        ;
         $this->storeToken($token, $email);
         return $token;
     }

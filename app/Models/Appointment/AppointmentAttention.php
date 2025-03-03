@@ -12,7 +12,8 @@ class AppointmentAttention extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    protected $fillable=[
+
+    protected $fillable = [
         "appointment_id",
         "patient_id",
         "description",
@@ -22,36 +23,38 @@ class AppointmentAttention extends Model
     ];
     public function setCreatedAtAttribute($value)
     {
-    	date_default_timezone_set('America/Caracas');
-        $this->attributes["created_at"]= Carbon::now();
+        date_default_timezone_set('America/Caracas');
+        $this->attributes["created_at"] = Carbon::now();
     }
 
     public function setUpdatedAtAttribute($value)
     {
-    	date_default_timezone_set("America/Caracas");
-        $this->attributes["updated_at"]= Carbon::now();
+        date_default_timezone_set("America/Caracas");
+        $this->attributes["updated_at"] = Carbon::now();
     }
 
-    public function scopefilterAdvanceAttention($query,$speciality_id, $name_doctor, $date){
-        
-        if($speciality_id){
+    public function scopefilterAdvanceAttention($query, $speciality_id, $name_doctor, $date)
+    {
+
+        if ($speciality_id) {
             $query->where("speciality_id", $speciality_id);
         }
 
-        if($name_doctor){
-            $query->whereHas("doctor", function($q)use($name_doctor){
-                $q->where("name", "like","%".$name_doctor."%")
-                    ->orWhere("surname", "like","%".$name_doctor."%");
+        if ($name_doctor) {
+            $query->whereHas("doctor", function ($q) use ($name_doctor) {
+                $q->where("name", "like", "%" . $name_doctor . "%")
+                    ->orWhere("surname", "like", "%" . $name_doctor . "%");
             });
         }
 
-        if($date){
+        if ($date) {
             $query->whereDate("date_appointment", Carbon::parse($date)->format("Y-m-d"));
         }
         return $query;
     }
 
-    public function files(){
+    public function files()
+    {
         return $this->hasMany(Laboratory::class, "appointment_id");
     }
 }

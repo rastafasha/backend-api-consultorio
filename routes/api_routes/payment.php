@@ -40,7 +40,7 @@ Route::delete('/payment/delete-foto/{id}', [AdminPaymentController::class, 'dele
 
 Route::get('/payment/search/', [AdminPaymentController::class, 'search'])
     ->name('payment.search');
-    
+
 Route::get('/payment/pagosbyUser/{id}', [AdminPaymentController::class, 'pagosbyUser'])
     ->name('payment.pagosbyUser');
 

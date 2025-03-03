@@ -25,7 +25,7 @@ class AppointmentFactory extends Factory
     {
         $doctor = User::role('DOCTOR')->inRandomOrder()->first();
         
-        $date_appointment = $this->faker->dateTimeBetween("2023-01-01 00:00:00", "2023-12-25 23:59:59");
+        $date_appointment = $this->faker->dateTimeBetween("2024-01-01 00:00:00", "2024-12-25 23:59:59");
         $status = $this->faker->randomElement([1, 2]);
         
         $doctor_schedule_day =  DoctorScheduleDay::where("user_id",$doctor->id)->inRandomOrder()->first();
@@ -43,7 +43,7 @@ class AppointmentFactory extends Factory
             "amount" => $this->faker->randomElement([100,150,200,250,80,120,95,75,160,230,110]),
             "status" => $status,
             "status_pay" => $this->faker->randomElement([1, 2]),
-            "date_attention" => $status == 2 ? $this->faker->dateTimeBetween($date_appointment, "2023-12-25 23:59:59") : NULL,
+            "date_attention" => $status == 2 ? $this->faker->dateTimeBetween($date_appointment, "2024-12-25 23:59:59") : NULL,
         ];
     }
 }

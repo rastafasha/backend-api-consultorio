@@ -11,7 +11,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class NewPatientRegisterMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     public $patient;
     /**
@@ -35,8 +36,8 @@ class NewPatientRegisterMail extends Mailable
         $patient = $this->patient;
         return $this
         ->subject('Bienvenido a HealthConnectMe')
-        ->view('emails.new_patient_register',['patient' => $this->patient]);
-        
+        ->view('emails.new_patient_register', ['patient' => $this->patient]);
+
         // return $this->from('citasmedicas@malcolmcordova.com', 'Sistema Automatizado de Envio de Notificaciones por correo')->subject('Registro de un nuevo usuario')
         //     ->markdown('emails.admin.new_user_register' , ['user' => $this->user]);
     }

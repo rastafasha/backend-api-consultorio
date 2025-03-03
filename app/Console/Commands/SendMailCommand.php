@@ -40,8 +40,8 @@ class SendMailCommand extends Command
     {
         return Artisan::call('queue:work', [
             '--sleep' => 3,
-            '--tries' =>3,
-            '--backoff' =>3,
+            '--tries' => 3,
+            '--backoff' => 3,
             '--timeout' => 30,
             '--queue' => 'high,emails,low', // remove this if queue is default
             '--stop-when-empty' => null,

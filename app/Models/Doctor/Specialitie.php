@@ -11,6 +11,7 @@ class Specialitie extends Model
 {
     use HasFactory;
     use SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -24,13 +25,13 @@ class Specialitie extends Model
 
     public function setCreatedAtAttribute($value)
     {
-    	date_default_timezone_set('America/Caracas');
-        $this->attributes["created_at"]= Carbon::now();
+        date_default_timezone_set('America/Caracas');
+        $this->attributes["created_at"] = Carbon::now();
     }
 
     public function setUpdatedAtAttribute($value)
     {
-    	date_default_timezone_set("America/Caracas");
-        $this->attributes["updated_at"]= Carbon::now();
+        date_default_timezone_set("America/Caracas");
+        $this->attributes["updated_at"] = Carbon::now();
     }
 }

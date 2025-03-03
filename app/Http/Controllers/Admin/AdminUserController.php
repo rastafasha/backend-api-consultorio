@@ -37,7 +37,7 @@ class AdminUserController extends Controller
         // if(!auth('api')->user()->can('list_doctor')){
         //     return response()->json(["message"=>"El usuario no esta autenticado"],403);
         //    }
-        
+
         $users = User::select([
             "id", "name", "email", "rolename"
         ])
@@ -112,7 +112,6 @@ class AdminUserController extends Controller
                 'user' => $user,
             ], 200);
         } catch (\Throwable $exception) {
-
             DB::rollBack();
             return response()->json([
                 'message' => 'Error no update' . $exception,
@@ -129,7 +128,7 @@ class AdminUserController extends Controller
     public function userDestroy(User $user)
     {
         // $this->authorize('delete', User::class);
-        
+
         try {
             DB::beginTransaction();
 
@@ -140,14 +139,12 @@ class AdminUserController extends Controller
                 'code' => 200,
                 'status' => 'Usuario delete',
             ], 200);
-
         } catch (\Throwable $exception) {
             DB::rollBack();
             return response()->json([
                 'status' => 'error',
                 'message' => 'Borrado fallido. Conflicto',
             ], 409);
-
         }
     }
 
@@ -174,26 +171,26 @@ class AdminUserController extends Controller
         ], 200);
     }
 
-    public function search(Request $request){
+    public function search(Request $request)
+    {
 
         return User::search($request->buscar);
-
     }
 
 
     public function showNdoc($n_doc)
     {
-       
+
         $data_patient = [];
-       
-        
+
+
         $user = User::where('n_doc', $n_doc)
         ->orderBy('id', 'desc')
         ->get();
         $patient = Patient::where('n_doc', $n_doc)
         ->orderBy('id', 'desc')
         ->get();
-        
+
             return response()->json([
                 'code' => 200,
                 'status' => 'Listar patient by n_doc',

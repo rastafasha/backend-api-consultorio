@@ -40,18 +40,18 @@ class SettingGController extends Controller
      */
     public function store(Request $request)
     {
-        if($request->hasFile('imagen')){
+        if ($request->hasFile('imagen')) {
             $path = Storage::putFile("settings", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+            $request->request->add(["avatar" => $path]);
         }
 
         $setting = Settingeneral::create($request->all());
-        
-        
+
+
         return response()->json([
-            "message"=>200,
+            "message" => 200,
         ]);
-        
+
         // return Settingeneral::create($request->all());
     }
 
@@ -61,13 +61,12 @@ class SettingGController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show( Settingeneral $id)
+    public function show(Settingeneral $id)
     {
         $setting = Settingeneral::findOrFail($id);
         return response()->json([
             "setting" => SettingGResource::make($setting),
         ]);
-
     }
 
     /**
@@ -83,22 +82,22 @@ class SettingGController extends Controller
 
         $setting = Settingeneral::findOrFail($id);
 
-        if($request->hasFile('imagen')){
-            if($setting->avatar){
+        if ($request->hasFile('imagen')) {
+            if ($setting->avatar) {
                 Storage::delete($setting->avatar);
             }
             $path = Storage::putFile("settings", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+            $request->request->add(["avatar" => $path]);
         }
-        
-        
-       
+
+
+
         $setting->update($request->all());
-        
-        
+
+
         return response()->json([
-            "message"=>200,
-            "setting"=>$setting,
+            "message" => 200,
+            "setting" => $setting,
             // "assesstments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
         ]);
     }

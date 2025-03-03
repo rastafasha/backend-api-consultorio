@@ -31,10 +31,9 @@ class LaboratoryController extends Controller
                             ->where("laboratory", 2)
                             ->paginate(10);
         return response()->json([
-            "total"=>$appointments->total(),
-            "appointments"=> AppointmentCollection::make($appointments)
+            "total" => $appointments->total(),
+            "appointments" => AppointmentCollection::make($appointments)
         ]);
-
     }
 
     /**
@@ -56,31 +55,30 @@ class LaboratoryController extends Controller
         //     ]);
         // }
 
-        foreach($request->file("files") as $key=>$file){
+        foreach ($request->file("files") as $key => $file) {
             $extension = $file->getClientOriginalExtension();
             $size = $file->getSize();
             $name_file = $file->getClientOriginalName();
             $data = null;
-            if(in_array(strtolower($extension), ["jpeg", "bmp","jpg","png" ])){
+            if (in_array(strtolower($extension), ["jpeg", "bmp","jpg","png" ])) {
                 $data = getImageSize($file);
-                
             }
             $path = Storage::putFile("laboratories", $file);
 
             $laboratory = Laboratory::create([
-                'appointment_id' =>$request->appointment_id,
-                'name_file' =>$name_file,
-                'size' =>$size,
-                'resolution' =>$data ? $data[0]."x".$data[1]: NULL,
-                'file' =>$path,
-                'type'  =>$extension,
+                'appointment_id' => $request->appointment_id,
+                'name_file' => $name_file,
+                'size' => $size,
+                'resolution' => $data ? $data[0] . "x" . $data[1] : null,
+                'file' => $path,
+                'type'  => $extension,
             ]);
         }
 
         // error_log($clase);
         error_log($laboratory);
 
-        return response()->json([ 'laboratory'=> LaboratoryResource::make($laboratory)]);
+        return response()->json([ 'laboratory' => LaboratoryResource::make($laboratory)]);
     }
 
     /**
@@ -94,40 +92,37 @@ class LaboratoryController extends Controller
         $appointment = Appointment::findOrFail($id);
         $laboratory = Laboratory::findOrFail($request->appointment_id);
         $appointment_attention = $appointment->attention;
-        if($appointment_attention){
+        if ($appointment_attention) {
             return response()->json([
-                "appointment_attention"=>[
-                    "id"=>$appointment_attention->id,
-                    "description"=>$appointment_attention->description,
-                    "laboratory"=>$appointment_attention->laboratory,
-                    "receta_medica"=>$appointment_attention->receta_medica ? json_decode($appointment_attention->receta_medica) : [],
+                "appointment_attention" => [
+                    "id" => $appointment_attention->id,
+                    "description" => $appointment_attention->description,
+                    "laboratory" => $appointment_attention->laboratory,
+                    "receta_medica" => $appointment_attention->receta_medica ? json_decode($appointment_attention->receta_medica) : [],
                     "created_at" => $appointment_attention->created_at->format("Y-m-d h:i A"),
                 ]
             ]);
-        }else{
+        } else {
             return response()->json([
                 "laboratory" => $laboratory,
-                "appointment_attention"=>[
-                    "id"=>NULL,
-                    "description"=>NULL,
-                    "laboratory"=>1,
-                    "receta_medica"=> [],
-                    "created_at" => NULL,
+                "appointment_attention" => [
+                    "id" => null,
+                    "description" => null,
+                    "laboratory" => 1,
+                    "receta_medica" => [],
+                    "created_at" => null,
                 ]
             ]);
         }
-        
     }
 
     public function showByAppointment($appointment_id)
     {
         $laboratories = Laboratory::where("appointment_id", $appointment_id)->get();
-    
+
         return response()->json([
             "laboratories" => LaboratoryCollection::make($laboratories),
         ]);
-
-        
     }
 
     /**
@@ -143,35 +138,33 @@ class LaboratoryController extends Controller
         $laboratory->update($request ->all());
 
         return response()->json([
-            'laboratory'=> LaboratoryResource::make($laboratory)
+            'laboratory' => LaboratoryResource::make($laboratory)
         ]);
     }
     public function addFiles(Request $request)
     {
         $laboratory = Laboratory::findOrFail($request->appointment_id);
-        foreach($request->file("files") as $key=>$file){
+        foreach ($request->file("files") as $key => $file) {
             $extension = $file->getClientOriginalExtension();
             $size = $file->getSize();
             $name_file = $file->getClientOriginalName();
             $data = null;
-            if(in_array(strtolower($extension), ["jpeg", "bmp","jpg","png"])){
+            if (in_array(strtolower($extension), ["jpeg", "bmp","jpg","png"])) {
                 $data = getImageSize($file);
-                
             }
             $path = Storage::putFile("laboratories", $file);
 
             $laboratory = Laboratory::create([
-                'appointment_id' =>$request-> appointment_id,
-                'name_file' =>$name_file,
-                'size' =>$size,
-                'resolution' =>$data ? $data[0]."x".$data[1]: NULL,
-                'file' =>$path,
-                'type'  =>$extension,
+                'appointment_id' => $request-> appointment_id,
+                'name_file' => $name_file,
+                'size' => $size,
+                'resolution' => $data ? $data[0] . "x" . $data[1] : null,
+                'file' => $path,
+                'type'  => $extension,
             ]);
         }
 
-        return response()->json([ 'laboratory'=> LaboratoryResource::make($laboratory)]);
-
+        return response()->json([ 'laboratory' => LaboratoryResource::make($laboratory)]);
     }
 
     public function removeFiles($id)
@@ -179,11 +172,10 @@ class LaboratoryController extends Controller
         $laboratory = Laboratory::findOrFail($id);
         $laboratory->delete();
 
-        return response()->json([ "message"=> 200]);
-
+        return response()->json([ "message" => 200]);
     }
 
-    
+
 
     /**
      * Remove the specified resource from storage.
@@ -194,7 +186,7 @@ class LaboratoryController extends Controller
         $laboratory->delete();
 
         return response()->json([
-            "message"=> 200
+            "message" => 200
         ]);
     }
 }

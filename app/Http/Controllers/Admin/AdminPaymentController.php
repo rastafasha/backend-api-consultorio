@@ -39,7 +39,7 @@ class AdminPaymentController extends Controller
      */
     public function index(Request $request)
     {
-        
+
         $metodo = $request->metodo;
         $search_referencia = $request->search_referencia;
         $bank_name = $request->bank_name;
@@ -54,12 +54,12 @@ class AdminPaymentController extends Controller
 
         $payments = Payment::filterAdvancePayment($search_referencia)->orderBy("id", "desc")
                             ->paginate(10);
-                    
+
         return response()->json([
-            "total"=>$payments->total(),
+            "total" => $payments->total(),
             "payments" => PaymentCollection::make($payments) ,
-            
-        ]);  
+
+        ]);
     }
 
     public function paymentsByDoctor(Request $request, $doctor_id)
@@ -70,24 +70,26 @@ class AdminPaymentController extends Controller
         $date_start = $request->date_start;
         $date_end = $request->date_end;
         $search_referencia = $request->search_referencia;
-        
-        
+
+
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
         // $patients = Patient::Where('doctor_id', $doctor_id)
 
         $payments = Payment::filterAdvancePaymentDoctor(
-            $search_doctor, 
+            $search_doctor,
             $search_patient,
-        $date_start,$date_end, $search_referencia)
+            $date_start,
+            $date_end,
+            $search_referencia
+        )
         ->Where('doctor_id', $doctor_id)
         ->orderBy("id", "desc")
         ->paginate(10);
 
         return response()->json([
-            "total"=>$payments->total(),
-            "payments"=> PaymentCollection::make($payments)
+            "total" => $payments->total(),
+            "payments" => PaymentCollection::make($payments)
         ]);
-
     }
 
 
@@ -99,10 +101,10 @@ class AdminPaymentController extends Controller
      */
     public function paymentStore(Request $request)
     {
-        
+
 
         // return Payment::create($request->all());
-        
+
         //reviso si viene el id del appointment
         $appointment = Appointment::
         where("id", $request->appointment_id)
@@ -111,24 +113,24 @@ class AdminPaymentController extends Controller
             return response()->json(['message' => 'Appointment not found.'], 404);
         }
 
-       
+
         $payment = Payment::create([
-            "patient_id" =>$request->patient_id,
-            "appointment_id" =>$request->appointment_id,
+            "patient_id" => $request->patient_id,
+            "appointment_id" => $request->appointment_id,
             "nombre" => $request->nombre,
-            "monto" =>$request->monto,
-            "email" =>$request->email,
-            "bank_name" =>$request->bank_name,
-            "metodo" =>$request->metodo,
-            "referencia" =>$request->referencia,
-            "status" =>$request->status,
+            "monto" => $request->monto,
+            "email" => $request->email,
+            "bank_name" => $request->bank_name,
+            "metodo" => $request->metodo,
+            "referencia" => $request->referencia,
+            "status" => $request->status,
             // "status_pay" =>$request->amount != $request->amount_add ? 2 : 1,
         ]);
         //envio de correo al doctor
         Mail::to($appointment->doctor->email)->send(new NewPaymentRegisterMail($payment));
-        
+
         return response()->json([
-            "message"=>200,
+            "message" => 200,
         ]);
     }
 
@@ -140,7 +142,7 @@ class AdminPaymentController extends Controller
      */
     public function paymentShow(Payment $payment)
     {
-       
+
 
         if (!$payment) {
             return response()->json([
@@ -163,7 +165,7 @@ class AdminPaymentController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function paymentUpdate(Payment $request,  $id)
+    public function paymentUpdate(Payment $request, $id)
     {
         try {
             DB::beginTransaction();
@@ -260,80 +262,79 @@ class AdminPaymentController extends Controller
 
 
      // subir imagen avatar
-     public function upload(Request $request)
-     {
-         // recoger la imagen de la peticion
-         $image = $request->file('file0');
-         // validar la imagen
-         $validate = \Validator::make($request->all(),[
-             'file0' => 'required|image|mimes:jpg,jpeg,png,gif'
-         ]);
-         //guardar la imagen en un disco
-         if(!$image || $validate->fails()){
-             $data = [
-                 'code' => 400,
-                 'status' => 'error',
-                 'message' => 'Error al subir la imagen'
-             ];
-         }else{
+    public function upload(Request $request)
+    {
+        // recoger la imagen de la peticion
+        $image = $request->file('file0');
+        // validar la imagen
+        $validate = \Validator::make($request->all(), [
+            'file0' => 'required|image|mimes:jpg,jpeg,png,gif'
+        ]);
+        //guardar la imagen en un disco
+        if (!$image || $validate->fails()) {
+            $data = [
+                'code' => 400,
+                'status' => 'error',
+                'message' => 'Error al subir la imagen'
+            ];
+        } else {
             $extension = $image->getClientOriginalExtension();
             $image_name = $image->getClientOriginalName();
             $pathFileName = trim(pathinfo($image_name, PATHINFO_FILENAME));
             $secureMaxName = substr(Str::slug($image_name), 0, 90);
-            $image_name = now().$secureMaxName.'.'.$extension;
+            $image_name = now() . $secureMaxName . '.' . $extension;
 
-             \Storage::disk('payments')->put($image_name, \File::get($image));
+            \Storage::disk('payments')->put($image_name, \File::get($image));
 
-             $data = [
-                 'code' => 200,
-                 'status' => 'success',
-                 'image' => $image_name
-             ];
+            $data = [
+                'code' => 200,
+                'status' => 'success',
+                'image' => $image_name
+            ];
+        }
 
-         }
+        //return response($data, $data['code'])->header('Content-Type', 'text/plain'); //devuelve el resultado
 
-         //return response($data, $data['code'])->header('Content-Type', 'text/plain'); //devuelve el resultado
+        return response()->json($data, $data['code']);// devuelve un objeto json
+    }
 
-         return response()->json($data, $data['code']);// devuelve un objeto json
-     }
+    public function getImage($filename)
+    {
 
-     public function getImage($filename)
-     {
+        //comprobar si existe la imagen
+        $isset = \Storage::disk('payments')->exists($filename);
+        if ($isset) {
+            $file = \Storage::disk('payments')->get($filename);
+            return new Response($file, 200);
+        } else {
+            $data = array(
+                'status' => 'error',
+                'code' => 404,
+                'mesaje' => 'Imagen no existe',
+            );
 
-         //comprobar si existe la imagen
-         $isset = \Storage::disk('payments')->exists($filename);
-         if ($isset) {
-             $file = \Storage::disk('payments')->get($filename);
-             return new Response($file, 200);
-         } else {
-             $data = array(
-                 'status' => 'error',
-                 'code' => 404,
-                 'mesaje' => 'Imagen no existe',
-             );
+            return response()->json($data, $data['code']);
+        }
+    }
 
-             return response()->json($data, $data['code']);
-         }
+    public function deleteFotoPayment($id)
+    {
+        $payment = Payment::findOrFail($id);
+        \Storage::delete('payments/' . $payment->image);
+        $payment->image = '';
+        $payment->save();
+        return response()->json([
+            'data' => $payment,
+            'msg' => [
+                'summary' => 'Archivo eliminado',
+                'detail' => '',
+                'code' => ''
+            ]
+        ]);
+    }
 
-     }
-
-     public function deleteFotoPayment($id)
-     {
-         $payment = Payment::findOrFail($id);
-         \Storage::delete('payments/' . $payment->image);
-         $payment->image = '';
-         $payment->save();
-         return response()->json([
-             'data' => $payment,
-             'msg' => [
-                 'summary' => 'Archivo eliminado',
-                 'detail' => '',
-                 'code' => ''
-             ]
-         ]);
-     }
-
-     public function search(Request $request){
+    public function search(Request $request)
+    {
         return Payment::search($request->buscar);
     }
 
@@ -347,52 +348,48 @@ class AdminPaymentController extends Controller
         $payment->status = $request->status;
         $payment->update();
 
-        
+
         $appointment = Appointment::where("patient_id", $request->patient_id)->first();
         $appointmentpay = AppointmentPay::where("appointment_id", $request->appointment_id)->first();
-        $sum_total_pays = AppointmentPay::where("appointment_id",$id)->sum("amount");
-        $monto = Payment::where("appointment_id",$id)->sum("monto");
-        
+        $sum_total_pays = AppointmentPay::where("appointment_id", $id)->sum("amount");
+        $monto = Payment::where("appointment_id", $id)->sum("monto");
+
         $costo = $appointment->amount;
-        $deuda = ($costo - $sum_total_pays); 
-        
-        
-        if($request->status === 'APPROVED'){
+        $deuda = ($costo - $sum_total_pays);
+
+
+        if ($request->status === 'APPROVED') {
             // Update Appointment status
-            if($request->monto == $deuda){
-                $appointment->update(["status_pay"=>1]);
+            if ($request->monto == $deuda) {
+                $appointment->update(["status_pay" => 1]);
             }
-    
+
             $appointmentpay = AppointmentPay::create([
-                "appointment_id" =>$request->appointment_id,
-                "amount"=>$request->monto,
-                "method_payment" =>$request->bank_name,
+                "appointment_id" => $request->appointment_id,
+                "amount" => $request->monto,
+                "method_payment" => $request->bank_name,
             ]);
         }
 
-        
+
         // error_log($appointment);
 
-        if($request->status === '2'){
+        if ($request->status === '2') {
             Mail::to($appointment->patient->email)->send(new ConfirmationAppointment($appointment));
-
         }
         return response()->json([
             "message" => 200,
             "payment" => $payment,
             "appointment" => $appointment,
             "appointmentpay" => $appointmentpay,
-            
-        ]);
-        
-        
 
+        ]);
     }
 
 
     public function pagosbyUser(Request $request, $patient_id)
     {
-        
+
         $payments = Payment::where("patient_id", $patient_id)->orderBy('created_at', 'DESC')
         ->get();
 
@@ -405,30 +402,28 @@ class AdminPaymentController extends Controller
 
     public function pagosPendientes()
     {
-        
+
         $payments = Payment::
         where('status', 'PENDING')
         ->orderBy("id", "desc")
         ->paginate(10);
 
         return response()->json([
-            "total"=>$payments->total(),
-            "payments"=> PaymentCollection::make($payments)
+            "total" => $payments->total(),
+            "payments" => PaymentCollection::make($payments)
         ]);
-
     }
     public function pagosPendientesShowId(Request $request, $doctor_id)
     {
-        
+
         $payments = Payment::where('status', 'PENDING')
         ->where("doctor_id", $doctor_id)
         ->orderBy("id", "desc")
         ->paginate(10);
-        
-        return response()->json([
-            "total"=>$payments->total(),
-            "payments"=> PaymentCollection::make($payments)
-        ]);
 
+        return response()->json([
+            "total" => $payments->total(),
+            "payments" => PaymentCollection::make($payments)
+        ]);
     }
 }

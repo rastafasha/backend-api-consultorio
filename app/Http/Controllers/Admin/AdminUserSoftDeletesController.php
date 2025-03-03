@@ -66,7 +66,8 @@ class AdminUserSoftDeletesController extends Controller
                             "roles"
                     ])
                     ->onlyTrashed()
-                    ->findOrFail($id);;
+                    ->findOrFail($id);
+            ;
 
             DB::commit();
             return response()->json([

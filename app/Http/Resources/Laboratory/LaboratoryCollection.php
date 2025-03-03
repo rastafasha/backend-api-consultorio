@@ -15,7 +15,7 @@ class LaboratoryCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            "data"=> LaboratoryResource::collection($this->collection)
+            "data" => LaboratoryResource::collection($this->collection)
         ];
     }
 }

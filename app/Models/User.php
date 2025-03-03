@@ -23,11 +23,16 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasApiTokens, HasFactory, Notifiable, HavePermission,  HasRoles;
+    use HasApiTokens;
+    use HasFactory;
+    use Notifiable;
+    use HavePermission;
+    use HasRoles;
     use SoftDeletes;
+
     /*
     |--------------------------------------------------------------------------
-    | goblan variables
+    | global variables
     |--------------------------------------------------------------------------
     */
 
@@ -41,7 +46,6 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'n_doc',
-        //
         'surname',
         'mobile',
         'birth_date',
@@ -53,7 +57,6 @@ class User extends Authenticatable implements JWTSubject
         'location_id',
         'precio_cita',
         'status',
-
     ];
 
     /**
@@ -75,27 +78,20 @@ class User extends Authenticatable implements JWTSubject
         'email_verified_at' => 'datetime',
     ];
 
-    const SUPERADMIN = 'SUPERADMIN';
-    const GUEST = 'GUEST';
+    public const SUPERADMIN = 'SUPERADMIN';
+    public const GUEST = 'GUEST';
 
     public function setCreatedAtAttribute($value)
     {
-    	date_default_timezone_set('America/Caracas');
-        $this->attributes["created_at"]= Carbon::now();
+        date_default_timezone_set('America/Caracas');
+        $this->attributes["created_at"] = Carbon::now();
     }
 
     public function setUpdatedAtAttribute($value)
     {
-    	date_default_timezone_set("America/Caracas");
-        $this->attributes["updated_at"]= Carbon::now();
+        date_default_timezone_set("America/Caracas");
+        $this->attributes["updated_at"] = Carbon::now();
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | functions
-    |--------------------------------------------------------------------------
-    */
 
     public function isSuperAdmin()
     {
@@ -117,23 +113,16 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELATIONS
-    |--------------------------------------------------------------------------
-    */
-
-
-
     public function speciality()
     {
         return $this->belongsTo(Specialitie::class);
     }
 
-    public function schedule_days()
+    public function scheduleDays()
     {
         return $this->hasMany(DoctorScheduleDay::class);
     }
+
     public function locations()
     {
         return $this->hasMany(Location::class, 'location_id');
@@ -143,9 +132,4 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Patient::class);
     }
-
-    
-    
-
-
 }

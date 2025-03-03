@@ -9,7 +9,8 @@ use Illuminate\Queue\SerializesModels;
 
 class PasswordResetMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     public $token;
     /**
@@ -26,9 +27,10 @@ class PasswordResetMail extends Mailable
      *
      * @return $this
      */
-    public function build(){
+    public function build()
+    {
         return $this->markdown('emails.reset_password')->with([
             'token' => $this->token
-        ]);        
+        ]);
     }
 }

@@ -11,4 +11,3 @@ Route::get('appointmentpay/show/{id}', [AppointmentPayController::class, 'show']
 Route::post('appointmentpay/store', [AppointmentPayController::class, 'store'])->name('appointmentpay.store');
 Route::put('appointmentpay/update/{appointmentpay}', [AppointmentPayController::class, 'update'])->name('appointmentpay.update');
 Route::delete('appointmentpay/destroy/{id}', [AppointmentPayController::class, 'destroy'])->name('appointmentpay.destroy');
-

@@ -15,7 +15,7 @@ class SettingGCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            "data"=> SettingGResource::collection($this->collection)
+            "data" => SettingGResource::collection($this->collection)
         ];
     }
 }

@@ -16,7 +16,8 @@ class Presupuesto extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    protected $fillable=[
+
+    protected $fillable = [
         "doctor_id",
         "patient_id",
         "date_appointment",
@@ -30,7 +31,7 @@ class Presupuesto extends Model
         "amount",
 
     ];
-    
+
     //notificaciones
 
     // protected static function boot(){
@@ -50,23 +51,25 @@ class Presupuesto extends Model
 
     public function setCreatedAtAttribute($value)
     {
-    	date_default_timezone_set('America/Caracas');
-        $this->attributes["created_at"]= Carbon::now();
+        date_default_timezone_set('America/Caracas');
+        $this->attributes["created_at"] = Carbon::now();
     }
 
     public function setUpdatedAtAttribute($value)
     {
-    	date_default_timezone_set("America/Caracas");
-        $this->attributes["updated_at"]= Carbon::now();
+        date_default_timezone_set("America/Caracas");
+        $this->attributes["updated_at"] = Carbon::now();
     }
 
     // relaciones
 
-    public function doctor() {
-        return $this->belongsTo(User::class,"doctor_id");
+    public function doctor()
+    {
+        return $this->belongsTo(User::class, "doctor_id");
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
 
@@ -74,7 +77,7 @@ class Presupuesto extends Model
     {
         return $this->belongsTo(Patient::class);
     }
-    
+
 
 
     public function speciality()
@@ -87,45 +90,50 @@ class Presupuesto extends Model
 
     // filtro buscador
 
-    public function scopefilterAdvance($query,$speciality_id, $name_doctor, $date){
-        
-        if($speciality_id){
+    public function scopefilterAdvance($query, $speciality_id, $name_doctor, $date)
+    {
+
+        if ($speciality_id) {
             $query->where("speciality_id", $speciality_id);
         }
 
-        if($name_doctor){
-            $query->whereHas("doctor", function($q)use($name_doctor){
-                $q->where("name", "like","%".$name_doctor."%")
-                    ->orWhere("surname", "like","%".$name_doctor."%");
+        if ($name_doctor) {
+            $query->whereHas("doctor", function ($q) use ($name_doctor) {
+                $q->where("name", "like", "%" . $name_doctor . "%")
+                    ->orWhere("surname", "like", "%" . $name_doctor . "%");
             });
         }
 
-        if($date){
+        if ($date) {
             $query->whereDate("date_presupuesto", Carbon::parse($date)->format("Y-m-d"));
         }
         return $query;
     }
-    public function scopefilterAdvancePay($query,$speciality_id, $search_doctor, $search_patient,
-    $date_start,$date_end){
-        
-        if($speciality_id){
+    public function scopefilterAdvancePay(
+        $query,
+        $speciality_id,
+        $search_doctor,
+        $search_patient,
+        $date_start,
+        $date_end
+    ) {
+
+        if ($speciality_id) {
             $query->where("speciality_id", $speciality_id);
         }
 
-        if($search_doctor){
-            $query->whereHas("doctor", function($q)use($search_doctor){
-                $q->where(DB::raw("CONCAT(users.name,' ',IFNULL(users.surname,''),' ',IFNULL(users.email,''))"),"like","%".$search_doctor."%");
-                   
+        if ($search_doctor) {
+            $query->whereHas("doctor", function ($q) use ($search_doctor) {
+                $q->where(DB::raw("CONCAT(users.name,' ',IFNULL(users.surname,''),' ',IFNULL(users.email,''))"), "like", "%" . $search_doctor . "%");
             });
         }
-        if($search_patient){
-            $query->whereHas("patient", function($q)use($search_patient){
-                $q->where(DB::raw("CONCAT(patients.name,' ',IFNULL(patients.surname,''),' ',IFNULL(patients.email,''))"),"like","%".$search_patient."%");
-                
+        if ($search_patient) {
+            $query->whereHas("patient", function ($q) use ($search_patient) {
+                $q->where(DB::raw("CONCAT(patients.name,' ',IFNULL(patients.surname,''),' ',IFNULL(patients.email,''))"), "like", "%" . $search_patient . "%");
             });
         }
 
-        if($date_start && $date_end){
+        if ($date_start && $date_end) {
             $query->whereBetween("date_presupuesto", [
                 Carbon::parse($date_start)->format("Y-m-d"),
                 Carbon::parse($date_end)->format("Y-m-d"),
@@ -133,5 +141,4 @@ class Presupuesto extends Model
         }
         return $query;
     }
-    
 }

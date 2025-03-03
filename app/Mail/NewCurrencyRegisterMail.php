@@ -10,7 +10,8 @@ use Illuminate\Queue\SerializesModels;
 
 class NewCurrencyRegisterMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     public $currency;
     /**
@@ -31,6 +32,6 @@ class NewCurrencyRegisterMail extends Mailable
     public function build()
     {
         return $this->from('noresponse@health-connect.me', 'Sistema Automatizado de Envio de Notificaciones por correo')->subject('Registro de una nueva divisa')
-            ->markdown('emails.admin.new_currency_register' , ['currency' => $this->currency]);
+            ->markdown('emails.admin.new_currency_register', ['currency' => $this->currency]);
     }
 }

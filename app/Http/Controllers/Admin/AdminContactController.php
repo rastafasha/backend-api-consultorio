@@ -16,7 +16,7 @@ class AdminContactController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {   
+    {
 
         $this->authorize('index', Contact::class);
 
@@ -36,7 +36,7 @@ class AdminContactController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function contactShow(Contact $contact)
-    {   
+    {
         $this->authorize('contactShow', Contact::class);
 
         if (!$contact) {
@@ -63,15 +63,15 @@ class AdminContactController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function contactUpdate(Request $request,  $id)
-    {   
+    public function contactUpdate(Request $request, $id)
+    {
         try {
             DB::beginTransaction();
-            
+
             $input = $request->all();
             $contact = Contact::find($id);
             $contact->update($input);
-            
+
 
             DB::commit();
 
@@ -90,7 +90,7 @@ class AdminContactController extends Controller
 
             Log::error("Error en actualizar un contacto - Usuario: 
             {$request->user()->username} Mensaje de error: {$exception->getMessage()}");
-            
+
             return response()->json([
                 'message' => 'Error no update'  . $exception,
                 'exception' => $exception->getMessage()
@@ -123,7 +123,6 @@ class AdminContactController extends Controller
                 'code' => 200,
                 'status' => 'Contact delete',
             ], 200);
-
         } catch (\Throwable $exception) {
             DB::rollBack();
 
@@ -137,5 +136,4 @@ class AdminContactController extends Controller
             ], 409);
         }
     }
-
 }

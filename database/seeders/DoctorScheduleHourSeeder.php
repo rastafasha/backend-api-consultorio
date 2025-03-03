@@ -62,6 +62,7 @@ class DoctorScheduleHourSeeder extends Seeder
                 'hour_start' => $hour['hour_start'],
                 'hour_end' => $hour['hour_end'],
                 'hour' => $hour['hour'],
+                'doctor_schedule_day_id' => DB::table('doctor_schedule_days')->first()->id, // Get the first valid ID
                 'created_at' => null,
                 'updated_at' => null,
                 'deleted_at' => null

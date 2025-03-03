@@ -10,11 +10,9 @@ class Pub extends Model
 {
     use HasFactory;
     use SoftDeletes;
+
     protected $fillable = [
-        'avatar', 
+        'avatar',
         'state',
     ];
-
-
-    
 }

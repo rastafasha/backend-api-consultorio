@@ -2,37 +2,20 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Mail\NewUserRegisterMail;
-use App\Http\Requests\AuthRequest;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use App\Http\Requests\RegisterRequest;
-use App\Http\Requests\AuthLoginRequest;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\ChangePasswordRequest;
-use Symfony\Component\HttpFoundation\Response;
-
-;
 
 class AuthController extends Controller
 {
-    // /**
-    //  * Create a new AuthController instance.
-    //  *
-    //  * @return void
-    //  */
-    // public function __construct()
-    // {
-    //     $this->middleware('jwt.verify', ['except' => ['login', 'register']]);
-    // }
-
     /**
      * Get a JWT via given credentials.
      *
@@ -48,36 +31,32 @@ class AuthController extends Controller
 
         $user = User::where('email', request('email'))->firstOrFail();
 
-        $permissions = auth('api')->user()->getAllPermissions()->map(function($perm){
+        $permissions = auth('api')->user()->getAllPermissions()->map(function ($perm) {
             return $perm->name;
         });
         return response()->json([
             'message' => "Inicio de sesión exitoso",
             'access_token' => $this->respondWithToken($token),
             'token_type' => 'Bearer',
-            // 'user' => $user,
-            'user'=>[
-                "id"=>auth('api')->user()->id,
-                "name"=>auth('api')->user()->name,
-                "surname"=>auth('api')->user()->surname,
-                // "rolename"=>auth('api')->user()->rolename,
-                "roles"=>auth('api')->user()->getRoleNames(),
-                "avatar"=>auth('api')->user()->avatar,
-                "email"=>auth('api')->user()->email,
-                "n_doc"=>auth('api')->user()->n_doc,
-                "permissions"=>$permissions,
-
+            'user' => [
+                "id" => auth('api')->user()->id,
+                "name" => auth('api')->user()->name,
+                "surname" => auth('api')->user()->surname,
+                "roles" => auth('api')->user()->getRoleNames(),
+                "avatar" => auth('api')->user()->avatar,
+                "email" => auth('api')->user()->email,
+                "n_doc" => auth('api')->user()->n_doc,
+                "permissions" => $permissions,
             ],
         ], 201);
-        
     }
 
     /**
      * Register a User
      * @return \Illuminate\Http\JsonResponse
      */
-    public function register(Request $request) {
-
+    public function register(Request $request)
+    {
         $data = $request->only('name', 'email', 'password', 'n_doc');
 
         $validator = Validator::make($data, [
@@ -88,9 +67,8 @@ class AuthController extends Controller
             'n_doc' => 'required',
             'role' => Rule::in([User::GUEST]),
         ]);
-        
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
@@ -105,7 +83,7 @@ class AuthController extends Controller
 
         $token = JWTAuth::fromUser($user);
 
-        Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
+        $this->sendRegistrationEmail($user); // Separate method for sending email
 
         return response()->json([
             'message' => 'User registered successfully',
@@ -113,7 +91,11 @@ class AuthController extends Controller
             'access_token' => $token,
             'token_type' => 'Bearer',
         ], 201);
+    }
 
+    protected function sendRegistrationEmail($user)
+    {
+        Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
     }
 
     /**
@@ -125,7 +107,7 @@ class AuthController extends Controller
     {
         return response()->json(auth('api')->user());
     }
-    
+
     /**
      * Log the user out (Invalidate the token).
      *
@@ -157,28 +139,26 @@ class AuthController extends Controller
      */
     protected function respondWithToken($token)
     {
-        $permissions = auth('api')->user()->getAllPermissions()->map(function($perm){
+        $permissions = auth('api')->user()->getAllPermissions()->map(function ($perm) {
             return $perm->name;
         });
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 180,
-            // 'user'=>auth('api')->user(),
-            'user'=>[
-                "name"=>auth('api')->user()->name,
-                "surname"=>auth('api')->user()->surname,
-                "rolename"=>auth('api')->user()->rolename,
-                "email"=>auth('api')->user()->email,
-                "n_doc"=>auth('api')->user()->n_doc,
-                "permissions"=>$permissions,
-
+            'user' => [
+                "name" => auth('api')->user()->name,
+                "surname" => auth('api')->user()->surname,
+                "rolename" => auth('api')->user()->rolename,
+                "email" => auth('api')->user()->email,
+                "n_doc" => auth('api')->user()->n_doc,
+                "permissions" => $permissions,
             ],
         ]);
     }
 
     /**
-     * Change password 
+     * Change password
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -188,7 +168,6 @@ class AuthController extends Controller
         $user = Auth::user();
 
         if (!Hash::check($request->current_password, $user->password)) {
-
             return response()->json([
                 'code' => 500,
                 'status' => '¡La contraseña actual no coincide!',

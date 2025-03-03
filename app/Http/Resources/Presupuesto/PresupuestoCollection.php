@@ -15,7 +15,7 @@ class PresupuestoCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            "data"=> PresupuestoResource::collection($this->collection)
+            "data" => PresupuestoResource::collection($this->collection)
         ];
     }
 }

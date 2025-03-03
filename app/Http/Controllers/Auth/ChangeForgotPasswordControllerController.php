@@ -19,7 +19,6 @@ class ChangeForgotPasswordControllerController extends Controller
     {
         return $this->updatePasswordRow($request)->count() > 0 ?
         $this->resetPassword($request) : $this->tokenNotFoundError();
-
     }
 
    /**

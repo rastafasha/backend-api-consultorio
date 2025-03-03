@@ -16,7 +16,19 @@ class AppointmentSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create specific appointment
+        // Create specific appointment and ensure schedules exist
+        $scheduleDay = \App\Models\Doctor\DoctorScheduleDay::firstOrCreate(
+            ['id' => 1],
+            ['day' => '2025-02-17']
+        );
+
+        $scheduleHour = \App\Models\Doctor\DoctorScheduleHour::firstOrCreate(
+            ['id' => 1],
+            ['hour' => '08:00:00', 'doctor_schedule_day_id' => $scheduleDay->id]
+        );
+
+        // Associate the schedule with the appointment
+        $doctor_schedule_join_hour_id = $scheduleHour->id;
         $appointment = Appointment::firstOrCreate(
             ['id' => 1],
             [
@@ -32,7 +44,7 @@ class AppointmentSeeder extends Seeder
                 'doctor_id' => 3,
                 'speciality_id' => 1,
                 'user_id' => 9,
-                'doctor_schedule_join_hour_id' => 1,
+                'doctor_schedule_join_hour_id' => $doctor_schedule_join_hour_id,
                 'created_at' => '2025-02-16 20:41:51',
                 'updated_at' => '2025-02-16 20:41:51',
                 'deleted_at' => null

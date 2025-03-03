@@ -10,4 +10,3 @@ Route::get('specialities/show/{id}', [SpecialityController::class, 'showId'])->n
 Route::get('specialities/show/{role}', [SpecialityController::class, 'show'])->name('specialitie.show');
 Route::put('specialities/update/{role}', [SpecialityController::class, 'update'])->name('specialitie.update');
 Route::delete('specialities/destroy/{role}', [SpecialityController::class, 'destroy'])->name('specialitie.destroy');
-

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Location;
 use Illuminate\Database\Seeder;
+use App\Models\Location;
 
 class LocationSeeder extends Seeder
 {

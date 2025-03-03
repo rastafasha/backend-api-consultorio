@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Auth\AuthController;
@@ -10,7 +9,6 @@ use App\Http\Controllers\Admin\Doctor\DoctorController;
 use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ChangeForgotPasswordControllerController;
-
 
 /*
 |--------------------------------------------------------------------------
@@ -29,10 +27,6 @@ use App\Http\Controllers\Auth\ChangeForgotPasswordControllerController;
 // Route::post('login', [AuthController::class, 'login'])
 //     ->name('login');
 
-
-
-
-
 Route::group(['middleware' => 'api'], function ($router) {
 
     // Auth
@@ -40,10 +34,10 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     // users
     require __DIR__ . '/api_routes/users.php';
-    
+
     // roles
     require __DIR__ . '/api_routes/roles.php';
-    
+
     // staff
     require __DIR__ . '/api_routes/staff.php';
 
@@ -58,41 +52,44 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     // appointment
     require __DIR__ . '/api_routes/appointment.php';
-    
+
     // appointmentpay
     require __DIR__ . '/api_routes/appointmentpay.php';
-    
+
     // citamedica
     require __DIR__ . '/api_routes/citamedica.php';
-    
+
     // dashboard
     require __DIR__ . '/api_routes/dashboard.php';
 
     // pagos
     require __DIR__ . '/api_routes/payment.php';
-    
+
     // tipos de pago
     require __DIR__ . '/api_routes/paymentMethod.php';
-    
+
     // setting
     require __DIR__ . '/api_routes/setting.php';
-    
+
     // pub
     require __DIR__ . '/api_routes/pub.php';
-    
+
     // location
     require __DIR__ . '/api_routes/location.php';
-    
+
     // laboratory
     require __DIR__ . '/api_routes/laboratory.php';
-    
+
     // whatsapp
     // require __DIR__ . '/api_routes/whatsapp.php';
 
     // presupuesto
     require __DIR__ . '/api_routes/presupuesto.php';
-        
 
+    // Add the ping route
+    Route::get('/ping', function () {
+        return response()->json(['message' => 'pong']);
+    });
 
     //comandos desde la url del backend
 
@@ -111,37 +108,28 @@ Route::group(['middleware' => 'api'], function ($router) {
         return "Storage Link";
     });
 
-
     Route::get('/migrate-fresh', function () {
         Artisan::call('migrate:refresh');
         return "Migrate: Actualizando sin borrar";
     });
 
-
     Route::get('/migrate-seed', function () {
         Artisan::call('migrate:refresh --seed');
         return "Migrate: creacion con datos, para uso";
     });
-    
-    
+
     Route::get('/send-notification', function () {
         Artisan::call('command:notification-appointments');
         return "Send All notifications";
     });
-    
+
     Route::get('/send-whatsapp', function () {
         Artisan::call('command:notification-appointment-whatsapp');
         return "Send All whatsapp";
     });
 
-
-
-
     //rutas libres
-
 
     // Route::get('/categories', [CategoryController::class, 'index'])
     //     ->name('category.index');
-
-
 });

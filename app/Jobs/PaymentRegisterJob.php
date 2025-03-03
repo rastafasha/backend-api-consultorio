@@ -15,7 +15,10 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentRegisterJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * @var Payment

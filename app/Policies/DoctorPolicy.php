@@ -20,18 +20,18 @@ class DoctorPolicy
         // error_log($user);
 
         // dd("Ya");
-       if($user->can('list_doctor')){
+        if ($user->can('list_doctor')) {
+            return false;
+        }
         return false;
-       }
-       return false;
     }
     public function profileDoctor(User $user, User $model = null)
     {
         error_log($user);
-       if($user->can('profile_doctor')){
+        if ($user->can('profile_doctor')) {
+            return false;
+        }
         return false;
-       }
-       return false;
     }
 
     /**
@@ -43,9 +43,9 @@ class DoctorPolicy
      */
     public function viewDoctor(User $user, User $model = null)
     {
-        if($user->can('edit_doctor')){
+        if ($user->can('edit_doctor')) {
             return false;
-           }
+        }
            return false;
     }
 
@@ -57,9 +57,9 @@ class DoctorPolicy
      */
     public function createDoctor(User $user, User $model = null)
     {
-        if($user->can('register_doctor')){
+        if ($user->can('register_doctor')) {
             return false;
-           }
+        }
            return false;
     }
 
@@ -72,9 +72,9 @@ class DoctorPolicy
      */
     public function updateDoctor(User $user, User $model = null)
     {
-        if($user->can('edit_doctor')){
+        if ($user->can('edit_doctor')) {
             return false;
-           }
+        }
            return false;
     }
 
@@ -87,9 +87,9 @@ class DoctorPolicy
      */
     public function delete(User $user, User $model = null)
     {
-        if($user->can('delet_doctor')){
+        if ($user->can('delet_doctor')) {
             return false;
-           }
+        }
            return false;
     }
 

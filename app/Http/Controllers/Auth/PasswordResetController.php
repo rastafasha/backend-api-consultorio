@@ -28,7 +28,6 @@ class PasswordResetController extends Controller
                 'message' => 'El correo no existe o tiene algún error, verifica por favor....'
             ], 404);
         } else {
-
             $this->sendMail($request->email);
 
             return response()->json([
@@ -54,7 +53,7 @@ class PasswordResetController extends Controller
     {
 
 
-        if($this->validateEmail($request->email)){
+        if ($this->validateEmail($request->email)) {
             return $this->failedResponse();
         }
 
@@ -70,11 +69,11 @@ class PasswordResetController extends Controller
 
 
 
-     public function failedResponse()
+    public function failedResponse()
     {
 
         return response()->json([
-            'error'=>'Email no existe'
+           'error' => 'Email no existe'
         ], Response::HTTP_NOT_FOUND);
     }
 
@@ -82,7 +81,7 @@ class PasswordResetController extends Controller
     {
 
         return response()->json([
-            'data'=>'Reset email is send '
+            'data' => 'Reset email is send '
         ], Response::HTTP_OK);
     }
 
@@ -97,9 +96,10 @@ class PasswordResetController extends Controller
         return !!User::where('email', $email)->first();
     }
 
-    public function createToken($email){
+    public function createToken($email)
+    {
         $oldToken = DB::table('password_resets')->where('email', $email)->first();
-        if($oldToken){
+        if ($oldToken) {
             return $oldToken;
         }
 
@@ -109,14 +109,15 @@ class PasswordResetController extends Controller
         return $token;
     }
 
-    public function saveToken($token, $email){
+    public function saveToken($token, $email)
+    {
         DB::table('password_resets')->insert(
             [
                 'email' => $email,
                 'token' => $token,
                 'created_at' => Carbon::now()
             ]
-            );
+        );
     }
 
     /**

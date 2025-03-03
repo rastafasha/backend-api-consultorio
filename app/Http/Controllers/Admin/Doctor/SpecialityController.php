@@ -16,10 +16,10 @@ class SpecialityController extends Controller
         // QUE EL FILTRO POR NOMBRE DE ROL
         $name = $request->search;
 
-        $specialities = Specialitie::where("name","like","%".$name."%")->orderBy("id","desc")->get();
+        $specialities = Specialitie::where("name", "like", "%" . $name . "%")->orderBy("id", "desc")->get();
 
         return response()->json([
-            "specialities" => $specialities->map(function($rol) {
+            "specialities" => $specialities->map(function ($rol) {
                 return [
                     "id" => $rol->id,
                     "name" => $rol->name,
@@ -36,9 +36,9 @@ class SpecialityController extends Controller
      */
     public function store(Request $request)
     {
-        $is_specialitie = Specialitie::where("name",$request->name)->first();
+        $is_specialitie = Specialitie::where("name", $request->name)->first();
 
-        if($is_specialitie){
+        if ($is_specialitie) {
             return response()->json([
                 "message" => 403,
                 "message_text" => "EL NOMBRE DE LA ESPECIALIDAD YA EXISTE"
@@ -82,9 +82,9 @@ class SpecialityController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $is_specialitie = Specialitie::where("id","<>",$id)->where("name",$request->name)->first();
+        $is_specialitie = Specialitie::where("id", "<>", $id)->where("name", $request->name)->first();
 
-        if($is_specialitie){
+        if ($is_specialitie) {
             return response()->json([
                 "message" => 403,
                 "message_text" => "EL NOMBRE DE LA ESPECIALIDAD YA EXISTE"

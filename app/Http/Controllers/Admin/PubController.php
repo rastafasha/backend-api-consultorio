@@ -27,7 +27,7 @@ class PubController extends Controller
             'code' => 200,
             'status' => 'Listar pubs',
             "pubs" => PubCollection::make($pubs),
-        ], 200);   
+        ], 200);
     }
 
     /**
@@ -38,16 +38,16 @@ class PubController extends Controller
      */
     public function store(Request $request)
     {
-        if($request->hasFile('imagen')){
+        if ($request->hasFile('imagen')) {
             $path = Storage::putFile("pubs", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+            $request->request->add(["avatar" => $path]);
         }
 
         $pub = Pub::create($request->all());
 
         return response()->json([
             "message" => 200,
-            "pub"=>$pub
+            "pub" => $pub
         ]);
     }
 
@@ -76,12 +76,12 @@ class PubController extends Controller
     public function update(Request $request, $id)
     {
         $pub = Pub::findOrFail($id);
-        if($request->hasFile('imagen')){
-            if($pub->avatar){
+        if ($request->hasFile('imagen')) {
+            if ($pub->avatar) {
                 Storage::delete($pub->avatar);
             }
             $path = Storage::putFile("pubs", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+            $request->request->add(["avatar" => $path]);
         }
         $pub->update($request->all());
 
@@ -108,7 +108,7 @@ class PubController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
-        
+
         $pub = Pub::findOrfail($id);
         $pub->state = $request->state;
         $pub->update();
@@ -116,7 +116,7 @@ class PubController extends Controller
         return response()->json([
             "message" => 200,
             "pub" => $pub,
-            
+
         ]);
     }
 
@@ -124,8 +124,8 @@ class PubController extends Controller
     {
 
         $pubs = Pub::orderBy('created_at', 'DESC')
-                
-                ->where('state', $state=2)
+
+                ->where('state', $state = 2)
                 ->get();
             return response()->json([
                 'code' => 200,

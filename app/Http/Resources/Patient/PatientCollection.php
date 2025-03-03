@@ -15,7 +15,7 @@ class PatientCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            "data"=> PatientResource::collection($this->collection)
+            "data" => PatientResource::collection($this->collection)
         ];
     }
 }

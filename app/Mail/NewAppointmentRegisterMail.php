@@ -10,7 +10,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 class NewAppointmentRegisterMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     public $appointment;
     /**
@@ -36,7 +37,6 @@ class NewAppointmentRegisterMail extends Mailable
 
             return $this
             ->subject('HealthConnectMe: Nueva Cita Médica')
-            ->view('emails.admin.new_appointment_register',['appointment' => $this->appointment]);
-        
+            ->view('emails.admin.new_appointment_register', ['appointment' => $this->appointment]);
     }
 }

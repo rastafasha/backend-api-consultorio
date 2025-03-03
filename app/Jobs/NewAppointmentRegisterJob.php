@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-
 use Illuminate\Bus\Queueable;
 use App\Models\Patient\Patient;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +16,10 @@ use App\Mail\NewAppointmentRegisterMail;
 
 class AppointmentRegisterJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * @var Patient

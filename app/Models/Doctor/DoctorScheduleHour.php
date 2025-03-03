@@ -11,20 +11,21 @@ class DoctorScheduleHour extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    protected $fillable =[
+
+    protected $fillable = [
         "user_id",
         "day",
     ];
 
     public function setCreatedAtAttribute($value)
     {
-    	date_default_timezone_set('America/Venezuela');
-        $this->attributes["created_at"]= Carbon::now();
+        date_default_timezone_set('America/Caracas');
+        $this->attributes["created_at"] = Carbon::now();
     }
 
     public function setUpdatedAtAttribute($value)
     {
-    	date_default_timezone_set("America/Venezuela");
-        $this->attributes["updated_at"]= Carbon::now();
+        date_default_timezone_set("America/Caracas");
+        $this->attributes["updated_at"] = Carbon::now();
     }
 }

@@ -4,7 +4,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\Doctor\DoctorController;
 
-
 Route::get('doctors', [DoctorController::class, 'index'])->name('doctor.index');
 Route::get('doctors/config', [DoctorController::class, 'config'])->name('doctor.config');
 Route::post('doctors/store', [DoctorController::class, 'store'])->name('doctor.store');
@@ -14,4 +13,3 @@ Route::delete('doctors/destroy/{id}', [DoctorController::class, 'destroy'])->nam
 Route::put('/doctors/update/status/{id}', [DoctorController::class, 'updateStatus'])
     ->name('doctor.updateStatus');
 Route::get('doctors/profile/{id}', [DoctorController::class, 'profile'])->name('doctor.profile');
-

@@ -28,28 +28,31 @@ class LocationController extends Controller
         $email_doctor = $request->search;
 
         $locations = Location::filterAdvanceLocation(
-            $client_id, $name_client, $email_client,
-            $doctor_id, $name_doctor, $email_doctor,
-            )->orderBy("id", "desc")
+            $client_id,
+            $name_client,
+            $email_client,
+            $doctor_id,
+            $name_doctor,
+            $email_doctor,
+        )->orderBy("id", "desc")
                             ->paginate(10);
         return response()->json([
             // "total"=>$patients->total(),
-            "locations"=> LocationCollection::make($locations)
+            "locations" => LocationCollection::make($locations)
         ]);
-
     }
 
     public function config()
     {
         // $roles = Role::where("name","like","%DOCTOR%")->get();
         // $specialists = User::where("status",'active')->get();
-        
-        
-        
+
+
+
         return response()->json([
             // "specialists" => $specialists,
             // "patients" => $patients,
-            
+
         ]);
     }
     /**
@@ -63,25 +66,25 @@ class LocationController extends Controller
         $user_is_valid = User::where("email", $request->email)->first();
 
 
-        if($user_is_valid){
+        if ($user_is_valid) {
             return response()->json([
-                "message"=>403,
-                "message_text"=> 'el usuario con este email ya existe'
+                "message" => 403,
+                "message_text" => 'el usuario con este email ya existe'
             ]);
         }
 
-        if($request->hasFile('imagen')){
+        if ($request->hasFile('imagen')) {
             $path = Storage::putFile("locations", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+            $request->request->add(["avatar" => $path]);
         }
 
-        
-        
+
+
         $location = Location::create($request->all());
-        
-        
+
+
         return response()->json([
-            "message"=>200,
+            "message" => 200,
             // "location" => LocationCollection::make($location),
         ]);
     }
@@ -94,9 +97,9 @@ class LocationController extends Controller
      */
     public function show($id)
     {
-        
-        $specialists = User::where("location_id",$id)->get();
-        $patients = Patient::where("location_id",$id)->get();
+
+        $specialists = User::where("location_id", $id)->get();
+        $patients = Patient::where("location_id", $id)->get();
 
         $location = Location::findOrFail($id);
 
@@ -110,7 +113,7 @@ class LocationController extends Controller
         ]);
     }
 
-    
+
 
     /**
      * Update the specified resource in storage.
@@ -122,7 +125,7 @@ class LocationController extends Controller
     public function update(Request $request, $id)
     {
 
-        
+
         $user_is_valid = User::where("email", $request->email)->first();
 
 
@@ -132,30 +135,30 @@ class LocationController extends Controller
         //         "message_text"=> 'el usuario con este email ya existe'
         //     ]);
         // }
-        
-        $request->request->add(["pa_services"=>json_encode($request->services)]);
-        $request->request->add(["pa_assessments"=>json_encode($request->pa_assessments)]);
 
-        
-        
+        $request->request->add(["pa_services" => json_encode($request->services)]);
+        $request->request->add(["pa_assessments" => json_encode($request->pa_assessments)]);
+
+
+
         $location = Location::findOrFail($id);
 
-        if($request->hasFile('imagen')){
-            if($location->avatar){
+        if ($request->hasFile('imagen')) {
+            if ($location->avatar) {
                 Storage::delete($location->avatar);
             }
             $path = Storage::putFile("locations", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+            $request->request->add(["avatar" => $path]);
         }
-        
-        
-       
+
+
+
         $location->update($request->all());
-        
-        
+
+
         return response()->json([
-            "message"=>200,
-            "location"=>$location,
+            "message" => 200,
+            "location" => $location,
             // "assesstments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
         ]);
     }
@@ -169,12 +172,12 @@ class LocationController extends Controller
     public function destroy($id)
     {
         $location = Location::findOrFail($id);
-        if($location->avatar){
+        if ($location->avatar) {
             Storage::delete($location->avatar);
         }
         $location->delete();
         return response()->json([
-            "message"=>200
+            "message" => 200
         ]);
     }
 }

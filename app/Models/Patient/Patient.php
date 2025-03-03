@@ -13,7 +13,8 @@ class Patient extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    protected $fillable=[
+
+    protected $fillable = [
         'name',
         'surname',
         'email',
@@ -37,17 +38,19 @@ class Patient extends Model
         'doctor_id',
     ];
 
-    public function setCreateAttribute($value){
-        date_default_timezone_set("America/Caracas"); 
-        $this->attribute['created_at']= Carbon::now();
+    public function setCreateAttribute($value)
+    {
+        date_default_timezone_set("America/Caracas");
+        $this->attribute['created_at'] = Carbon::now();
     }
 
-    public function setUpdateAttribute($value){
-        date_default_timezone_set("America/Caracas"); 
-        $this->attribute['updated_at']= Carbon::now();
+    public function setUpdateAttribute($value)
+    {
+        date_default_timezone_set("America/Caracas");
+        $this->attribute['updated_at'] = Carbon::now();
     }
 
-     public function person()
+    public function person()
     {
         return $this->hasOne(PatientPerson::class, 'patient_id');
     }

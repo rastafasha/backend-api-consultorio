@@ -15,7 +15,10 @@ use Illuminate\Support\Facades\Log;
 
 class NewCurrencyRegisterJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * @var Currency

@@ -27,31 +27,31 @@ class StaffsController extends Controller
         //    }
 
         $search = $request->search;
-        $users = User::where(DB::raw("CONCAT(users.name,' ',IFNULL(users.surname,''),' ',users.email)"),"like","%".$search."%")
+        $users = User::where(DB::raw("CONCAT(users.name,' ',IFNULL(users.surname,''),' ',users.email)"), "like", "%" . $search . "%")
                     // "name", "like", "%".$search."%"
                     // ->orWhere("surname", "like", "%".$search."%")
                     // ->orWhere("email", "like", "%".$search."%")
                     ->orderBy("id", "desc")
-                    ->whereHas("roles", function($q){
-                        $q->where("name","not like","%DOCTOR%");
+                    ->whereHas("roles", function ($q) {
+                        $q->where("name", "not like", "%DOCTOR%");
                     })
                     ->get();
-                    
+
         return response()->json([
             "users" => UserCollection::make($users) ,
-            
-        ]);          
+
+        ]);
     }
     public function config()
     {
-        $roles = Role::where("name","not like","%DOCTOR%")->get();
+        $roles = Role::where("name", "not like", "%DOCTOR%")->get();
 
         return response()->json([
             "roles" => $roles,
         ]);
     }
 
-    
+
 
     /**
      * Store a newly created resource in storage.
@@ -61,39 +61,39 @@ class StaffsController extends Controller
      */
     public function store(Request $request)
     {
-        // $this->authorize('index', User::class); 
+        // $this->authorize('index', User::class);
         $user_is_valid = User::where("email", $request->email)->first();
 
-        if($user_is_valid){
+        if ($user_is_valid) {
             return response()->json([
-                "message"=>403,
-                "message_text"=> 'el usuario con este email ya existe'
+                "message" => 403,
+                "message_text" => 'el usuario con este email ya existe'
             ]);
         }
 
-        if($request->hasFile('imagen')){
+        if ($request->hasFile('imagen')) {
             $path = Storage::putFile("staffs", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+            $request->request->add(["avatar" => $path]);
         }
 
-        if($request->password){
-             $request->request->add(["password"=>Hash::make($request->password)]);
+        if ($request->password) {
+             $request->request->add(["password" => Hash::make($request->password)]);
         }
 
         //para el error:
         //Could not parse 'Fri Dec 08 2023 00:00:00 GMT-0400 (Venezuela Time)
         //colocamos:
-        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '',$request->birth_date );
+        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
 
         $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
 
         $user = User::create($request->all());
 
-        $role=  Role::findOrFail($request->role_id);
+        $role =  Role::findOrFail($request->role_id);
         $user->assignRole($role);
 
         return response()->json([
-            "message"=>200,
+            "message" => 200,
         ]);
     }
 
@@ -134,33 +134,33 @@ class StaffsController extends Controller
     {
         $user_is_valid = User::where("id", "<>", $id)->where("email", $request->email)->first();
 
-        if($user_is_valid){
+        if ($user_is_valid) {
             return response()->json([
-                "message"=>403,
-                "message_text"=> 'el usuario con este email ya existe'
+                "message" => 403,
+                "message_text" => 'el usuario con este email ya existe'
             ]);
         }
-        
+
         $user = User::findOrFail($id);
-        
-        if($request->hasFile('imagen')){
-            if($user->avatar){
+
+        if ($request->hasFile('imagen')) {
+            if ($user->avatar) {
                 Storage::delete($user->avatar);
             }
             $path = Storage::putFile("staffs", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
-        }
-        
-        if($request->password){
-             $request->request->add(["password"=>Hash::make($request->password)]);
+            $request->request->add(["avatar" => $path]);
         }
 
-        if($request->birth_date){
-            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '',$request->birth_date );
+        if ($request->password) {
+             $request->request->add(["password" => Hash::make($request->password)]);
+        }
+
+        if ($request->birth_date) {
+            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
             $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
         }
-    
-        if($request->role_id && $request->role_id != $user->roles()->first()->id){
+
+        if ($request->role_id && $request->role_id != $user->roles()->first()->id) {
             // error_log($user->roles()->first()->id);
             $role_old = Role::findOrFail($user->roles()->first()->id);
             $user->removeRole($role_old);
@@ -168,13 +168,13 @@ class StaffsController extends Controller
             $role_new = Role::findOrFail($request->role_id);
             $user->assignRole($role_new);
         }
-        
+
         $user->update($request->all());
-        
+
 
         return response()->json([
-            "message"=>200,
-            "user"=>UserResource::make($user)
+            "message" => 200,
+            "user" => UserResource::make($user)
         ]);
     }
 
@@ -187,12 +187,12 @@ class StaffsController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
-        if($user->avatar){
+        if ($user->avatar) {
             Storage::delete($user->avatar);
         }
         $user->delete();
         return response()->json([
-            "message"=>200
+            "message" => 200
         ]);
     }
 }

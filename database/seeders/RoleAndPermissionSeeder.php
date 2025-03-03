@@ -95,7 +95,10 @@ class RoleAndPermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create($permission);
+            Permission::firstOrCreate([
+            'name' => $permission['name'],
+            'guard_name' => $permission['guard_name'],
+        ]);
         }
 
         // Create roles
@@ -112,15 +115,23 @@ class RoleAndPermissionSeeder extends Seeder
         ];
 
         foreach ($roles as $role) {
-            Role::create($role);
+            Role::firstOrCreate([
+            'name' => $role['name'],
+            'guard_name' => $role['guard_name'],
+        ]);
         }
 
-        
+
         // Give all permissions to SUPERADMIN
         // $role3 = Role::create(['guard_name' => 'api','name' => 'SUPERADMIN']);
-        $superadminRole = Role::find(1);
+        $superadminRole = Role::firstOrCreate([
+            'name' => 'SUPERADMIN',
+            'guard_name' => 'api',
+        ]);
         
-        $superadminRole->givePermissionTo(Permission::all());
+        if ($superadminRole) {
+            $superadminRole->givePermissionTo(Permission::all());
+        }
 
         // Give all permissions to ADMIN
         $adminRole = Role::find(2);

@@ -10,7 +10,6 @@ use App\Models\User;
 
 class ChangePasswordController extends Controller
 {
-
     /**
      * Reques data
      *
@@ -21,8 +20,6 @@ class ChangePasswordController extends Controller
     {
         return $this->updatePasswordRow($request)->count() > 0 ?
         $this->resetPassword($request) : $this->tokenNotFoundError();
-
-
     }
 
    /**

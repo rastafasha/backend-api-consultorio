@@ -7,7 +7,7 @@ use App\Http\Controllers\tiposdepagoController;
 //pagos
 Route::get('/paymentmethods', [tiposdepagoController::class, 'index'])
     ->name('paymentmethods.index');
-    
+
 Route::get('/paymentmethods/activos', [tiposdepagoController::class, 'activos'])
     ->name('paymentmethods.activos');
 
@@ -35,5 +35,3 @@ Route::get('/paymentmethods/search/', [tiposdepagoController::class, 'search'])
 
     Route::put('/paymentmethods/update/status/{paymentmethod:id}', [tiposdepagoController::class, 'updateStatus'])
     ->name('paymentmethod.updateStatus');
-
-

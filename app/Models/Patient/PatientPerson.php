@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class PatientPerson extends Model
 {
     use HasFactory;
-    protected $fillable=[
+
+    protected $fillable = [
         'patient_id',
         'name_companion',
         'surname_companion',
@@ -22,15 +23,15 @@ class PatientPerson extends Model
 
     protected $table = "patient_persons";
 
-    public function setCreateAttribute($value){
-        date_default_timezone_set("America/Caracas"); 
-        $this->attribute['created_at']= Carbon::now();
+    public function setCreateAttribute($value)
+    {
+        date_default_timezone_set("America/Caracas");
+        $this->attribute['created_at'] = Carbon::now();
     }
 
-    public function setUpdateAttribute($value){
-        date_default_timezone_set("America/Caracas"); 
-        $this->attribute['updated_at']= Carbon::now();
+    public function setUpdateAttribute($value)
+    {
+        date_default_timezone_set("America/Caracas");
+        $this->attribute['updated_at'] = Carbon::now();
     }
-
-
 }

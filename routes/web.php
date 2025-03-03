@@ -34,7 +34,4 @@ Route::get('/send-notification', function () {
         Artisan::call('command:notification-appointments');
         // return "Send All notifications";
         return true;
-    });
-
-
-
+});

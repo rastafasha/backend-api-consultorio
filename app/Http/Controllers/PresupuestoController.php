@@ -28,154 +28,108 @@ class PresupuestoController extends Controller
         $presupuestos = Presupuesto::filterAdvance($speciality_id, $name_doctor, $date)->orderBy("id", "desc")
                             ->paginate(10);
         return response()->json([
-            "total"=>$presupuestos->total(),
-            "presupuestos"=> PresupuestoCollection::make($presupuestos)
+            "total" => $presupuestos->total(),
+            "presupuestos" => PresupuestoCollection::make($presupuestos)
         ]);
-
     }
 
     public function config()
     {
-        
-        $specialities = Specialitie::where("state",1)->get();
+        $specialities = Specialitie::where("state", 1)->get();
 
         return response()->json([
             "specialities" => $specialities,
         ]);
     }
-    
-    public function query_patient(Request $request)
+
+    public function queryPatient(Request $request)
     {
-        $n_doc =$request->get("n_doc");
+        $n_doc = $request->get("n_doc");
 
         $patient = Patient::where("n_doc", $n_doc)->first();
 
-        if(!$patient){
+        if (!$patient) {
             return response()->json([
-                "message"=>403,
+                "message" => 403,
             ]);
         }
 
         return response()->json([
-            "message"=>200,
-            "id"=>$patient->id,
-            "name"=>$patient->name,
-            "surname"=>$patient->surname,
-            "phone"=>$patient->phone,
-            "n_doc"=>$patient->n_doc,
+            "message" => 200,
+            "id" => $patient->id,
+            "name" => $patient->name,
+            "surname" => $patient->surname,
+            "phone" => $patient->phone,
+            "n_doc" => $patient->n_doc,
         ]);
-
     }
 
-   
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        
         $patient = null;
         $patient = Patient::where("n_doc", $request->n_doc)->first();
         $doctor = User::where("id", $request->doctor_id)->first();
 
-        // $request->request->add(["medical" => $request->medical]);
-        $request->request->add(["medical"=>json_encode($request->medical)]);
-        
-        if(!$patient){
+        $request->request->add(["medical" => json_encode($request->medical)]);
+
+        if (!$patient) {
             $patient = Patient::create([
-                "name"=>$request->name,
-                "surname"=>$request->surname,
-                "email"=>$request->email,
-                "n_doc"=>$request->n_doc,
-                "phone"=>$request->phone,
+                "name" => $request->name,
+                "surname" => $request->surname,
+                "email" => $request->email,
+                "n_doc" => $request->n_doc,
+                "phone" => $request->phone,
             ]);
         }
-        // else{
-        //     $patient->person->update([
-        //         'name_companion' => $request->name_companion,
-        //         'surname_companion' => $request->surname_companion,
-        //     ]);
-        // }
 
-        
-            $presupuesto = Presupuesto::create([
-                "doctor_id" =>$request->doctor_id,
-                "patient_id" =>$patient->id,
-                "speciality_id" => $request->speciality_id,
-                "description" => $request->description,
-                "diagnostico" => $request->diagnostico,
-                "amount" =>$request->amount,
-                "medical" => $request->medical, // Ensure this is updated correctly
-            ]);
-
-
+        $presupuesto = Presupuesto::create([
+            "doctor_id" => $request->doctor_id,
+            "patient_id" => $patient->id,
+            "speciality_id" => $request->speciality_id,
+            "description" => $request->description,
+            "diagnostico" => $request->diagnostico,
+            "amount" => $request->amount,
+            "medical" => $request->medical,
+        ]);
 
         Mail::to($presupuesto->patient->email)->send(new NewPresupuestoRegisterMail($presupuesto));
-        // Mail::to($doctor->email)->send(new NewpresupuestoRegisterMail($presupuesto));
 
         return response()->json([
             "message" => 200,
             "presupuesto" => $presupuesto,
-            
         ]);
     }
-    
-   
 
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function show($id)
     {
         $presupuesto = Presupuesto::findOrFail($id);
-        // $sum_total_pays = presupuestoPay::where("presupuesto_id",$id)->sum("amount");
         $costo = $presupuesto->amount;
-        // $deuda = ($costo - $sum_total_pays); 
 
         return response()->json([
             "costo" => $costo,
-            // "deuda" => $deuda,
             "presupuesto" => PresupuestoResource::make($presupuesto),
         ]);
-
     }
 
-    
-
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $e
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
-        $presupuesto = Presupuesto::findOrFail($id );
-        
+        $presupuesto = Presupuesto::findOrFail($id);
+
         $request->validate([
-            'amount' => 'required|numeric', // Ensure amount is present and is a number
-            'medical' => 'required|array', // Ensure medical is present and is an array
+            'amount' => 'required|numeric',
+            'medical' => 'required|array',
         ]);
 
-        $request->request->add(["medical"=>json_encode($request->medical)]);
-        
+        $request->request->add(["medical" => json_encode($request->medical)]);
+
         $presupuesto->update([
-            "doctor_id" =>$request->doctor_id,
-            "patient_id" =>$request->patient_id,
+            "doctor_id" => $request->doctor_id,
+            "patient_id" => $request->patient_id,
             "speciality_id" => $request->speciality_id,
-            "description" =>$request->description,
-            "diagnostico" =>$request->diagnostico,
-            "amount" =>$request->amount,
-            "medical" =>$request->medical, // Ensure this is updated correctly
+            "description" => $request->description,
+            "diagnostico" => $request->diagnostico,
+            "amount" => $request->amount,
+            "medical" => $request->medical,
         ]);
 
         return response()->json([
@@ -184,12 +138,6 @@ class PresupuestoController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
         $presupuesto = Presupuesto::findOrFail($id);
@@ -198,17 +146,15 @@ class PresupuestoController extends Controller
             "message" => 200,
         ]);
     }
-    
-     public function atendidas()
-    {
-        
-        $presupuestos = Presupuesto::where('status', 2)->orderBy("id", "desc")
-                            ->paginate(10);
-        return response()->json([
-            "total"=>$presupuestos->total(),
-            "presupuestos"=> PresupuestoCollection::make($presupuestos)
-        ]);
 
+    public function atendidas()
+    {
+        $presupuestos = Presupuesto::where('status', 2)->orderBy("id", "desc")
+                           ->paginate(10);
+        return response()->json([
+           "total" => $presupuestos->total(),
+           "presupuestos" => PresupuestoCollection::make($presupuestos)
+        ]);
     }
 
     public function updateConfirmation(Request $request, $id)
@@ -218,78 +164,74 @@ class PresupuestoController extends Controller
 
         $presupuesto->confimation = $request->confimation;
         $presupuesto->update();
-        
-        if($request->confimation === '2'){
+
+        if ($request->confimation === '2') {
             // Mail::to($presupuesto->patient->email)->send(new Confirmationpresupuesto($presupuesto));
         }
-        
+
         return response()->json([
             "message" => 200,
             "presupuesto" => $presupuesto,
-            "amount" =>$request->amount,
-            "paymentmethod" =>$request->method_payment,
-            "amountadd" =>$request->amount_add,
+            "amount" => $request->amount,
+            "paymentmethod" => $request->method_payment,
+            "amountadd" => $request->amount_add,
             "date_presupuesto" => Carbon::parse($presupuesto->date_presupuesto)->format('d-m-Y'),
-            "patient"=>$presupuesto->patient_id ? 
+            "patient" => $presupuesto->patient_id ?
                     [
-                        "id"=> $presupuesto->patient->id,
-                        "email" =>$presupuesto->patient->email,
-                        "full_name" =>$presupuesto->patient->name.' '.$presupuesto->patient->surname,
-                    ]: NULL,
-            "speciality"=>$presupuesto->speciality ? 
+                        "id" => $presupuesto->patient->id,
+                        "email" => $presupuesto->patient->email,
+                        "full_name" => $presupuesto->patient->name . ' ' . $presupuesto->patient->surname,
+                    ] : null,
+            "speciality" => $presupuesto->speciality ?
                 [
-                    "id"=> $presupuesto->speciality->id,
-                    "name"=> $presupuesto->speciality->name,
-                ]: NULL,
+                    "id" => $presupuesto->speciality->id,
+                    "name" => $presupuesto->speciality->name,
+                ] : null,
             "doctor_id" => $presupuesto->doctor_id,
-            "doctor"=>$presupuesto->doctor_id ? 
+            "doctor" => $presupuesto->doctor_id ?
                         [
-                            "id"=> $doctor->id,
-                            "email"=> $doctor->email,
-                            "full_name" =>$doctor->name.' '.$doctor->surname,
-                        ]: NULL,
+                            "id" => $doctor->id,
+                            "email" => $doctor->email,
+                            "full_name" => $doctor->name . ' ' . $doctor->surname,
+                        ] : null,
         ]);
     }
 
     public function presupuestoByDoctor(Request $request, $doctor_id)
     {
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        if(!$doctor_is_valid){
+        if (!$doctor_is_valid) {
             return response()->json([
-                "message"=>'403',
+                "message" => '403',
             ]);
         }
         $presupuestos = Presupuesto::where('doctor_id', $doctor_id)->get();
 
-
         return response()->json([
-            // "presupuestos"=> $presupuestos,
-            "presupuestos"=> PresupuestoCollection::make($presupuestos)
-            // "total"=>$appointments->total(),
+            "presupuestos" => PresupuestoCollection::make($presupuestos)
         ]);
     }
 
-    public function bypatient(Request $request, $n_doc)
-        {
-            $patient = Patient::where("n_doc", $n_doc)->first();
+    public function byPatient(Request $request, $n_doc)
+    {
+        $patient = Patient::where("n_doc", $n_doc)->first();
 
-            if (!$patient) {
-                return response()->json([
-                    'code' => 404,
-                    'status' => 'error',
-                    'message' => 'Patient not found',
-                ], 404);
-            }
-
-            $presupuestos = Presupuesto::where("patient_id", '=', $patient->id)
-                ->orderBy('created_at', 'DESC')
-                ->get();
-
+        if (!$patient) {
             return response()->json([
-                'code' => 200,
-                'status' => 'success',
-                // 'presupuestos' => $presupuestos,
-                 "presupuestos"=> PresupuestoCollection::make($presupuestos)
-            ], 200);
+                'code' => 404,
+                'status' => 'error',
+                'message' => 'Patient not found',
+            ], 404);
         }
+
+        $presupuestos = Presupuesto::where("patient_id", '=', $patient->id)
+            ->orderBy('created_at', 'DESC')
+            ->get();
+
+        return response()->json([
+            'code' => 200,
+            'status' => 'success',
+            "presupuestos" => PresupuestoCollection::make($presupuestos)
+        ], 200);
+    }
 }

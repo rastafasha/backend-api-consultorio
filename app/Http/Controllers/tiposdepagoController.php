@@ -7,7 +7,7 @@ use App\Models\Tiposdepago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class tiposdepagoController extends Controller
+class TiposDePagoController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -30,7 +30,7 @@ class tiposdepagoController extends Controller
     public function byDoctor(Request $request, $doctor_id)
     {
 
-        
+
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
 
         $tiposdepagos = Tiposdepago::orderBy('created_at', 'DESC')
@@ -39,42 +39,25 @@ class tiposdepagoController extends Controller
         ->get();
 
         return response()->json([
-            "tiposdepagos"=> $tiposdepagos
+            "tiposdepagos" => $tiposdepagos
         ]);
-
-        
-
     }
 
     public function byDoctorActivo(Request $request, $doctor_id)
     {
 
-        
+
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
 
         $tiposdepagos = Tiposdepago::orderBy('created_at', 'DESC')
         ->Where('doctor_id', $doctor_id)
-        ->where('status', $status='ACTIVE')
+        ->where('status', $status = 'ACTIVE')
         ->orderBy("id", "desc")
         ->get();
 
         return response()->json([
-            "tiposdepagos"=> $tiposdepagos
+            "tiposdepagos" => $tiposdepagos
         ]);
-
-        
-
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-       
     }
 
     /**
@@ -131,7 +114,7 @@ class tiposdepagoController extends Controller
      */
     public function paymentUpdate(Request $request, $id)
     {
-       $tipodepago = Tiposdepago::findOrfail($id);
+        $tipodepago = Tiposdepago::findOrfail($id);
         $tipodepago->bankAccount = $request->bankAccount;
         $tipodepago->bankAccountType = $request->bankAccountType;
         $tipodepago->bankName = $request->bankName;
@@ -145,9 +128,9 @@ class tiposdepagoController extends Controller
         $tipodepago->type = $request->type;
         $tipodepago->user = $request->user;
         $tipodepago->doctor_id = $request->doctor_id;
-        
-        
-        
+
+
+
         $tipodepago->update();
         return $tipodepago;
     }
@@ -163,8 +146,7 @@ class tiposdepagoController extends Controller
         $tiposdepago =  Tiposdepago::where('id', $id)
                         ->first();
 
-        if(!empty($tiposdepago)){
-
+        if (!empty($tiposdepago)) {
             // borrar
             $tiposdepago->delete();
             // devolver respuesta
@@ -173,7 +155,7 @@ class tiposdepagoController extends Controller
                 'status' => 'success',
                 'tiposdepago' => $tiposdepago
             ];
-        }else{
+        } else {
             $data = [
                 'code' => 404,
                 'status' => 'error',
@@ -196,8 +178,8 @@ class tiposdepagoController extends Controller
     {
 
         $tiposdepagos = Tiposdepago::orderBy('created_at', 'DESC')
-                
-                ->where('status', $status='ACTIVE')
+
+                ->where('status', $status = 'ACTIVE')
                 ->get();
             return response()->json([
                 'code' => 200,

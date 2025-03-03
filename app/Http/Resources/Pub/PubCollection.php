@@ -15,7 +15,7 @@ class PubCollection extends ResourceCollection
     public function toArray($request)
     {
         return [
-            "data"=> PubResource::collection($this->collection)
+            "data" => PubResource::collection($this->collection)
         ];
     }
 }

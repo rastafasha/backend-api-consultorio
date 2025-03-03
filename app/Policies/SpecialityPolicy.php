@@ -19,10 +19,10 @@ class SpecialityPolicy
     public function viewAny(User $user)
     {
         // dd("Ya");
-       if($user->can('list_speciality')){
+        if ($user->can('list_speciality')) {
+            return false;
+        }
         return false;
-       }
-       return false;
     }
 
     /**
@@ -35,9 +35,9 @@ class SpecialityPolicy
     public function view(User $user, Speciality $model = null)
     {
         //
-        if($user->can('list_speciality')){
+        if ($user->can('list_speciality')) {
             return false;
-           }
+        }
            return false;
     }
 
@@ -49,9 +49,9 @@ class SpecialityPolicy
      */
     public function create(User $user)
     {
-        if($user->can('register_specialty')){
+        if ($user->can('register_specialty')) {
             return false;
-           }
+        }
            return false;
     }
 
@@ -64,9 +64,9 @@ class SpecialityPolicy
      */
     public function update(User $user, Speciality $model = null)
     {
-        if($user->can('edit_specialty')){
+        if ($user->can('edit_specialty')) {
             return false;
-           }
+        }
            return false;
     }
 
@@ -79,9 +79,9 @@ class SpecialityPolicy
      */
     public function delete(User $user, Speciality $model = null)
     {
-        if($user->can('delet_specialty')){
+        if ($user->can('delet_specialty')) {
             return false;
-           }
+        }
            return false;
     }
 

@@ -18,7 +18,7 @@ class AdminPaymentSoftDeletesController extends Controller
     // {
     //     $this->middleware('jwt.verify');
     // }
-    
+
     /**
      * Display a listing of the resource.
      *
@@ -27,14 +27,14 @@ class AdminPaymentSoftDeletesController extends Controller
     public function index()
     {
         $this->authorize('indexDeletes', Payment::class);
-        
+
         $payments = Payment::select([
             "name",
         ])
         ->orderBy('id', 'desc')
         ->onlyTrashed()
         ->get();
-            
+
         return response()->json([
             'code' => 200,
             'status' => 'Listar todos los pagos borrados',
@@ -48,7 +48,7 @@ class AdminPaymentSoftDeletesController extends Controller
      * @return JsonResponse
      */
     public function paymentDeleteShow($id)
-    {   
+    {
         $this->authorize('paymentDeleteShow', Payment::class);
 
         try {
@@ -58,7 +58,8 @@ class AdminPaymentSoftDeletesController extends Controller
                     "id", "name", "created_at", "updated_at", "deleted_at",
                 ])
                 ->onlyTrashed()
-                ->findOrFail($id);;
+                ->findOrFail($id);
+            ;
 
             DB::commit();
             return response()->json([
@@ -82,7 +83,7 @@ class AdminPaymentSoftDeletesController extends Controller
      * @return JsonResponse
      */
     public function paymentDeleteRestore(int $id)
-    {    
+    {
         $this->authorize('paymentDeleteRestore', Payment::class);
 
         try {
@@ -112,7 +113,7 @@ class AdminPaymentSoftDeletesController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function paymentDeleteForce($id)
-    {   
+    {
         $this->authorize('paymentDeleteForce', Payment::class);
 
         try {

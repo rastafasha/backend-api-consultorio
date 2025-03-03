@@ -18,7 +18,7 @@ class PatientPolicy
      */
     public function viewAny(User $user, Patient $model = null)
     {
-        if($user->can('list_patient')){
+        if ($user->can('list_patient')) {
             return true;
         }
         return false;
@@ -33,7 +33,7 @@ class PatientPolicy
      */
     public function view(User $user, Patient $model = null)
     {
-        if($user->can('edit_patient')){
+        if ($user->can('edit_patient')) {
             return true;
         }
         return false;
@@ -47,7 +47,7 @@ class PatientPolicy
      */
     public function create(User $user)
     {
-        if($user->can('register_patient')){
+        if ($user->can('register_patient')) {
             return true;
         }
         return false;
@@ -62,7 +62,7 @@ class PatientPolicy
      */
     public function update(User $user, Patient $model = null)
     {
-        if($user->can('edit_patient')){
+        if ($user->can('edit_patient')) {
             return true;
         }
         return false;
@@ -77,7 +77,7 @@ class PatientPolicy
      */
     public function delete(User $user, Patient $model = null)
     {
-        if($user->can('delete_patient')){
+        if ($user->can('delete_patient')) {
             return true;
         }
         return false;

@@ -10,7 +10,8 @@ use App\Models\Appointment\Appointment;
 
 class CancellationAppointmentMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     public $appointment;
     public $reason;

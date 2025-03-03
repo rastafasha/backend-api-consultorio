@@ -7,7 +7,7 @@ use App\Http\Controllers\Appointment\AppointmentController;
 Route::post('appointment/filter', [AppointmentController::class, 'filter'])->name('appointment.filter');
 Route::post('appointments/filterbydoctor/{doctor_id}/', [AppointmentController::class, 'filterByDoctor'])->name('appointment.filterByDoctor');
 Route::get('appointments/config', [AppointmentController::class, 'config'])->name('appointment.config');
-Route::get('appointments/patient', [AppointmentController::class, 'query_patient'])->name('appointment.query_patient');
+Route::get('appointments/patient', [AppointmentController::class, 'queryPatient'])->name('appointment.queryPatient');
 
 Route::get('appointment', [AppointmentController::class, 'index'])->name('index');
 Route::get('appointments/byDoctor/{doctor_id}/', [AppointmentController::class, 'appointmentByDoctor'])->name('appointment.appointmentByDoctor');
@@ -32,7 +32,7 @@ Route::post('appointments/calendar', [AppointmentController::class, 'calendar'])
 Route::put('/appointments/update/cofirmation/{appointment:id}', [AppointmentController::class, 'updateConfirmation'])
     ->name('appointment.updateConfirmation');
 
-   
+
 
 Route::post('/appointment/{id}/cancel', [AppointmentController::class, 'cancelarCita'])
     ->name('appointment.cancelarCita');

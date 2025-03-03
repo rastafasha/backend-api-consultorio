@@ -11,28 +11,31 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class DoctorScheduleJoinHour extends Model
 {
     use HasFactory;
+
     // use SoftDeletes;
-    protected $fillable =[
+    protected $fillable = [
         "doctor_schedule_day_id",
         "doctor_schedule_hour_id",
     ];
 
     public function setCreatedAtAttribute($value)
     {
-    	date_default_timezone_set('America/Caracas');
-        $this->attributes["created_at"]= Carbon::now();
+        date_default_timezone_set('America/Caracas');
+        $this->attributes["created_at"] = Carbon::now();
     }
 
     public function setUpdatedAtAttribute($value)
     {
-    	date_default_timezone_set("America/Caracas");
-        $this->attributes["updated_at"]= Carbon::now();
+        date_default_timezone_set("America/Caracas");
+        $this->attributes["updated_at"] = Carbon::now();
     }
 
-    public function doctor_schedule_day(){
+    public function doctorScheduleDay()
+    {
         return $this->belongsTo(DoctorScheduleDay::class)->withTrashed();
     }
-    public function doctor_schedule_hour(){
+    public function doctorScheduleHour()
+    {
         return $this->belongsTo(DoctorScheduleHour::class);
     }
 }

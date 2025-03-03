@@ -16,14 +16,14 @@ class CreateLocationsTable extends Migration
         Schema::create('locations', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('title', 250);
-            $table->string('avatar', 250);
+            $table->string('avatar', 250)->nullable();
             $table->string('city', 250);
             $table->string('state', 250);
             $table->string('zip', 50);
             $table->text('address')->nullable();
-            $table->string('email', 150);
-            $table->string('phone1', 150);
-            $table->string('phone2', 150);
+            $table->string('email', 150)->nullable();
+            $table->string('phone1', 150)->nullable();
+            $table->string('phone2', 150)->nullable();
 
             
             // Provider IDs

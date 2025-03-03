@@ -9,7 +9,8 @@ use Illuminate\Queue\SerializesModels;
 
 class UpdateStatusMail extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * Create a new message instance.
@@ -17,7 +18,7 @@ class UpdateStatusMail extends Mailable
      * @return void
      */
     public $user;
-    
+
     /**
      * Create a new message instance.
      *

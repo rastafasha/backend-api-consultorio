@@ -12,12 +12,12 @@ class Tiposdepago extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | goblan variables
+    | global variables
     |--------------------------------------------------------------------------
     */
 
     protected $fillable = [
-        'name', 
+        'name',
         'tipo',
         'bankAccount',
         'bankName',
@@ -29,8 +29,8 @@ class Tiposdepago extends Model
         'doctor_id',
     ];
 
-    const ACTIVE = 'ACTIVE';
-    const INACTIVE = 'INACTIVE';
+    public const ACTIVE = 'ACTIVE';
+    public const INACTIVE = 'INACTIVE';
 
     public static function statusTypes()
     {
@@ -43,5 +43,4 @@ class Tiposdepago extends Model
     {
         return $this->belongsTo(User::class, 'doctor_id');
     }
-
 }

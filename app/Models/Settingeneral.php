@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Settingeneral extends Model
 {
     use HasFactory;
+
     protected $fillable = [
-        'name', 
-        'address', 
-        'phone', 
+        'name',
+        'address',
+        'phone',
         'city',
         'state',
         'zip',
