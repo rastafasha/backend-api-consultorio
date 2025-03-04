@@ -296,8 +296,6 @@ class AppointmentController extends Controller
         ]);
     }
 
-
-
     public function calendar(Request $request)
     {
         $speciality_id = $request->speciality_id;
@@ -333,7 +331,6 @@ class AppointmentController extends Controller
                 ->get();
 
         return response()->json([
-            // "patients"=> $patients,
             "appointmens" => $appointmens,
             "total" => $appointmens->total(),
             // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
