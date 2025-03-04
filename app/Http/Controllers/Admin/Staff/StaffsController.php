@@ -105,7 +105,7 @@ class StaffsController extends Controller
      */
     public function show($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with('scheduleDays')->findOrFail($id);
 
         return response()->json([
             "user" => UserResource::make($user),
