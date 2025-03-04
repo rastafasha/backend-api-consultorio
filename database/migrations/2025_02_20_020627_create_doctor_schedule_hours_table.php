@@ -16,9 +16,9 @@ class CreateDoctorScheduleHoursTable extends Migration
         Schema::create('doctor_schedule_hours', function (Blueprint $table) {
             $table->bigIncrements('id');
         
-            $table->string('hour_start', 50)->default('00:00:00');
-            $table->string('hour_end', 50)->default('00:00:00');
-            $table->string('hour', 20)->default('00:00');
+            $table->string('hour_start', 50);
+            $table->string('hour_end', 50);
+            $table->string('hour', 20);
             
             $table->unsignedBigInteger('doctor_schedule_day_id')->nullable(); // Add foreign key for doctor_schedule_day and allow null values
             $table->foreign('doctor_schedule_day_id')->references('id')->on('doctor_schedule_days')->onDelete('cascade');
