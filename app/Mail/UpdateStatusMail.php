@@ -46,7 +46,7 @@ class UpdateStatusMail extends Mailable
     public function build()
     {
         $user = $this->user;
-        return $this->subject('Notificación de Cita Médica')
-        ->view('emails.update_status');
+        return $this->subject('Health-ConnectMe: Activacion de Perfil')
+        ->view('emails.admin.update_status');
     }
 }

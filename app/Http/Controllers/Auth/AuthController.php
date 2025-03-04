@@ -78,7 +78,7 @@ class AuthController extends Controller
      */
     public function register(Request $request) {
 
-        $data = $request->only('name', 'email', 'password', 'n_doc');
+        $data = $request->only('name','surname', 'email', 'password', 'n_doc');
 
         $validator = Validator::make($data, [
             'name' => 'required|string|between:2,100',
@@ -105,7 +105,7 @@ class AuthController extends Controller
 
         $token = JWTAuth::fromUser($user);
 
-        Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
+        // Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
 
         return response()->json([
             'message' => 'User registered successfully',
