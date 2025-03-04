@@ -53,7 +53,6 @@ class AppointmentAttentionController extends Controller
 
     public function storeLocal(Request $request)
     {
-
         $request->request->add(["receta_medica"=>json_encode($request->medical)]);
 
         $doctor = User::where("id", $request->doctor_id)->first();
@@ -72,12 +71,20 @@ class AppointmentAttentionController extends Controller
                 'surname_companion' => $request->surname_companion,
             ]);
         }else{
-            $patient->person->update([
-                'name_companion' => $request->name_companion,
-                'surname_companion' => $request->surname_companion,
-            ]);
+            if ($patient->person) {
+                $patient->person->update([
+                    'name_companion' => $request->name_companion,
+                    'surname_companion' => $request->surname_companion,
+                ]);
+            } else {
+                // Create a new PatientPerson if it doesn't exist
+                PatientPerson::create([
+                    'patient_id' => $patient->id,
+                    'name_companion' => $request->name_companion,
+                    'surname_companion' => $request->surname_companion,
+                ]);
+            }
         }
-
 
         $appointment = Appointment::create([
             "doctor_id" =>$request->doctor_id,
@@ -86,8 +93,6 @@ class AppointmentAttentionController extends Controller
             "date_attention" => Carbon::parse($request->date_appointment)->format("Y-m-d h:i:s"),
             "speciality_id" => $request->speciality_id,
             "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
-            // "user_id" => auth("api")->user()->id, aqui lo comente porque no reconoce el id.. 
-            // asi que lo envio desde el front y aqui lo recibo
             "user_id" => $request->user_id,
             "amount" =>$request->amount,
             "status_pay" =>$request->amount != $request->amount_add ? 2 : 1,
@@ -95,8 +100,8 @@ class AppointmentAttentionController extends Controller
 
         AppointmentAttention::create($request->all());
 
-            date_default_timezone_set('America/Caracas');
-            $appointment->update(["status"=>2,"date_attention" =>now()]);
+        date_default_timezone_set('America/Caracas');
+        $appointment->update(["status"=>2,"date_attention" =>now()]);
 
         AppointmentPay::create([
             "appointment_id"=>$appointment->id,
@@ -104,9 +109,7 @@ class AppointmentAttentionController extends Controller
             "method_payment"=>$request->method_payment,
         ]);
 
-            date_default_timezone_set('America/Caracas');
-            
-            
+        date_default_timezone_set('America/Caracas');
         
         return response()->json([
             "message"=>200,
@@ -170,6 +173,4 @@ class AppointmentAttentionController extends Controller
         }
         
     }
-
-    
 }
