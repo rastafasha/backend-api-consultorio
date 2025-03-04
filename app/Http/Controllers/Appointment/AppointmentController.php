@@ -110,6 +110,8 @@ class AppointmentController extends Controller
                 "doctor"=>[
                     "id"=> $doctor_q->doctor->id,
                     "full_name"=> $doctor_q->doctor->name.' '.$doctor_q->doctor->surname,
+                    "address"=> $doctor_q->doctor->address,
+                    "precio_cita"=> $doctor_q->doctor->precio_cita,
                     "speciality"=>[
                         "id"=> $doctor_q->doctor->speciality->id,
                         "name"=>$doctor_q->doctor->speciality->name,
@@ -191,6 +193,8 @@ class AppointmentController extends Controller
                 "doctor"=>[
                     "id"=> $doctor->id,
                     "full_name"=> $doctor->name.' '.$doctor->surname,
+                    "address"=> $doctor->address,
+                    "precio_cita"=> $doctor->precio_cita,
                     "speciality"=>[
                         "id"=> $doctor->speciality->id,
                         "name"=>$doctor->speciality->name,
