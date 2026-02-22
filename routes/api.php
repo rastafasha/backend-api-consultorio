@@ -122,6 +122,11 @@ Route::group(['middleware' => 'api'], function ($router) {
         Artisan::call('migrate:refresh --seed');
         return "Migrate: creacion con datos, para uso";
     });
+
+    Route::get('/route-clear', function () {
+    Artisan::call('route:clear');
+    return "Route cache cleared successfully.";
+});
     
     
     Route::get('/send-notification', function () {
