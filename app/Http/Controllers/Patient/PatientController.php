@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers\Patient;
 
+use App\Http\Controllers\Controller;
+use App\Http\Resources\Appointment\AppointmentCollection;
+use App\Http\Resources\Patient\PatientCollection;
+use App\Http\Resources\Patient\PatientResource;
+use App\Mail\NewPatientRegisterMail;
+use App\Models\Appointment\Appointment;
+use App\Models\Patient\Patient;
+use App\Models\Patient\PatientPerson;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use App\Models\Patient\Patient;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
-use App\Models\Patient\PatientPerson;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Mail;
-use App\Models\Appointment\Appointment;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Resources\Patient\PatientResource;
-use App\Http\Resources\Patient\PatientCollection;
-use App\Http\Resources\Appointment\AppointmentCollection;
-use App\Models\User;
 
 class PatientController extends Controller
 {
