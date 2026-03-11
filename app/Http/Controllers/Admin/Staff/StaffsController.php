@@ -173,7 +173,8 @@ class StaffsController extends Controller
         
         $user->update($request->all());
         
-        Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
+        Mail::to($user)->send(new NewUserRegisterMail($user));
+        // Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
 
         return response()->json([
             "message"=>200,
