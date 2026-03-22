@@ -149,7 +149,7 @@ Notificaciones automatizadas desde la app
 																	<table width="100%" border="0" cellspacing="0" cellpadding="0">
 																		<tr>
 																			<td class="img-center p-30 px-15" style="font-size:0pt; line-height:0pt; text-align:center; padding: 30px; padding-left: 15px; padding-right: 15px;">
-																				<a href="#" target="_blank"><img src="https://health-connect.me/varios/logoHealthConnect-01.png" width="150" height="100" editable="true" border="0" alt="" /></a>
+																				<a href="#" target="_blank"><img src="https://klytic.com/varios/logoklyntic.png" width="150" height="100" editable="true" border="0" alt="" /></a>
 																			</td>
 																		</tr>
 																	</table>
@@ -281,7 +281,7 @@ Notificaciones automatizadas desde la app
 																													bgcolor="#f3189e"
 																													style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
 																													<multiline>
-																														<a href="https://consultorio.health-connect.me/"
+																														<a href="https://consultorio.klytic.com/"
 																															target="_blank"
 																															class="link c-white"
 																															style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
@@ -308,8 +308,8 @@ Notificaciones automatizadas desde la app
 																								<tr>
 																									<td class="text-16 lh-26 a-center pb-25" style="font-size:16px; color:#6e6e6e; font-family:'PT Sans', Arial, sans-serif; min-width:auto !important; line-height: 26px; text-align:center; padding-bottom: 25px;">
 																										<multiline>
-																											<em>Health-connect.me no es entidad financiera, las trasnferencias se hacen directo entre la cuenta creada desde la app directo al paciente.
-																												La App Health Connect solo es un medio de comunicación entre el paciente y el doctor,
+																											<em>Klintic no es entidad financiera, las trasnferencias se hacen directo entre la cuenta creada desde la app directo al paciente.
+																												La App Klintic solo es un medio de comunicación entre el paciente y el doctor,
         no somos entidades de salud, no somos entidad financiera. </em>
 																										</multiline>
 																									</td>
@@ -376,9 +376,9 @@ Notificaciones automatizadas desde la app
 
 																			<td class="img" width="117"
 																				style="font-size:0pt; line-height:0pt; text-align:center; ">
-																				<a href="https://health-connect.me/"
+																				<a href="https://klytic.com/"
 																					target="_blank"><img
-																						src="https://health-connect.me/varios/logoHealthConnect-01.png"
+																						src="https://klytic.com/varios/logoHealthConnect-01.png"
 																						width="75" height="50"
 																						editable="true" border="0"
 																						alt="" /></a>

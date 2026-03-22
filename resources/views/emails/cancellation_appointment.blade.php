@@ -34,11 +34,11 @@
     
     <p>
         Saludos cordiales,</p>
-    <p>El Equipo de Health Connect </p>
-    <p>Algún motivo directo con la clinica o consultorio, healthconnect no se hace responsable, 
+    <p>El Equipo de Klintic </p>
+    <p>Algún motivo directo con la clinica o consultorio, Klintic no se hace responsable, 
         por favor comunicarse directamente con el consultorio o clinica.
     </p>
-    <p> La App Health Connect solo es un medio de comunicación entre el paciente y el doctor,
+    <p> La App Klintic solo es un medio de comunicación entre el paciente y el doctor,
         no somos entidades de salud, no somos entidad financiera.
     </p>
     <p>Gracias por su comprensión.</p>
@@ -47,9 +47,9 @@
 
             <td class="img" width="117"
                 style="font-size:0pt; line-height:0pt; text-align:center; ">
-                <a href="https://health-connect.me/"
+                <a href="https://klytic.com/"
                     target="_blank"><img
-                        src="https://health-connect.me/varios/logoHealthConnect-01.png"
+                        src="https://klytic.com/varios/logoklyntic.png"
                         width="75" height="50"
                         editable="true" border="0"
                         alt="" /></a>

@@ -433,9 +433,9 @@
 
 																			<td class="img" width="117"
 																				style="font-size:0pt; line-height:0pt; text-align:center; ">
-																				<a href="https://health-connect.me/"
+																				<a href="https://klytic.com/"
 																					target="_blank"><img
-																						src="https://health-connect.me/varios/logoHealthConnect-01.png"
+																						src="https://klytic.com/varios/logoklyntic.png"
 																						width="75" height="50"
 																						editable="true" border="0"
 																						alt="" /></a>

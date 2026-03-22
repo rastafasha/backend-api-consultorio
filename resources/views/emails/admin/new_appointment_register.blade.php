@@ -532,7 +532,7 @@
 																													bgcolor="#f3189e"
 																													style="font-size:16px; line-height:20px; mso-padding-alt:15px 35px; font-family:'PT Sans', Arial, sans-serif; text-align:center; font-weight:bold; text-transform:uppercase; border-radius:25px; min-width:auto !important; color:#ffffff;">
 																													<multiline>
-																														<a href="https://consultorio.health-connect.me/appointments"
+																														<a href="https://consultorio.klytic.com/appointments"
 																															target="_blank"
 																															class="link c-white"
 																															style="display: block; padding: 15px 35px; text-decoration:none; color:#ffffff;">
@@ -624,9 +624,9 @@
 
 																			<td class="img" width="117"
 																				style="font-size:0pt; line-height:0pt; text-align:center; ">
-																				<a href="https://health-connect.me/"
+																				<a href="https://klytic.com/"
 																					target="_blank"><img
-																						src="https://health-connect.me/varios/logoHealthConnect-01.png"
+																						src="https://klytic.com/varios/logoHealthConnect-01.png"
 																						width="75" height="50"
 																						editable="true" border="0"
 																						alt="" /></a>
