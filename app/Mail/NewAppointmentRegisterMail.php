@@ -33,7 +33,7 @@ class NewAppointmentRegisterMail extends Mailable
         
 
             return $this
-            ->subject('HealthConnectMe: Nueva Cita Médica')
+            ->subject('Klyntic: Nueva Cita Médica')
             ->view('emails.admin.new_appointment_register',['appointment' => $this->appointment]);
         
     }

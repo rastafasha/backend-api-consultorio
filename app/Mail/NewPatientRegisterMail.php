@@ -34,7 +34,7 @@ class NewPatientRegisterMail extends Mailable
 
         $patient = $this->patient;
         return $this
-        ->subject('Bienvenido a HealthConnectMe')
+        ->subject('Bienvenido a Klyntic')
         ->view('emails.new_patient_register',['patient' => $this->patient]);
         
         // return $this->from('citasmedicas@malcolmcordova.com', 'Sistema Automatizado de Envio de Notificaciones por correo')->subject('Registro de un nuevo usuario')

@@ -32,7 +32,7 @@ class NewUserRegisterMail extends Mailable
     {
 
         $user = $this->user;
-        return $this->subject('Bienvenido a HealthConnectMe')
+        return $this->subject('Bienvenido a Klyntic')
         ->view('emails.new_user_register',['user' => $this->user]);
         
         // return $this->from('citasmedicas@malcolmcordova.com', 'Sistema Automatizado de Envio de Notificaciones por correo')->subject('Registro de un nuevo usuario')

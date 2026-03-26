@@ -263,12 +263,15 @@ class PatientController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $patient_is_valid = Patient::where("id", "<>", $id)->where("n_doc", $request->n_doc)->first();
+         $patient_is_valid = Patient::where("id", "!=", (int)$id)
+                           ->where("n_doc", $request->n_doc)
+                           ->first();
 
         if($patient_is_valid){
             return response()->json([
                 "message"=>403,
                 "message_text"=> 'el paciente ya existe'
+                // "message_text" => "Error: El documento {$request->n_doc} ya lo tiene el paciente con ID: {$patient_is_valid->id}"
             ]);
         }
         
