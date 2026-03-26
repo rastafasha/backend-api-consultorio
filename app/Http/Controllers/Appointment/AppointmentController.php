@@ -280,7 +280,9 @@ class AppointmentController extends Controller
                 "name"=>"05:00 PM"
             ],
         ];
-        $specialities = Specialitie::where("state",1)->get();
+        // $specialities = Specialitie::where("state",1)->get();
+
+$specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('activeDoctors')->get();
 
         return response()->json([
             "specialities" => $specialities,

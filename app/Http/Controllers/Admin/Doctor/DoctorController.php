@@ -2,27 +2,27 @@
 
 namespace App\Http\Controllers\Admin\Doctor;
 
-use Carbon\Carbon;
-use App\Models\User;
-use App\Models\Location;
-use Illuminate\Http\Request;
-use App\Mail\UpdateStatusMail;
-use App\Mail\NewUserRegisterMail;
-use App\Models\Doctor\Specialitie;
-use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Appointment\AppointmentCollection;
+use App\Http\Resources\User\UserCollection;
+use App\Http\Resources\User\UserResource;
+use App\Mail\NewUserRegisterMail;
+use App\Mail\UpdateStatusMail;
+use App\Models\Appointment\Appointment;
+use App\Models\Doctor\DoctorScheduleDay;
+use App\Models\Doctor\DoctorScheduleHour;
+use App\Models\Doctor\DoctorScheduleJoinHour;
+use App\Models\Doctor\Specialitie;
+use App\Models\Country;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
-use App\Models\Appointment\Appointment;
 use Illuminate\Support\Facades\Storage;
-use App\Models\Doctor\DoctorScheduleDay;
-use App\Http\Resources\User\UserResource;
-use App\Models\Doctor\DoctorScheduleHour;
-use App\Http\Resources\User\UserCollection;
-use App\Models\Doctor\DoctorScheduleJoinHour;
-use App\Http\Resources\Appointment\AppointmentCollection;
+use Spatie\Permission\Models\Role;
 
 class DoctorController extends Controller
 {
@@ -62,7 +62,7 @@ class DoctorController extends Controller
         $roles = Role::where("name","like","%DOCTOR%")->get();
 
         $specialities = Specialitie::where("state",1)->get();
-        $locations = Location::get();
+        $countries = Country::get();
 
         $hours_days = collect([]);
         
@@ -89,7 +89,7 @@ class DoctorController extends Controller
         return response()->json([
             "roles" => $roles,
             "specialities" => $specialities,
-            "locations" => $locations,
+            "countries" => $countries,
             "hours_days" => $hours_days,
         ]);
     }

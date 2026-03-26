@@ -91,6 +91,9 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     // presupuesto
     require __DIR__ . '/api_routes/presupuesto.php';
+
+    // pais
+    require __DIR__ . '/api_routes/pais.php';
         
 
 
