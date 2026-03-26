@@ -104,6 +104,22 @@ Route::group(['middleware' => 'api'], function ($router) {
         return "Cache";
     });
 
+    Route::get('/clear-all', function () {
+    // Limpia el caché de la aplicación
+    Artisan::call('cache:clear');
+    
+    // Limpia el caché de la configuración (crucial para cambios en el .env)
+    Artisan::call('config:clear');
+    
+    // Limpia el caché de las rutas
+    Artisan::call('route:clear');
+    
+    // Limpia las vistas compiladas
+    Artisan::call('view:clear');
+
+    return "✅ Sistema optimizado: Caché, Configuración, Rutas y Vistas han sido limpiadas.";
+});
+
     Route::get('/optimize', function () {
         Artisan::call('optimize:clear');
         return "Optimización de Laravel";
@@ -125,6 +141,19 @@ Route::group(['middleware' => 'api'], function ($router) {
         Artisan::call('migrate:refresh --seed');
         return "Migrate: creacion con datos, para uso";
     });
+
+    Route::get('/migrate-update', function () {
+    try {
+        // Ejecuta solo las migraciones pendientes sin tocar la data actual
+        Artisan::call('migrate', [
+            '--force' => true // Necesario si estás en entorno de producción
+        ]);
+        
+        return "Migración completada: Estructura actualizada sin pérdida de datos.";
+    } catch (\Exception $e) {
+        return "Error al migrar: " . $e->getMessage();
+    }
+});
 
     Route::get('/route-clear', function () {
     Artisan::call('route:clear');
