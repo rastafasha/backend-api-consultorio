@@ -46,7 +46,8 @@ class StaffsController extends Controller
     }
     public function config()
     {
-        $roles = Role::where("name","not like","%DOCTOR%")->get();
+        // $roles = Role::where("name","not like","%DOCTOR%")->get();
+        $roles = Role::get();
 
         return response()->json([
             "roles" => $roles,

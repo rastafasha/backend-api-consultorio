@@ -69,8 +69,8 @@ class UserResource extends JsonResource
             "precio_cita"=>$this->resource->precio_cita,
             "designation"=>$this->resource->designation,
             "address"=>$this->resource->address,
-            // "avatar"=> $this->resource->avatar ? env("APP_URL")."storage/".$this->resource->avatar : null,
-            "avatar"=> $this->resource->avatar ? env("APP_URL").$this->resource->avatar : null,
+            "avatar"=> $this->resource->avatar ? env("APP_URL")."storage/".$this->resource->avatar : null,
+            // "avatar"=> $this->resource->avatar ? env("APP_URL").$this->resource->avatar : null,
             "roles"=>$this->resource->roles->first(),
             "speciality_id" => $this->resource->speciality_id,
             "speciality"=>$this->resource->speciality ? [

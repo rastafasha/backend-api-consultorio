@@ -20,7 +20,7 @@ class AppointmentSeeder extends Seeder
         $appointment = Appointment::firstOrCreate(
             ['id' => 1],
             [
-                'date_appointment' => '2025-02-17 08:00:00',
+                'date_appointment' => '2026-02-17 08:00:00',
                 'date_attention' => null,
                 'amount' => 30,
                 'cron_state' => 1,
