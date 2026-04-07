@@ -80,6 +80,14 @@ class User extends Authenticatable implements JWTSubject
     const SUPERADMIN = 'SUPERADMIN';
     const GUEST = 'GUEST';
 
+    /**
+     * Accessor for role
+     */
+    public function getRoleAttribute()
+    {
+        return $this->getRoleNames()->first();
+    }
+
     public function setCreatedAtAttribute($value)
     {
     	date_default_timezone_set('America/Caracas');
@@ -101,12 +109,12 @@ class User extends Authenticatable implements JWTSubject
 
     public function isSuperAdmin()
     {
-        return $this->role === User::SUPERADMIN;
+        return $this->role === static::SUPERADMIN;
     }
 
     public function isGuest()
     {
-        return $this->role === User::GUEST;
+        return $this->role === static::GUEST;
     }
 
     public function getJWTIdentifier()
@@ -159,10 +167,15 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(Pais::class);
     }
 
-    public function patients()
-    {
-        return $this->hasMany(Patient::class);
-    }
+
+    public function patients() {
+    return $this->hasMany(Patient::class, 'doctor_id');
+}
+
+// Relación para cuando el usuario ES un paciente logueado
+public function patientProfile() {
+    return $this->hasOne(Patient::class, 'user_id');
+}
 
 
     

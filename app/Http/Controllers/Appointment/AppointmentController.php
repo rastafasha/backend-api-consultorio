@@ -582,10 +582,10 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
         
         // error_log($appointment);
 
-        if($request->confimation === '2'){
-            Mail::to($appointment->patient->email)->send(new ConfirmationAppointment($appointment));
+        // if($request->confimation === '2'){
+        //     Mail::to($appointment->patient->email)->send(new ConfirmationAppointment($appointment));
 
-        }
+        // }
         return response()->json([
             "message" => 200,
             "appointment" => $appointment,

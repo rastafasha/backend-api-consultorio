@@ -3,21 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\AuthLoginRequest;
-use App\Http\Requests\AuthRequest;
 use App\Http\Requests\ChangePasswordRequest;
-use App\Http\Requests\RegisterRequest;
-use App\Mail\NewUserGuestRegisterMail;
-use App\Mail\NewUserRegisterMail;
-use App\Models\Role;
+use App\Models\Patient\Patient;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
-use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 ;
@@ -77,45 +69,42 @@ class AuthController extends Controller
      * Register a User
      * @return \Illuminate\Http\JsonResponse
      */
-    public function register(Request $request) {
+public function register(Request $request) {
+    // 1. Validaciones mínimas
+    $validator = Validator::make($request->all(), [
+        'n_doc'    => 'required|exists:patients,n_doc|unique:users,n_doc',
+        'email'    => 'required|email|unique:users,email',
+        'password' => 'required|min:6',
+    ], [
+        'n_doc.exists' => 'No estás registrado en el consultorio.',
+        'n_doc.unique' => 'Este documento ya tiene una cuenta activa.',
+    ]);
 
-        $data = $request->only('name','surname', 'email', 'password', 'n_doc');
+    if($validator->fails()) return response()->json($validator->errors(), 422);
 
-        $validator = Validator::make($data, [
-            'name' => 'required|string|between:2,100',
-            'surname' => 'required|string|between:2,100',
-            'email' => 'required|string|email|max:100|unique:users',
-            'password' => 'required|string|min:5',
-            'n_doc' => 'required',
-            'role' => Rule::in([User::GUEST]),
-        ]);
-        
+    // 2. Buscamos al paciente del consultorio (ID 21)
+    $paciente = Patient::where('n_doc', $request->n_doc)->first();
 
-        if($validator->fails()){
-            return response()->json($validator->errors(), 422);
-        }
+    // 3. Creamos el Usuario (ID 12) usando los datos que ya tenemos en la ficha médica
+    $user = User::create([
+        'name'     => $paciente->name,    // Heredamos del consultorio
+        'surname'  => $paciente->surname, // Heredamos del consultorio
+        'email'    => $request->email,
+        'n_doc'    => $request->n_doc,
+        'password' => Hash::make($request->password),
+    ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'surname' => $request->surname,
-            'email' => $request->email,
-            'n_doc' => $request->n_doc,
-            'password' => Hash::make($request->password),
-            'role' => User::GUEST,
-        ]);
+    // 4. Vinculamos la ficha médica con el nuevo usuario
+    $paciente->update(['user_id' => $user->id]);
 
-        $token = JWTAuth::fromUser($user);
+    $user->assignRole(User::GUEST);
 
-        Mail::to('mercadocreativo@gmail.com')->send(new NewUserGuestRegisterMail($user));
+    return response()->json([
+        'message' => 'Cuenta activada correctamente',
+        'access_token' => JWTAuth::fromUser($user),
+    ], 201);
+}
 
-        return response()->json([
-            'message' => 'User registered successfully',
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ], 201);
-
-    }
 
     /**
      * Get the authenticated User.

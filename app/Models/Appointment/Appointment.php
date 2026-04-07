@@ -75,14 +75,17 @@ class Appointment extends Model
         return $this->belongsTo(User::class,"doctor_id");
     }
 
-    public function user() {
-        return $this->belongsTo(User::class);
-    }
-
     public function patient()
-    {
-        return $this->belongsTo(Patient::class);
-    }
+{
+    // Esto conectará la cita con el ID 21 de patients
+    return $this->belongsTo(Patient::class, 'patient_id');
+}
+
+public function user()
+{
+    // Esto conectará la cita con el ID 12 de users
+    return $this->belongsTo(User::class, 'user_id');
+}
     
     public function doctor_schedule_join_hour()
     {   

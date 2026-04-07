@@ -35,16 +35,17 @@ class Patient extends Model
         'current_desease',
         'location_id',
         'doctor_id',
+        'user_id',
     ];
 
-    public function setCreateAttribute($value){
+    public function setCreatedAtAttribute($value){
         date_default_timezone_set("America/Caracas"); 
-        $this->attribute['created_at']= Carbon::now();
+        $this->attributes['created_at']= Carbon::now();
     }
 
     public function setUpdateAttribute($value){
         date_default_timezone_set("America/Caracas"); 
-        $this->attribute['updated_at']= Carbon::now();
+        $this->attributes['updated_at']= Carbon::now();
     }
 
      public function person()
@@ -60,4 +61,9 @@ class Patient extends Model
     {
         return $this->belongsTo(User::class, 'doctor_id');
     }
+    public function account()
+{
+    // Relación con el usuario que se registró en la app (el ID 12)
+    return $this->belongsTo(User::class, 'user_id');
+}
 }

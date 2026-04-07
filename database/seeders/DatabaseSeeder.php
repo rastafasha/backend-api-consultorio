@@ -14,18 +14,19 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleAndPermissionSeeder::class,
             PaisSeeder::class,
+            LocationSeeder::class,
             UserSeeder::class,
             SpecialitySeeder::class,
             PatientSeeder::class,
             
             TiposDePagoSeeder::class,
             AppointmentSeeder::class,
-            LocationSeeder::class,
-            PubSeeder::class,
+            
             SettingeneralSeeder::class,
             DoctorScheduleDaySeeder::class,
             DoctorScheduleHourSeeder::class,
             DoctorScheduleJoinHourSeeder::class,
+            PubSeeder::class,
             PresupuestoSeeder::class,
 
 

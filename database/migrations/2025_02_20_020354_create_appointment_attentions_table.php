@@ -15,7 +15,8 @@ class CreateAppointmentAttentionsTable extends Migration
     {
         Schema::create('appointment_attentions', function (Blueprint $table) {
             $table->bigIncrements('id');
-        
+            $table->unsignedBigInteger('patient_id')->nullable(); 
+            $table->unsignedBigInteger('appointment_id')->nullable(); 
             $table->text('description')->nullable();
             $table->json('receta_medica')->nullable();
 
@@ -23,15 +24,18 @@ class CreateAppointmentAttentionsTable extends Migration
 
             
             // Provider IDs
-            $table->unsignedBigInteger('appointment_id')->nullable();
-            $table->unsignedBigInteger('patient_id')->nullable();
+           
+            // Foreign keys for provider relationships
+            $table->foreign('patient_id')
+              ->references('id')
+              ->on('patients')
+              ->onDelete('set null');
+            $table->foreign('appointment_id')->references('id')->on('appointments')->nullOnDelete();
             
             $table->timestamps();
             $table->softDeletes();
 
-            // Foreign keys for provider relationships
-            // $table->foreign('patient_id')->references('id')->on('patients')->nullOnDelete();
-            // $table->foreign('appointment_id')->references('id')->on('appointments')->nullOnDelete();
+            
         });
     }
 
