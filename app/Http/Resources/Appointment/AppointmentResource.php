@@ -56,21 +56,19 @@ class AppointmentResource extends JsonResource
                     "price" => $this->resource->speciality->price,
                 ] : NULL,
             "doctor_schedule_join_hour_id" => $this->resource->doctor_schedule_join_hour_id,
-            "segment_hour" => $this->resource->doctor_schedule_join_hour ?
-                [
-                    "id" => $this->resource->doctor_schedule_join_hour->id,
-                    "doctor_schedule_day_id" => $this->resource->doctor_schedule_join_hour->doctor_schedule_day_id,
-                    "doctor_schedule_hour_id" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour_id,
-                    // "is_appointment"=> $appointment ? true : false,
-                    "format_segment" => [
-                        "id" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->id,
-                        "hour_start" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour_start,
-                        "hour_end" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour_end,
-                        "format_hour_start" => Carbon::parse(date("Y-m-d") . ' ' . $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A"),
-                        "format_hour_end" => Carbon::parse(date("Y-m-d") . ' ' . $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
-                        "hour" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour,
-                    ],
+            "segment_hour" => $this->resource->doctor_schedule_join_hour ? [
+               "id" => $this->resource->doctor_schedule_join_hour->id,
+                "doctor_schedule_day_id" => $this->resource->doctor_schedule_join_hour->doctor_schedule_day_id,
+                "doctor_schedule_hour_id" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour_id,
+                "format_segment" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour ? [
+                    "id" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->id,
+                    "hour_start" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour_start,
+                    "hour_end" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour_end,
+                    "format_hour_start" => Carbon::parse($this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A"),
+                    "format_hour_end" => Carbon::parse($this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
+                    "hour" => $this->resource->doctor_schedule_join_hour->doctor_schedule_hour->hour,
                 ] : NULL,
+            ] : NULL,
 
             // CORRECCIÓN EN USER: Tenías $this->resource->doctor->id, debe ser el usuario logueado
             "user_id" => $this->resource->user_id,

@@ -78,8 +78,23 @@ class UserResource extends JsonResource
                 "name"=> $this->resource->speciality->name,
             ]:NULL,
             "created_at"=>$this->resource->created_at ? Carbon::parse($this->resource->created_at)->format("Y/m/d") : NULL,
-            "schedule_selecteds"=> $HOUR_SCHEDULES,
-            "days_name"=> $days_name,
+            // "schedule_selecteds"=> $HOUR_SCHEDULES,
+            // "days_name"=> $days_name,
+            // ESTO ES LO QUE NECESITA TU ANGULAR PARA LOS CHECKBOXES
+        "schedule_selecteds" => $this->resource->schedule_days->map(function($day) {
+            return $day->schedule_hours->map(function($pivot) use ($day) {
+                return [
+                    "day_name" => $day->day,
+                    "item" => [
+                        "id" => $pivot->doctor_schedule_hour_id,
+                        "hour_start" => optional($pivot->doctor_schedule_hour)->hour_start,
+                        "hour_end" => optional($pivot->doctor_schedule_hour)->hour_end,
+                    ]
+                ];
+            });
+        })->collapse(), // Convertimos la matriz en una lista plana para Angular
+        
+        "days_name" => $this->resource->schedule_days->pluck('day')->implode('-') . '-',
         ];
     }
 }

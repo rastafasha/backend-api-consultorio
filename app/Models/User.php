@@ -25,7 +25,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasApiTokens, HasFactory, Notifiable, HavePermission,  HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HavePermission, HasRoles;
     use SoftDeletes;
     /*
     |--------------------------------------------------------------------------
@@ -90,14 +90,14 @@ class User extends Authenticatable implements JWTSubject
 
     public function setCreatedAtAttribute($value)
     {
-    	date_default_timezone_set('America/Caracas');
-        $this->attributes["created_at"]= Carbon::now();
+        date_default_timezone_set('America/Caracas');
+        $this->attributes["created_at"] = Carbon::now();
     }
 
     public function setUpdatedAtAttribute($value)
     {
-    	date_default_timezone_set("America/Caracas");
-        $this->attributes["updated_at"]= Carbon::now();
+        date_default_timezone_set("America/Caracas");
+        $this->attributes["updated_at"] = Carbon::now();
     }
 
 
@@ -164,22 +164,25 @@ class User extends Authenticatable implements JWTSubject
     }
     public function pais()
     {
-        return $this->belongsTo(Pais::class);
+        return $this->belongsTo(Country::class);
+    }
+
+    // Relación para el Médico: Ahora es belongsToMany
+    public function patients()
+    {
+        return $this->belongsToMany(Patient::class, 'doctor_patient', 'doctor_id', 'patient_id')
+            ->withTimestamps();
+    }
+
+    // Relación para cuando el usuario ES un paciente logueado
+    public function patientProfile()
+    {
+        return $this->hasOne(Patient::class, 'user_id');
     }
 
 
-    public function patients() {
-    return $this->hasMany(Patient::class, 'doctor_id');
-}
-
-// Relación para cuando el usuario ES un paciente logueado
-public function patientProfile() {
-    return $this->hasOne(Patient::class, 'user_id');
-}
 
 
-    
-    
 
 
 }

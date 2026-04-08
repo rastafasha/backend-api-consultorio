@@ -29,40 +29,44 @@ class PatientController extends Controller
     {
         $search = $request->search;
 
-        $patients = Patient::where(DB::raw("CONCAT(patients.name,' ', IFNULL(patients.surname,''),' ',patients.email)"),
-        "like","%".$search."%"
+        $patients = Patient::where(
+            DB::raw("CONCAT(patients.name,' ', IFNULL(patients.surname,''),' ',patients.email)"),
+            "like",
+            "%" . $search . "%"
         )->orderBy("id", "desc")
-        ->paginate(10);
-                    
+            ->paginate(10);
+
         return response()->json([
-            "total" =>$patients->total(),
+            "total" => $patients->total(),
             "patients" => PatientCollection::make($patients),
-            
-        ]);          
+
+        ]);
     }
 
     public function patientsByDoctor(Request $request, $doctor_id)
     {
-
         $search = $request->search;
-        
-        $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        // $patients = Patient::Where('doctor_id', $doctor_id)
 
-        $patients = Patient::where(DB::raw("CONCAT(patients.name,' ', IFNULL(patients.surname,''),' ',patients.email)"),
-        "like","%".$search."%"
-        )
-        ->Where('doctor_id', $doctor_id)
-        ->orderBy("id", "desc")
-        ->paginate(10);
+        // Filtramos los pacientes que TIENEN una relación con el doctor_id dado
+        $patients = Patient::whereHas('doctors', function ($query) use ($doctor_id) {
+            $query->where('users.id', $doctor_id); // Filtro en la tabla pivot/doctors
+        })
+            ->where(function ($query) use ($search) {
+                if ($search) {
+                    $query->where(
+                        DB::raw("CONCAT(name, ' ', IFNULL(surname, ''), ' ', email)"),
+                        "like",
+                        "%" . $search . "%"
+                    );
+                }
+            })
+            ->orderBy("id", "desc")
+            ->paginate(10);
 
         return response()->json([
-            // "patients"=> $patients,
-            "total"=>$patients->total(),
-            "patients"=> PatientCollection::make($patients)
-            // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
+            "total" => $patients->total(),
+            "patients" => PatientCollection::make($patients)
         ]);
-
     }
 
     /**
@@ -78,15 +82,15 @@ class PatientController extends Controller
         // if(isset($cachedRecord)) {
         //     $data_patient = json_decode($cachedRecord, FALSE);
         // }else{
-            
+
         //     $patient = Patient::findOrFail($id);
-    
+
         //     $num_appointment = Appointment::where("patient_id",$id)->count();
         //     $money_of_appointments = Appointment::where("patient_id",$id)->sum("amount");
         //     $num_appointment_pendings = Appointment::where("patient_id",$id)->where("status",1)->count();
         //     $appointment_pendings = Appointment::where("patient_id",$id)->where("status",1)->get();
         //     $appointments = Appointment::where("patient_id",$id)->get();
-            
+
         //     $data_patient = [
         //         "num_appointment"=>$num_appointment,
         //         "money_of_appointments"=> $money_of_appointments,
@@ -126,70 +130,102 @@ class PatientController extends Controller
         //     Redis::set('profile_patient_#'.$id, json_encode($data_patient),'EX', 3600);
         // }
         //uso de redis
-        
+
         //sin redis
         $data_patient = [];
         $patient = Patient::findOrFail($id);
-    
-            $num_appointment = Appointment::where("patient_id",$id)->count();
-            $money_of_appointments = Appointment::where("patient_id",$id)->sum("amount");
-            $num_appointment_pendings = Appointment::where("patient_id",$id)->where("status",1)->count();
-            $num_appointment_checkeds = Appointment::where("patient_id",$id)->where("status",2)->count();
-            $appointment_checkeds = Appointment::where("patient_id",$id)->where("status",2)->orderby("id", "desc")->get();
-            $appointment_pendings = Appointment::where("patient_id",$id)->where("status",1)->orderby("id", "desc")->get();
-            $appointments = Appointment::where("patient_id",$id)->orderBy("date_appointment", "desc")->get();
-            
-            $data_patient = [
-                "num_appointment"=>$num_appointment,
-                "num_appointment_checkeds"=>$num_appointment_checkeds,
-                "appointment_checkeds"=>AppointmentCollection::make($appointment_checkeds),
-                "money_of_appointments"=> $money_of_appointments,
-                "num_appointment_pendings"=>$num_appointment_pendings,
-                "patient" => PatientResource::make($patient),
-                "appointment_pendings"=> AppointmentCollection::make($appointment_pendings),
-                "appointments"=>$appointments->map(function($appointment){
-                    return [
-                        "id"=> $appointment->id,
-                        "patient"=> [
-                            "id"=> $appointment->patient->id,
-                            "full_name"=> $appointment->patient->name.' '.$appointment->patient->surname,
-                            // "avatar"=> $appointment->patient->avatar ? env("APP_URL")."storage/".$appointment->patient->avatar : null,
-                            "avatar"=> $appointment->patient->avatar ? env("APP_URL").$appointment->patient->avatar : null,
-                        ],
-                        "doctor"=> [
-                            "id"=> $appointment->doctor->id,
-                            "full_name"=> $appointment->doctor->name.' '.$appointment->doctor->surname,
-                            // "avatar"=> $appointment->doctor->avatar ? env("APP_URL")."storage/".$appointment->doctor->avatar : null,
-                            "avatar"=> $appointment->doctor->avatar ? env("APP_URL").$appointment->doctor->avatar : null,
-                            "speciality_id" => $appointment->doctor->speciality_id,
-                            "speciality"=>$appointment->doctor->speciality ? [
-                                "id"=> $appointment->doctor->speciality->id,
-                                "name"=> $appointment->doctor->speciality->name,
-                                "price"=> $appointment->doctor->speciality->price,
-                            ]:NULL,
-                        ],
-                        "date_appointment" =>$appointment->date_appointment,
-                        "date_appointment_format" =>Carbon::parse($appointment->date_appointment)->format("d M Y"),
-                        "format_hour_start" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A") ,
-                        "format_hour_end" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
-                        "appointment_attention"=> $appointment->attention ?[
-                            "id"=>$appointment->attention->id,
-                            "description"=>$appointment->attention->description,
-                            "receta_medica"=>$appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
-                            "created_at" => $appointment->attention->created_at->format("Y-m-d h:i A"),
-                        ]: NULL,
-                        "amount" =>$appointment->amount,
-                        "status_pay" =>$appointment->status_pay,
-                        "status" =>$appointment->status,
-                        "speciality_id" => $appointment->speciality_id,
-                            "speciality"=>$appointment->speciality ? [
-                                "id"=> $appointment->speciality->id,
-                                "name"=> $appointment->speciality->name,
-                                "price"=> $appointment->speciality->price,
-                            ]:NULL,
-                    ];
-                }),
-            ];
+
+        // $num_appointment = Appointment::where("patient_id", $id)->count();
+        // $money_of_appointments = Appointment::where("patient_id", $id)->sum("amount");
+        // $num_appointment_pendings = Appointment::where("patient_id", $id)->where("status", 1)->count();
+        // $num_appointment_checkeds = Appointment::where("patient_id", $id)->where("status", 2)->count();
+        // $appointment_checkeds = Appointment::where("patient_id", $id)->where("status", 2)->orderby("id", "desc")->get();
+        // $appointment_pendings = Appointment::where("patient_id", $id)->where("status", 1)->orderby("id", "desc")->get();
+
+        // Cargamos todas las citas con sus relaciones de una vez para no repetir consultas
+        $all_appointments = Appointment::with([
+            'doctor_schedule_join_hour.doctor_schedule_hour',
+            'patient',
+            'doctor.speciality',
+            'speciality',
+            'attention'
+        ])
+            ->where('patient_id', $id)
+            ->orderBy("id", "desc")
+            ->get();
+        // Filtramos sobre la colección en memoria (más rápido que ir 3 veces a la DB)
+        $appointment_checkeds = $all_appointments->where('status', 2);
+        $appointment_pendings = $all_appointments->where('status', 1);
+
+        $data_patient = [
+            "num_appointment" => $all_appointments->count(),
+            "num_appointment_checkeds" => $appointment_checkeds->count(),
+            "num_appointment_pendings" => $appointment_pendings->count(),
+            "money_of_appointments" => $all_appointments->sum("amount"),
+            // Ahora estas colecciones ya llevan el horario cargado
+            "appointment_checkeds" => AppointmentCollection::make($appointment_checkeds),
+            "appointment_pendings" => AppointmentCollection::make($appointment_pendings),
+            "patient" => PatientResource::make($patient),
+            "appointments" => $all_appointments->map(function ($appointment) {
+
+                return [
+                    "id" => $appointment->id,
+                    "doctor_schedule_join_hour_id" => $appointment->doctor_schedule_join_hour_id,
+                    "segment_hour" => $appointment->doctor_schedule_join_hour ? [
+                        "id" => $appointment->doctor_schedule_join_hour->id,
+                        "format_segment" => $appointment->doctor_schedule_join_hour->doctor_schedule_hour ? [
+                            "hour_start" => $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start,
+                            "format_hour_start" => Carbon::parse($appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A"),
+                            "hour_end" => $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end,
+                            "format_hour_end" => Carbon::parse($appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
+                        ] : null,
+                    ] : null,
+                    "patient" => [
+                        "id" => $appointment->patient->id,
+
+                        "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+                        // "avatar"=> $appointment->patient->avatar ? env("APP_URL")."storage/".$appointment->patient->avatar : null,
+                        "avatar" => $appointment->patient->avatar ? env("APP_URL") . $appointment->patient->avatar : null,
+                    ],
+                    "doctor" => [
+                        "id" => $appointment->doctor->id,
+                        "full_name" => $appointment->doctor->name . ' ' . $appointment->doctor->surname,
+                        // "avatar"=> $appointment->doctor->avatar ? env("APP_URL")."storage/".$appointment->doctor->avatar : null,
+                        "avatar" => $appointment->doctor->avatar ? env("APP_URL") . $appointment->doctor->avatar : null,
+                        "speciality_id" => $appointment->doctor->speciality_id,
+                        "speciality" => $appointment->doctor->speciality ? [
+                            "id" => $appointment->doctor->speciality->id,
+                            "name" => $appointment->doctor->speciality->name,
+                            "price" => $appointment->doctor->speciality->price,
+                        ] : NULL,
+                    ],
+                    "date_appointment" => $appointment->date_appointment,
+                    "date_appointment_format" => Carbon::parse($appointment->date_appointment)->format("d M Y"),
+                    // Estos campos ahora sí tendrán datos porque usamos with() arriba
+                    "format_hour_start" => $appointment->doctor_schedule_join_hour?->doctor_schedule_hour
+                        ? Carbon::parse(date("Y-m-d") . ' ' . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A")
+                        : null,
+                    "format_hour_end" => $appointment->doctor_schedule_join_hour?->doctor_schedule_hour
+                        ? Carbon::parse(date("Y-m-d") . ' ' . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A")
+                        : null,
+                    "appointment_attention" => $appointment->attention ? [
+                        "id" => $appointment->attention->id,
+                        "description" => $appointment->attention->description,
+                        "receta_medica" => $appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
+                        "created_at" => $appointment->attention->created_at->format("Y-m-d h:i A"),
+                    ] : NULL,
+                    "amount" => $appointment->amount,
+                    "status_pay" => $appointment->status_pay,
+                    "status" => $appointment->status,
+                    "speciality_id" => $appointment->speciality_id,
+                    "speciality" => $appointment->speciality ? [
+                        "id" => $appointment->speciality->id,
+                        "name" => $appointment->speciality->name,
+                        "price" => $appointment->speciality->price,
+                    ] : NULL,
+                ];
+            }),
+        ];
         //sin redis
 
         return response()->json($data_patient);
@@ -205,36 +241,36 @@ class PatientController extends Controller
     {
         $patient_is_valid = Patient::where("n_doc", $request->n_doc)->first();
 
-        if($patient_is_valid){
+        if ($patient_is_valid) {
             return response()->json([
-                "message"=>403,
-                "message_text"=> 'el paciente ya existe'
+                "message" => 403,
+                "message_text" => 'el paciente ya existe'
             ]);
         }
 
-        if($request->hasFile('imagen')){
+        if ($request->hasFile('imagen')) {
             $path = Storage::putFile("patients", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+            $request->request->add(["avatar" => $path]);
         }
 
-        if($request->birth_date){
-            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '',$request->birth_date );
+        if ($request->birth_date) {
+            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
             $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
         }
 
         $patient = Patient::create($request->all());
 
-        
+
 
         $request->request->add([
-            "patient_id" =>$patient->id
+            "patient_id" => $patient->id
         ]);
         PatientPerson::create($request->all());
 
         Mail::to($patient->email)->send(new NewPatientRegisterMail($patient));
 
         return response()->json([
-            "message"=>200,
+            "message" => 200,
         ]);
     }
 
@@ -263,29 +299,29 @@ class PatientController extends Controller
      */
     public function update(Request $request, $id)
     {
-         $patient_is_valid = Patient::where("id", "!=", (int)$id)
-                           ->where("n_doc", $request->n_doc)
-                           ->first();
+        $patient_is_valid = Patient::where("id", "!=", (int) $id)
+            ->where("n_doc", $request->n_doc)
+            ->first();
 
-        if($patient_is_valid){
+        if ($patient_is_valid) {
             return response()->json([
-                "message"=>403,
-                "message_text"=> 'el paciente ya existe'
+                "message" => 403,
+                "message_text" => 'el paciente ya existe'
                 // "message_text" => "Error: El documento {$request->n_doc} ya lo tiene el paciente con ID: {$patient_is_valid->id}"
             ]);
         }
-        
+
         $patient = Patient::findOrFail($id);
-        if($request->hasFile('imagen')){
-            if($patient->avatar){
+        if ($request->hasFile('imagen')) {
+            if ($patient->avatar) {
                 Storage::delete($patient->avatar);
             }
             $path = Storage::putFile("patients", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+            $request->request->add(["avatar" => $path]);
         }
-        
-        if($request->birth_date){
-            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '',$request->birth_date );
+
+        if ($request->birth_date) {
+            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
             $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
         }
         //uso de redis
@@ -295,12 +331,12 @@ class PatientController extends Controller
         // }
         $patient->update($request->all());
 
-        if($patient->person){
+        if ($patient->person) {
             $patient->person->update($request->all());
         }
         return response()->json([
-            "message"=>200,
-            "patient"=>$patient
+            "message" => 200,
+            "patient" => $patient
         ]);
     }
 
@@ -313,7 +349,7 @@ class PatientController extends Controller
     public function destroy($id)
     {
         $patient = Patient::findOrFail($id);
-        if($patient->avatar){
+        if ($patient->avatar) {
             Storage::delete($patient->avatar);
         }
         //uso de redis
@@ -323,7 +359,7 @@ class PatientController extends Controller
         // }
         $patient->delete();
         return response()->json([
-            "message"=>200
+            "message" => 200
         ]);
     }
 
@@ -333,20 +369,20 @@ class PatientController extends Controller
         // $doctors = Patient::join('users', 'patients.id', '=', 'users.id')
         // ->where('location_id',$location_id)
         // ->select(
-            
+
         //     'patients.id as id',
         //     'users.name',
         //     'users.surname',
         //     'users.location_id',
         //     )
         // ->get();
-        
-        
-        $doctors = User::where('location_id',$location_id)->get();
-        $patients = Patient::where('location_id',$location_id)->get();
+
+
+        $doctors = User::where('location_id', $location_id)->get();
+        $patients = Patient::where('location_id', $location_id)->get();
 
         return response()->json([
-            
+
             "patients" => $patients,
             "patients" => PatientCollection::make($patients),
             // "patients"=>$patients->map(function($patient){
@@ -388,10 +424,10 @@ class PatientController extends Controller
             //         "diagnosis_code"=>$patient->diagnosis_code,
             //         "special_note"=>$patient->special_note,
             //         "patient_control"=>$patient->patient_control,
-                    
+
             //         //benefits
             //         "insurer_id"=>$patient->insurer_id,
-                    
+
 
             //         'insurances'=>$patient-> insurances,
             //             'insurances'=>[
@@ -414,7 +450,7 @@ class PatientController extends Controller
             //         "coinsurance"=>$patient->coinsurance,
             //         "copayments"=>$patient->copayments,
             //         "oop"=>$patient->oop,
-                    
+
             //         //intake
             //         "welcome"=>$patient->welcome,
             //         "consent"=>$patient->consent,
@@ -431,7 +467,7 @@ class PatientController extends Controller
             //         "eqhlid"=>$patient->eqhlid,
             //         "telehealth"=>$patient->telehealth,
             //         "pay"=>$patient->pay,
-                    
+
             //         //pas
             //         'pa_assessments'=> json_decode($patient->pa_assessments) ? : null,
             //         // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
@@ -481,12 +517,12 @@ class PatientController extends Controller
             //                 'surname'=> $patient->clin_director->surname,
             //                 'npi'=> $patient->clin_director->npi,
             //             ],
-                            
-                    
+
+
             //     "created_at"=>$patient->created_at ? Carbon::parse($patient->created_at)->format("Y-m-d h:i A") : NULL,
             //     ];
             // }),
-            
+
             "doctors" => $doctors,
             // "doctors" => UserCollection::make($doctors),
             // "doctors"=>$doctors->map(function($doctor){
@@ -541,8 +577,8 @@ class PatientController extends Controller
             //             ],
             //    ];
             // }),
-            
-            
+
+
         ]);
     }
 }

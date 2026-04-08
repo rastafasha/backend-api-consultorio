@@ -23,27 +23,28 @@ class AppointmentFactory extends Factory
      */
     public function definition(): array
     {
-        $doctor = User::role('DOCTOR')->inRandomOrder()->first();
-        
+        // 1. Buscamos un horario que YA exista en la base de datos
+        // Esto nos asegura que el doctor_id y el horario coincidan perfectamente
+       $schedule = DoctorScheduleJoinHour::with('doctor_schedule_day.doctor')->inRandomOrder()->first();
+        // 2. Si no hay horarios creados, usamos IDs por defecto (ajusta según tus seeders)
+        $doctor_id = $schedule ? $schedule->doctor_schedule_day->user_id : 3;
+        $schedule_id = $schedule ? $schedule->id : 1;
+
         $date_appointment = $this->faker->dateTimeBetween("2024-01-01 00:00:00", "2026-01-01 23:59:59");
         $status = $this->faker->randomElement([1, 2]);
-        
-        $doctor_schedule_day =  DoctorScheduleDay::where("user_id",$doctor->id)->inRandomOrder()->first();
-        $doctor_schedule_join_hour = $doctor_schedule_day ? 
-            DoctorScheduleJoinHour::where("doctor_schedule_day_id",$doctor_schedule_day->id)->inRandomOrder()->first() : 
-            null;
-        
+
         return [
-            "doctor_id" => User::role('DOCTOR')->inRandomOrder()->first()->id,
-            "patient_id" => Patient::inRandomOrder()->first()->id,
+            'doctor_id' => $schedule ? $schedule->doctor_schedule_day->user_id : 3, // Usamos el doctor que es dueño del horario
+            "patient_id" => Patient::inRandomOrder()->first()?->id ?? 1,
             "date_appointment" => $date_appointment,
-            "speciality_id" => Specialitie::all()->random()->id,
-            "doctor_schedule_join_hour_id" => $doctor_schedule_join_hour ? $doctor_schedule_join_hour->id : 1,
-            "user_id" => User::all()->random()->id,
-            "amount" => $this->faker->randomElement([100,150,200,250,80,120,95,75,160,230,110]),
+            "speciality_id" => Specialitie::inRandomOrder()->first()?->id ?? 1,
+            'doctor_schedule_join_hour_id' => $schedule_id, // <--- ID dinámico y real
+            "user_id" => User::role('ADMIN')->inRandomOrder()->first()?->id ?? 1,
+            "amount" => $this->faker->randomElement([100, 150, 200, 250, 80, 120, 95, 75, 160, 230, 110]),
             "status" => $status,
             "status_pay" => $this->faker->randomElement([1, 2]),
             "date_attention" => $status == 2 ? $this->faker->dateTimeBetween($date_appointment, "2026-12-25 23:59:59") : NULL,
         ];
     }
+
 }

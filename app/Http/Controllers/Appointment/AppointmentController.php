@@ -392,13 +392,11 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
 
         $appointment = Appointment::create([
             "doctor_id" =>$request->doctor_id,
-            "patient_id" =>$patient->id,
+            'patient_id' => auth()->user()->patientProfile->id,
             "date_appointment" => Carbon::parse($request->date_appointment)->format("Y-m-d h:i:s"),
             "speciality_id" => $request->speciality_id,
             "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
-            // "user_id" => auth("api")->user()->id, aqui lo comente porque no reconoce el id.. 
-            // asi que lo envio desde el front y aqui lo recibo
-            "user_id" => $request->user_id,
+            'user_id'    => auth()->id(), 
             "amount" =>$request->amount,
             "status_pay" =>$request->amount != $request->amount_add ? 2 : 1,
         ]);
