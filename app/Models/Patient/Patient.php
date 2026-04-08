@@ -35,7 +35,6 @@ class Patient extends Model
         'peso',
         'current_desease',
         'location_id',
-        'doctor_id',
         'user_id',
     ];
 

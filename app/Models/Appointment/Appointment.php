@@ -29,7 +29,7 @@ class Appointment extends Model
         "date_appointment",
         "speciality_id",
         "user_id",
-        "amount",
+        "precio_cita",
         "status_pay",
         "deuda",
         "status",

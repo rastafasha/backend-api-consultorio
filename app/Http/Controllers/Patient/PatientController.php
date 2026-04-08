@@ -135,13 +135,6 @@ class PatientController extends Controller
         $data_patient = [];
         $patient = Patient::findOrFail($id);
 
-        // $num_appointment = Appointment::where("patient_id", $id)->count();
-        // $money_of_appointments = Appointment::where("patient_id", $id)->sum("amount");
-        // $num_appointment_pendings = Appointment::where("patient_id", $id)->where("status", 1)->count();
-        // $num_appointment_checkeds = Appointment::where("patient_id", $id)->where("status", 2)->count();
-        // $appointment_checkeds = Appointment::where("patient_id", $id)->where("status", 2)->orderby("id", "desc")->get();
-        // $appointment_pendings = Appointment::where("patient_id", $id)->where("status", 1)->orderby("id", "desc")->get();
-
         // Cargamos todas las citas con sus relaciones de una vez para no repetir consultas
         $all_appointments = Appointment::with([
             'doctor_schedule_join_hour.doctor_schedule_hour',
@@ -312,6 +305,16 @@ class PatientController extends Controller
         }
 
         $patient = Patient::findOrFail($id);
+        // 1. Actualizamos los datos propios del paciente (quitando doctor_id del chorro de datos)
+        $patient->update($request->except('doctor_id'));
+
+        // 2. Sincronizamos la relación en la tabla intermedia 'doctor_patient'
+        if ($request->has('doctor_id')) {
+            // sync() añade el nuevo, mantiene los que ya estaban o borra los que no vengan
+            // Si solo es un doctor, puedes pasarle el ID solo o en array [ $request->doctor_id ]
+            $patient->doctors()->sync($request->doctor_id);
+        }
+
         if ($request->hasFile('imagen')) {
             if ($patient->avatar) {
                 Storage::delete($patient->avatar);

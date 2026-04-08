@@ -36,10 +36,10 @@ class AppointmentController extends Controller
         $date = $request->date;
 
         $appointments = Appointment::filterAdvance($speciality_id, $name_doctor, $date)->orderBy("id", "desc")
-                            ->paginate(10);
+            ->paginate(10);
         return response()->json([
-            "total"=>$appointments->total(),
-            "appointments"=> AppointmentCollection::make($appointments)
+            "total" => $appointments->total(),
+            "appointments" => AppointmentCollection::make($appointments)
         ]);
 
     }
@@ -51,26 +51,26 @@ class AppointmentController extends Controller
         $search_patient = $request->search_patient;
         $search = $request->search;
         $date = $request->date;
-        
+
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
         // $patients = Patient::Where('doctor_id', $doctor_id)
 
         $appointments = Appointment::filterAdvanceDoc(
             $search_doctor,
-            $search_patient, 
+            $search_patient,
             $date,
-            $search 
-            )
-        ->Where('doctor_id', $doctor_id)
-        ->orderBy("id", "desc")
-        ->paginate(10);
+            $search
+        )
+            ->Where('doctor_id', $doctor_id)
+            ->orderBy("id", "desc")
+            ->paginate(10);
 
         return response()->json([
-            "total"=>$appointments->total(),
-            "appointments"=> AppointmentCollection::make($appointments)
+            "total" => $appointments->total(),
+            "appointments" => AppointmentCollection::make($appointments)
         ]);
 
-        
+
 
     }
 
@@ -79,7 +79,7 @@ class AppointmentController extends Controller
         $date_appointment = $request->date_appointment;
         $hour = $request->hour;
         $speciality_id = $request->speciality_id;
-        
+
         date_default_timezone_set('America/Caracas');
         Carbon::setLocale('es');
         DB::statement("SET lc_time_names = 'es_ES'");
@@ -87,63 +87,63 @@ class AppointmentController extends Controller
         $name_day = Carbon::parse($date_appointment)->dayName;
         //consulta para saber que doctor cumple con la disponibilidad de atencion tendiendo en cuenta
         //el dia, hora y especialidad
-        $doctor_query = DoctorScheduleDay::where("day","like","%".$name_day."%")
-                        ->whereHas("doctor", function($q) use($speciality_id){
-                            $q->where("speciality_id", $speciality_id);
-                        })
-                        ->whereHas("schedule_hours", function($q)use($hour){
-                            $q->whereHas("doctor_schedule_hour",function($qs)use($hour){
-                                $qs->where("hour", $hour);
-                            });
-                        })->get();
-        $doctors = collect([]);   
+        $doctor_query = DoctorScheduleDay::where("day", "like", "%" . $name_day . "%")
+            ->whereHas("doctor", function ($q) use ($speciality_id) {
+                $q->where("speciality_id", $speciality_id);
+            })
+            ->whereHas("schedule_hours", function ($q) use ($hour) {
+                $q->whereHas("doctor_schedule_hour", function ($qs) use ($hour) {
+                    $qs->where("hour", $hour);
+                });
+            })->get();
+        $doctors = collect([]);
         //iteramos entre los doctores que resultaron de la consulta
         foreach ($doctor_query as $key => $doctor_q) {
             //revisamos su disponibilidad para arrojar los segmentos de la hora, en intervalos de 15 min
-            $segments = DoctorScheduleJoinHour::where("doctor_schedule_day_id",$doctor_q->id)
-                                                ->whereHas("doctor_schedule_hour",function($q)use($hour){
-                                                    $q->where("hour", $hour);
-                                                })->get();
-             //armamos una lista de doctores con los segmentos de su hora(marcamos cuales se encuentran ocupados)                                   
+            $segments = DoctorScheduleJoinHour::where("doctor_schedule_day_id", $doctor_q->id)
+                ->whereHas("doctor_schedule_hour", function ($q) use ($hour) {
+                    $q->where("hour", $hour);
+                })->get();
+            //armamos una lista de doctores con los segmentos de su hora(marcamos cuales se encuentran ocupados)                                   
             $doctors->push([
                 //datos del doctor
-                "doctor"=>[
-                    "id"=> $doctor_q->doctor->id,
-                    "full_name"=> $doctor_q->doctor->name.' '.$doctor_q->doctor->surname,
-                    "address"=> $doctor_q->doctor->address,
-                    "precio_cita"=> $doctor_q->doctor->precio_cita,
-                    "speciality"=>[
-                        "id"=> $doctor_q->doctor->speciality->id,
-                        "name"=>$doctor_q->doctor->speciality->name,
+                "doctor" => [
+                    "id" => $doctor_q->doctor->id,
+                    "full_name" => $doctor_q->doctor->name . ' ' . $doctor_q->doctor->surname,
+                    "address" => $doctor_q->doctor->address,
+                    "precio_cita" => $doctor_q->doctor->precio_cita,
+                    "speciality" => [
+                        "id" => $doctor_q->doctor->speciality->id,
+                        "name" => $doctor_q->doctor->speciality->name,
                     ],
                 ],
                 //datos del segmento en un formato para el frontend
-                "segments" => $segments->map(function($segment)use($date_appointment){
+                "segments" => $segments->map(function ($segment) use ($date_appointment) {
                     //aca podemos averiguar si el segmento ya se encuentra ocupado por otra cita medica
                     $appointment = Appointment::where("doctor_schedule_join_hour_id", $segment->id)
-                                                ->whereDate("date_appointment", Carbon::parse($date_appointment)->format("Y-m-d"))
-                                                ->first();
-                        return[
-                            "id" => $segment->id,
-                            "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
-                            "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
-                            "is_appointment"=> $appointment ? true : false,
-                            "format_segment"=>[
-                                "id" => $segment->doctor_schedule_hour->id,
-                                "hour_start" => $segment->doctor_schedule_hour->hour_start,
-                                "hour_end" => $segment->doctor_schedule_hour->hour_end,
-                                "format_hour_start" => Carbon::parse(date("Y-m-d").' '.$segment->doctor_schedule_hour->hour_start)->format("h:i A") ,
-                                "format_hour_end" => Carbon::parse(date("Y-m-d").' '.$segment->doctor_schedule_hour->hour_end)->format("h:i A"),
-                                "hour" => $segment->doctor_schedule_hour->hour,
-                            ],
-                        ];
-                    })
-                ]);
-        }             
+                        ->whereDate("date_appointment", Carbon::parse($date_appointment)->format("Y-m-d"))
+                        ->first();
+                    return [
+                        "id" => $segment->id,
+                        "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
+                        "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
+                        "is_appointment" => $appointment ? true : false,
+                        "format_segment" => [
+                            "id" => $segment->doctor_schedule_hour->id,
+                            "hour_start" => $segment->doctor_schedule_hour->hour_start,
+                            "hour_end" => $segment->doctor_schedule_hour->hour_end,
+                            "format_hour_start" => Carbon::parse(date("Y-m-d") . ' ' . $segment->doctor_schedule_hour->hour_start)->format("h:i A"),
+                            "format_hour_end" => Carbon::parse(date("Y-m-d") . ' ' . $segment->doctor_schedule_hour->hour_end)->format("h:i A"),
+                            "hour" => $segment->doctor_schedule_hour->hour,
+                        ],
+                    ];
+                })
+            ]);
+        }
         // dd($doctors);
 
         return response()->json([
-            "doctors"=>$doctors
+            "doctors" => $doctors
         ]);
     }
 
@@ -152,34 +152,34 @@ class AppointmentController extends Controller
         $date_appointment = $request->date_appointment;
         $hour = $request->hour;
         $speciality_id = $request->speciality_id;
-        
+
         date_default_timezone_set('America/Caracas');
         Carbon::setLocale('es');
         DB::statement("SET lc_time_names = 'es_ES'");
 
         $name_day = Carbon::parse($date_appointment)->dayName;
-        $doctor_query = DoctorScheduleDay::where("day","like","%".$name_day."%")
-                        ->whereHas("doctor", function($q) use($doctor_id, $speciality_id){
-                            $q->where("id", $doctor_id)
-                              ->where("speciality_id", $speciality_id);
-                        })
-                        ->whereHas("schedule_hours", function($q)use($hour){
-                            $q->whereHas("doctor_schedule_hour",function($qs)use($hour){
-                                $qs->where("hour", $hour);
-                            });
-                        })->get();
-        
+        $doctor_query = DoctorScheduleDay::where("day", "like", "%" . $name_day . "%")
+            ->whereHas("doctor", function ($q) use ($doctor_id, $speciality_id) {
+                $q->where("id", $doctor_id)
+                    ->where("speciality_id", $speciality_id);
+            })
+            ->whereHas("schedule_hours", function ($q) use ($hour) {
+                $q->whereHas("doctor_schedule_hour", function ($qs) use ($hour) {
+                    $qs->where("hour", $hour);
+                });
+            })->get();
+
         // Get the specific doctor's details
         $doctor = User::find($doctor_id);
-        
+
         // Iterate through the doctor's schedule
         foreach ($doctor_query as $key => $doctor_q) {
             // Get available time segments
-            $segments = DoctorScheduleJoinHour::where("doctor_schedule_day_id",$doctor_q->id)
-                                                ->whereHas("doctor_schedule_hour",function($q)use($hour){
-                                                    $q->where("hour", $hour);
-                                                })->get();
-             // Build doctor's schedule with available segments
+            $segments = DoctorScheduleJoinHour::where("doctor_schedule_day_id", $doctor_q->id)
+                ->whereHas("doctor_schedule_hour", function ($q) use ($hour) {
+                    $q->where("hour", $hour);
+                })->get();
+            // Build doctor's schedule with available segments
             $doctor = User::find($doctor_id);
             if (!$doctor) {
                 return response()->json([
@@ -190,46 +190,46 @@ class AppointmentController extends Controller
 
             $doctorDetails = [
                 // Doctor details
-                "doctor"=>[
-                    "id"=> $doctor->id,
-                    "full_name"=> $doctor->name.' '.$doctor->surname,
-                    "address"=> $doctor->address,
-                    "precio_cita"=> $doctor->precio_cita,
-                    "speciality"=>[
-                        "id"=> $doctor->speciality->id,
-                        "name"=>$doctor->speciality->name,
+                "doctor" => [
+                    "id" => $doctor->id,
+                    "full_name" => $doctor->name . ' ' . $doctor->surname,
+                    "address" => $doctor->address,
+                    "precio_cita" => $doctor->precio_cita,
+                    "speciality" => [
+                        "id" => $doctor->speciality->id,
+                        "name" => $doctor->speciality->name,
                     ],
                 ],
                 //datos del segmento en un formato para el frontend
-                "segments" => $segments->map(function($segment)use($date_appointment){
+                "segments" => $segments->map(function ($segment) use ($date_appointment) {
                     //aca podemos averiguar si el segmento ya se encuentra ocupado por otra cita medica
                     $appointment = Appointment::where("doctor_schedule_join_hour_id", $segment->id)
-                                                ->whereDate("date_appointment", Carbon::parse($date_appointment)->format("Y-m-d"))
-                                                ->first();
-                        return[
-                            "id" => $segment->id,
-                            "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
-                            "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
-                            "is_appointment"=> $appointment ? true : false,
-                            "format_segment"=>[
-                                "id" => $segment->doctor_schedule_hour->id,
-                                "hour_start" => $segment->doctor_schedule_hour->hour_start,
-                                "hour_end" => $segment->doctor_schedule_hour->hour_end,
-                                "format_hour_start" => Carbon::parse(date("Y-m-d").' '.$segment->doctor_schedule_hour->hour_start)->format("h:i A") ,
-                                "format_hour_end" => Carbon::parse(date("Y-m-d").' '.$segment->doctor_schedule_hour->hour_end)->format("h:i A"),
-                                "hour" => $segment->doctor_schedule_hour->hour,
-                            ],
-                        ];
-                    })
-                ];
-        }             
+                        ->whereDate("date_appointment", Carbon::parse($date_appointment)->format("Y-m-d"))
+                        ->first();
+                    return [
+                        "id" => $segment->id,
+                        "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
+                        "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
+                        "is_appointment" => $appointment ? true : false,
+                        "format_segment" => [
+                            "id" => $segment->doctor_schedule_hour->id,
+                            "hour_start" => $segment->doctor_schedule_hour->hour_start,
+                            "hour_end" => $segment->doctor_schedule_hour->hour_end,
+                            "format_hour_start" => Carbon::parse(date("Y-m-d") . ' ' . $segment->doctor_schedule_hour->hour_start)->format("h:i A"),
+                            "format_hour_end" => Carbon::parse(date("Y-m-d") . ' ' . $segment->doctor_schedule_hour->hour_end)->format("h:i A"),
+                            "hour" => $segment->doctor_schedule_hour->hour,
+                        ],
+                    ];
+                })
+            ];
+        }
 
         return response()->json([
-            "doctor"=>$doctorDetails,
+            "doctor" => $doctorDetails,
         ]);
 
 
-        
+
 
 
 
@@ -238,51 +238,51 @@ class AppointmentController extends Controller
 
     public function config()
     {
-        $hours =[
+        $hours = [
             [
-                "id"=>"08",
-                "name"=>"8:00 AM"
+                "id" => "08",
+                "name" => "8:00 AM"
             ],
             [
-                "id"=>"09",
-                "name"=>"09:00 AM"
+                "id" => "09",
+                "name" => "09:00 AM"
             ],
             [
-                "id"=>"10",
-                "name"=>"10:00 AM"
+                "id" => "10",
+                "name" => "10:00 AM"
             ],
             [
-                "id"=>"11",
-                "name"=>"11:00 AM"
+                "id" => "11",
+                "name" => "11:00 AM"
             ],
             [
-                "id"=>"12",
-                "name"=>"12:00 PM"
+                "id" => "12",
+                "name" => "12:00 PM"
             ],
             [
-                "id"=>"13",
-                "name"=>"01:00 PM"
+                "id" => "13",
+                "name" => "01:00 PM"
             ],
             [
-                "id"=>"14",
-                "name"=>"02:00 PM"
+                "id" => "14",
+                "name" => "02:00 PM"
             ],
             [
-                "id"=>"15",
-                "name"=>"03:00 PM"
+                "id" => "15",
+                "name" => "03:00 PM"
             ],
             [
-                "id"=>"16",
-                "name"=>"04:00 PM"
+                "id" => "16",
+                "name" => "04:00 PM"
             ],
             [
-                "id"=>"17",
-                "name"=>"05:00 PM"
+                "id" => "17",
+                "name" => "05:00 PM"
             ],
         ];
         // $specialities = Specialitie::where("state",1)->get();
 
-$specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('activeDoctors')->get();
+        $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('activeDoctors')->get();
 
         return response()->json([
             "specialities" => $specialities,
@@ -292,46 +292,52 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
 
     public function query_patient(Request $request)
     {
-        $n_doc =$request->get("n_doc");
+        $n_doc = $request->get("n_doc");
 
         $patient = Patient::where("n_doc", $n_doc)->first();
 
-        if(!$patient){
+        if (!$patient) {
             return response()->json([
-                "message"=>403,
+                "message" => 403,
             ]);
         }
 
         return response()->json([
-            "message"=>200,
-            "id"=>$patient->id,
-            "name"=>$patient->name,
-            "email"=>$patient->email,
-            "surname"=>$patient->surname,
-            "phone"=>$patient->phone,
-            "n_doc"=>$patient->n_doc,
+            "message" => 200,
+            "id" => $patient->id,
+            "name" => $patient->name,
+            "email" => $patient->email,
+            "surname" => $patient->surname,
+            "phone" => $patient->phone,
+            "n_doc" => $patient->n_doc,
         ]);
 
     }
 
-    
 
-    public function calendar(Request $request){
+
+    public function calendar(Request $request)
+    {
         $speciality_id = $request->speciality_id;
         $search_doctor = $request->search_doctor;
         $search_patient = $request->search_patient;
 
         $appointments = Appointment::filterAdvancePay(
-            $speciality_id, $search_doctor, $search_patient, null, null)->orderBy("id", "desc")
-        ->get();
+            $speciality_id,
+            $search_doctor,
+            $search_patient,
+            null,
+            null
+        )->orderBy("id", "desc")
+            ->get();
 
         return response()->json([
-            "appointments" => $appointments->map(function($appointment){
-                return[
-                    "id"=> $appointment->id,
-                    "title"=> "Cita Médica - ".($appointment->doctor->name.' '.$appointment->doctor->surname)." - ".$appointment->speciality->name,
-                    "start"=> Carbon::parse($appointment->date_appointment)->format("Y-m-d")."T".$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start,
-                    "end"=> Carbon::parse($appointment->date_appointment)->format("Y-m-d")."T".$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end,
+            "appointments" => $appointments->map(function ($appointment) {
+                return [
+                    "id" => $appointment->id,
+                    "title" => "Cita Médica - " . ($appointment->doctor->name . ' ' . $appointment->doctor->surname) . " - " . $appointment->speciality->name,
+                    "start" => Carbon::parse($appointment->date_appointment)->format("Y-m-d") . "T" . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start,
+                    "end" => Carbon::parse($appointment->date_appointment)->format("Y-m-d") . "T" . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end,
                 ];
             }),
         ]);
@@ -341,13 +347,14 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
     {
 
         $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        $appointmens = Appointment::Where('doctor_id', $doctor_id)
-                ->get();
+        $appointments = Appointment::where('doctor_id', $doctor_id)
+            ->where('status', 1) // o el estado de pendiente
+            ->get();
 
         return response()->json([
             // "patients"=> $patients,
-            "appointmens"=> $appointmens,
-            "total"=>$appointmens->total(),
+            "appointmens" => $appointments,
+            "total" => $appointments->total(),
             // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
         ]);
 
@@ -361,53 +368,54 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
      */
     public function store(Request $request)
     {
-        
+
         $patient = null;
         $patient = Patient::where("n_doc", $request->n_doc)->first();
         $doctor = User::where("id", $request->doctor_id)->first();
 
-        if(!$patient){
+        if (!$patient) {
             $patient = Patient::create([
-                "name"=>$request->name,
-                "surname"=>$request->surname,
-                "email"=>$request->email,
-                "n_doc"=>$request->n_doc,
-                "phone"=>$request->phone,
+                "name" => $request->name,
+                "surname" => $request->surname,
+                "email" => $request->email,
+                "n_doc" => $request->n_doc,
+                "phone" => $request->phone,
             ]);
             PatientPerson::create([
                 'patient_id' => $patient->id,
                 'name_companion' => $request->name_companion,
                 'surname_companion' => $request->surname_companion,
             ]);
-        }else{
+        } else {
             $patient->person->update([
                 'name_companion' => $request->name_companion,
                 'surname_companion' => $request->surname_companion,
             ]);
         }
 
-        
-        // $user = auth('api')->user();//lo coloco para saber si viene o no
-        // error_log($doctor);
-
         $appointment = Appointment::create([
-            "doctor_id" =>$request->doctor_id,
-            'patient_id' => auth()->user()->patientProfile->id,
+            "doctor_id" => $request->doctor_id,
+            'patient_id' => $patient->id,
             "date_appointment" => Carbon::parse($request->date_appointment)->format("Y-m-d h:i:s"),
             "speciality_id" => $request->speciality_id,
             "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
-            'user_id'    => auth()->id(), 
-            "amount" =>$request->amount,
-            "status_pay" =>$request->amount != $request->amount_add ? 2 : 1,
+            // Si auth()->id() es null, podrías asignar el user_id del doctor o el del paciente
+            'user_id' => auth()->id() ?? $doctor->id,
+            "amount" => $request->amount,
+            "status_pay" => $request->status_pay,
+            "status" => $request->status,
         ]);
+        if ($request->status_pay === 1) {
+            AppointmentPay::create([
+                "appointment_id" => $appointment->id,
+                "amount" => $request->amount_add,
+                "method_payment" => $request->method_payment,
+                "status_pay" => 1,
+            ]);
+        }
 
-        AppointmentPay::create([
-            "appointment_id"=>$appointment->id,
-            "amount"=> $request->amount_add,
-            "method_payment"=>$request->method_payment,
-        ]);
-        
-        
+
+
         // if($request->doctor_id){
         //     $doctor = User::findOrFail($id);
 
@@ -426,34 +434,34 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
         return response()->json([
             "message" => 200,
             "appointment" => $appointment,
-            "amount" =>$request->amount,
-            "paymentmethod" =>$request->method_payment,
-            "amountadd" =>$request->amount_add,
+            "amount" => $request->amount,
+            "paymentmethod" => $request->method_payment,
+            "amountadd" => $request->amount_add,
             "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-            "patient"=>$appointment->patient_id ? 
-                    [
-                        "id"=> $appointment->patient->id,
-                        "email" =>$appointment->patient->email,
-                        "full_name" =>$appointment->patient->name.' '.$appointment->patient->surname,
-                    ]: NULL,
-            "speciality"=>$appointment->speciality,
-            "speciality"=>$appointment->speciality ? 
+            "patient" => $appointment->patient_id ?
                 [
-                    "id"=> $appointment->speciality->id,
-                    "name"=> $appointment->speciality->name,
-                ]: NULL,
+                    "id" => $appointment->patient->id,
+                    "email" => $appointment->patient->email,
+                    "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+                ] : NULL,
+            "speciality" => $appointment->speciality,
+            "speciality" => $appointment->speciality ?
+                [
+                    "id" => $appointment->speciality->id,
+                    "name" => $appointment->speciality->name,
+                ] : NULL,
             "doctor_id" => $appointment->doctor_id,
-            "doctor"=>$appointment->doctor_id ? 
-                        [
-                            "id"=> $doctor->id,
-                            "email"=> $doctor->email,
-                            "full_name" =>$doctor->name.' '.$doctor->surname,
-                        ]: NULL,
-            
+            "doctor" => $appointment->doctor_id ?
+                [
+                    "id" => $doctor->id,
+                    "email" => $doctor->email,
+                    "full_name" => $doctor->name . ' ' . $doctor->surname,
+                ] : NULL,
+
         ]);
     }
-    
-   
+
+
 
 
     /**
@@ -465,9 +473,9 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
     public function show($id)
     {
         $appointment = Appointment::findOrFail($id);
-        $sum_total_pays = AppointmentPay::where("appointment_id",$id)->sum("amount");
+        $sum_total_pays = AppointmentPay::where("appointment_id", $id)->sum("amount");
         $costo = $appointment->amount;
-        $deuda = ($costo - $sum_total_pays); 
+        $deuda = ($costo - $sum_total_pays);
 
         return response()->json([
             "costo" => $costo,
@@ -477,7 +485,7 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
 
     }
 
-    
+
 
 
     /**
@@ -489,23 +497,23 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
      */
     public function update(Request $request, $id)
     {
-       
+
         $appointment = Appointment::findOrFail($id);
 
-        if($appointment->payments->sum("amount") > $request->amount){
+        if ($appointment->payments->sum("amount") > $request->amount) {
             return response()->json([
                 "message" => 403,
-                "message_text"=> "Los Pagos ingresados superan al nuevo monto que quiere guardar"
+                "message_text" => "Los Pagos ingresados superan al nuevo monto que quiere guardar"
             ]);
         }
 
         $appointment->update([
-            "doctor_id" =>$request->doctor_id,
+            "doctor_id" => $request->doctor_id,
             "date_appointment" => Carbon::parse($request->date_appointment)->format("Y-m-d h:i:s"),
             "speciality_id" => $request->speciality_id,
             "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
-            "amount" =>$request->amount,
-            "status_pay" =>$appointment->payments->sum("amount") != $request->amount ? 2 : 1,
+            "amount" => $request->amount,
+            "status_pay" => $appointment->payments->sum("amount") != $request->amount ? 2 : 1,
         ]);
 
         return response()->json([
@@ -527,44 +535,44 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
             "message" => 200,
         ]);
     }
-    
-     public function atendidas()
+
+    public function atendidas()
     {
-        
+
         $appointments = Appointment::where('status', 2)->orderBy("id", "desc")
-                            ->paginate(10);
+            ->paginate(10);
         return response()->json([
-            "total"=>$appointments->total(),
-            "appointments"=> AppointmentCollection::make($appointments)
+            "total" => $appointments->total(),
+            "appointments" => AppointmentCollection::make($appointments)
         ]);
 
     }
     public function pendientes()
     {
-        
+
         $appointments = Appointment::
-        where('status', 1)
-        // ->orWhere('confimation', 1)
-        ->orderBy("id", "desc")
-                            ->paginate(10);
+            where('status', 1)
+            // ->orWhere('confimation', 1)
+            ->orderBy("id", "desc")
+            ->paginate(10);
         return response()->json([
-            "total"=>$appointments->total(),
-            "appointments"=> AppointmentCollection::make($appointments)
+            "total" => $appointments->total(),
+            "appointments" => AppointmentCollection::make($appointments)
         ]);
 
     }
 
     public function pagosPendientesShowId(Request $request, $doctor_id)
     {
-        
+
         $appointments = Appointment::
-        where("doctor_id", $doctor_id)
-        ->where('status', 1)
-        ->orderBy("id", "desc")
-                            ->paginate(10);
+            where("doctor_id", $doctor_id)
+            ->where('status', 1)
+            ->orderBy("id", "desc")
+            ->paginate(10);
         return response()->json([
-            "total"=>$appointments->total(),
-            "appointments"=> AppointmentCollection::make($appointments)
+            "total" => $appointments->total(),
+            "appointments" => AppointmentCollection::make($appointments)
         ]);
 
     }
@@ -577,7 +585,7 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
         // Update confirmation status without modifying appointment time
         $appointment->confimation = $request->confimation;
         $appointment->update();
-        
+
         // error_log($appointment);
 
         // if($request->confimation === '2'){
@@ -586,44 +594,45 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
         // }
         return response()->json([
             "message" => 200,
+            "status" => $request->confimation == 2 ? 'Confirmada' : 'Pendiente',
             "appointment" => $appointment,
-            "amount" =>$request->amount,
-            "paymentmethod" =>$request->method_payment,
-            "amountadd" =>$request->amount_add,
+            "amount" => $request->amount,
+            "paymentmethod" => $request->method_payment,
+            "amountadd" => $request->amount_add,
             "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-            "patient"=>$appointment->patient_id ? 
-                    [
-                        "id"=> $appointment->patient->id,
-                        "email" =>$appointment->patient->email,
-                        "full_name" =>$appointment->patient->name.' '.$appointment->patient->surname,
-                    ]: NULL,
-            "speciality"=>$appointment->speciality ? 
+            "patient" => $appointment->patient_id ?
                 [
-                    "id"=> $appointment->speciality->id,
-                    "name"=> $appointment->speciality->name,
-                ]: NULL,
+                    "id" => $appointment->patient->id,
+                    "email" => $appointment->patient->email,
+                    "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+                ] : NULL,
+            "speciality" => $appointment->speciality ?
+                [
+                    "id" => $appointment->speciality->id,
+                    "name" => $appointment->speciality->name,
+                ] : NULL,
             "doctor_id" => $appointment->doctor_id,
-            "doctor"=>$appointment->doctor_id ? 
-                        [
-                            "id"=> $doctor->id,
-                            "email"=> $doctor->email,
-                            "full_name" =>$doctor->name.' '.$doctor->surname,
-                        ]: NULL,
-            
+            "doctor" => $appointment->doctor_id ?
+                [
+                    "id" => $doctor->id,
+                    "email" => $doctor->email,
+                    "full_name" => $doctor->name . ' ' . $doctor->surname,
+                ] : NULL,
+
         ]);
-        
-        
+
+
 
     }
 
     public function cancelarCita($id)
     {
         $appointment = Appointment::findOrFail($id);
-        
+
         // Send cancellation emails
         Mail::to($appointment->patient->email)
             ->send(new CancellationAppointmentMail($appointment));
-            
+
         Mail::to($appointment->doctor->email)
             ->send(new CancellationAppointmentMail($appointment));
 
@@ -641,7 +650,7 @@ $specialities = Specialitie::where('state', 1)->has('activeDoctors')->with('acti
         // Send cancellation emails
         Mail::to($appointment->patient->email)
             ->send(new CancellationAppointmentMail($appointment, $reason));
-            
+
         Mail::to($appointment->doctor->email)
             ->send(new CancellationAppointmentMail($appointment, $reason));
 
