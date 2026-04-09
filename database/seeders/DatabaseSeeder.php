@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         SpecialitySeeder::class,
         PatientSeeder::class,
         TiposDePagoSeeder::class,
+        TasabcvSeeder::class,
         
         // 1. Primero configuramos los horarios del doctor
         SettingeneralSeeder::class,

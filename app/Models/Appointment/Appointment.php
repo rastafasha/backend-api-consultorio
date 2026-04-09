@@ -37,6 +37,7 @@ class Appointment extends Model
         "date_attention",
         "cron_state",
         "confimation",
+        "amount",
 
     ];
 

@@ -94,6 +94,9 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     // pais
     require __DIR__ . '/api_routes/pais.php';
+    
+    // tasabcv
+    require __DIR__ . '/api_routes/tasabcv.php';
         
 
 

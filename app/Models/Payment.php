@@ -33,7 +33,9 @@ class Payment extends Model
         'appointment_id',
         'image',
         'fecha',
-        'status'
+        'status',
+        'tasabcv',
+
     ];
 
     const APPROVED = 'APPROVED';
