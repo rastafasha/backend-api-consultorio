@@ -266,64 +266,7 @@ class AdminPaymentController extends Controller
     }
 
 
-    // subir imagen avatar
-    public function upload(Request $request)
-    {
-        // recoger la imagen de la peticion
-        $image = $request->file('file0');
-        // validar la imagen
-        $validate = \Validator::make($request->all(), [
-            'file0' => 'required|image|mimes:jpg,jpeg,png,gif'
-        ]);
-        //guardar la imagen en un disco
-        if (!$image || $validate->fails()) {
-            $data = [
-                'code' => 400,
-                'status' => 'error',
-                'message' => 'Error al subir la imagen'
-            ];
-        } else {
-            $extension = $image->getClientOriginalExtension();
-            $image_name = $image->getClientOriginalName();
-            $pathFileName = trim(pathinfo($image_name, PATHINFO_FILENAME));
-            $secureMaxName = substr(Str::slug($image_name), 0, 90);
-            $image_name = now() . $secureMaxName . '.' . $extension;
-
-            \Storage::disk('payments')->put($image_name, \File::get($image));
-
-            $data = [
-                'code' => 200,
-                'status' => 'success',
-                'image' => $image_name
-            ];
-
-        }
-
-        //return response($data, $data['code'])->header('Content-Type', 'text/plain'); //devuelve el resultado
-
-        return response()->json($data, $data['code']);// devuelve un objeto json
-    }
-
-    public function getImage($filename)
-    {
-
-        //comprobar si existe la imagen
-        $isset = \Storage::disk('payments')->exists($filename);
-        if ($isset) {
-            $file = \Storage::disk('payments')->get($filename);
-            return new Response($file, 200);
-        } else {
-            $data = array(
-                'status' => 'error',
-                'code' => 404,
-                'mesaje' => 'Imagen no existe',
-            );
-
-            return response()->json($data, $data['code']);
-        }
-
-    }
-
+    
     public function deleteFotoPayment($id)
     {
         $payment = Payment::findOrFail($id);
@@ -342,7 +285,8 @@ class AdminPaymentController extends Controller
 
     public function search(Request $request)
     {
-        return Payment::search($request->buscar);
+        // return Payment::search($request->buscar);
+        return Payment::search($request->query('buscar'));
     }
 
 
@@ -409,6 +353,33 @@ class AdminPaymentController extends Controller
             'status' => 'success',
             "payments" => PaymentCollection::make($payments),
         ], 200);
+
+
+
+        // $search_doctor = $request->search_doctor;
+        // $search_patient = $request->search_patient;
+        // $search_referencia = $request->search_referencia;
+        // $search_status = $request->search_status;
+        
+
+
+        // $patient_is_valid = User::where("id", $request->patient_id)->first();
+
+        // $payments = Payment::filterAdvancePaymentPatient(
+        //     $search_status,
+        //     $search_referencia,
+        //     $search_doctor,
+        //     $search_patient
+        // )
+        //     ->Where('id', $patient_id)
+        //     ->orderBy("id", "desc")
+        //     ->paginate(10);
+
+        // return response()->json([
+        //     "total" => $payments->total(),
+        //     "payments" => PaymentCollection::make($payments)
+        // ]);
+
     }
 
     public function pagosPendientes()
