@@ -110,7 +110,7 @@ class AdminPaymentController extends Controller
             return response()->json(['message' => 'Appointment not found.'], 404);
         }
 
-        if ($request->hasFile('image')) { 
+        if ($request->hasFile('image')) {
             $path = Storage::putFile("payments", $request->file('image'));
             $request->request->add(["image" => $path]);
         }
@@ -128,7 +128,7 @@ class AdminPaymentController extends Controller
             "referencia" => $request->referencia,
             "status" => $request->status,
             "tasabcv" => $request->tasabcv,
-            "image"          => $path,
+            "image" => $path,
             // "status_pay" =>$request->amount != $request->amount_add ? 2 : 1,
         ]);
         //envio de correo al doctor
@@ -266,7 +266,7 @@ class AdminPaymentController extends Controller
     }
 
 
-    
+
     public function deleteFotoPayment($id)
     {
         $payment = Payment::findOrFail($id);
@@ -289,32 +289,47 @@ class AdminPaymentController extends Controller
         return Payment::search($request->query('buscar'));
     }
 
-
-
-
     public function updateStatus(Request $request, $id)
     {
-        $patient = Patient::where("id", $request->patient_id)->first();
-        $payment = Payment::findOrfail($id);
+        // 1. Buscamos el pago (siempre viene el ID)
+        $payment = Payment::findOrFail($id);
         $payment->status = $request->status;
-        $payment->update();
+        $payment->motivo_rechazo = $request->motivo_rechazo;
+        $payment->save();
 
+        // 2. Si es RECHAZADO, terminamos aquí para evitar errores de null
+        if ($request->status === 'REJECTED') {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pago rechazado y notificado correctamente'
+            ]);
+        }
 
-        $appointment = Appointment::where("patient_id", $request->patient_id)->first();
-        $appointmentpay = AppointmentPay::where("appointment_id", $request->appointment_id)->first();
-        $sum_total_pays = AppointmentPay::where("appointment_id", $id)->sum("amount");
-        $monto = Payment::where("appointment_id", $id)->sum("monto");
+        // 3. Si llega aquí, es porque es APPROVED o PENDIENTE
+        // Buscamos la cita usando el appointment_id que SI enviaste en el JSON
+        $appointment = Appointment::find($request->appointment_id);
 
+        if (!$appointment) {
+            return response()->json(['message' => 'Cita no encontrada'], 404);
+        }
+
+        // Cálculos solo para aprobaciones
+        $sum_total_pays = AppointmentPay::where("appointment_id", $request->appointment_id)->sum("amount");
         $costo = $appointment->amount;
         $deuda = ($costo - $sum_total_pays);
 
-
         if ($request->status === 'APPROVED') {
-            // Update Appointment status
-            if ($request->monto == $deuda) {
+            // Marcamos pagada si el monto actual completa la deuda
+            if ($request->monto >= $deuda) {
                 $appointment->update(["status_pay" => 1]);
             }
 
+            // Registramos el pago en la tabla de pagos de citas
+            AppointmentPay::create([
+                "appointment_id" => $request->appointment_id,
+                "amount" => $request->monto,
+                "method_payment" => "TRANSFERENCIA", // O el campo que uses
+            ]);
             $appointmentpay = AppointmentPay::create([
                 "appointment_id" => $request->appointment_id,
                 "amount" => $request->monto,
@@ -322,13 +337,11 @@ class AdminPaymentController extends Controller
             ]);
         }
 
-
-        // error_log($appointment);
-
-        if ($request->status === '2') {
+        if ($request->status === 'APPROVED') {
             Mail::to($appointment->patient->email)->send(new ConfirmationAppointment($appointment));
 
         }
+
         return response()->json([
             "message" => 200,
             "payment" => $payment,
@@ -353,32 +366,6 @@ class AdminPaymentController extends Controller
             'status' => 'success',
             "payments" => PaymentCollection::make($payments),
         ], 200);
-
-
-
-        // $search_doctor = $request->search_doctor;
-        // $search_patient = $request->search_patient;
-        // $search_referencia = $request->search_referencia;
-        // $search_status = $request->search_status;
-        
-
-
-        // $patient_is_valid = User::where("id", $request->patient_id)->first();
-
-        // $payments = Payment::filterAdvancePaymentPatient(
-        //     $search_status,
-        //     $search_referencia,
-        //     $search_doctor,
-        //     $search_patient
-        // )
-        //     ->Where('id', $patient_id)
-        //     ->orderBy("id", "desc")
-        //     ->paginate(10);
-
-        // return response()->json([
-        //     "total" => $payments->total(),
-        //     "payments" => PaymentCollection::make($payments)
-        // ]);
 
     }
 

@@ -185,6 +185,7 @@ class PatientController extends Controller
                         "full_name" => $appointment->doctor->name . ' ' . $appointment->doctor->surname,
                         // "avatar"=> $appointment->doctor->avatar ? env("APP_URL")."storage/".$appointment->doctor->avatar : null,
                         "avatar" => $appointment->doctor->avatar ? env("APP_URL") . $appointment->doctor->avatar : null,
+                        "mobile" => $appointment->doctor->mobile,
                         "speciality_id" => $appointment->doctor->speciality_id,
                         "speciality" => $appointment->doctor->speciality ? [
                             "id" => $appointment->doctor->speciality->id,
@@ -210,12 +211,12 @@ class PatientController extends Controller
                     "amount" => $appointment->amount,
                     "status_pay" => $appointment->status_pay,
                     "status" => $appointment->status,
-                    "speciality_id" => $appointment->speciality_id,
-                    "speciality" => $appointment->speciality ? [
-                        "id" => $appointment->speciality->id,
-                        "name" => $appointment->speciality->name,
-                        "price" => $appointment->speciality->price,
-                    ] : NULL,
+                    // "speciality_id" => $appointment->speciality_id,
+                    // "speciality" => $appointment->speciality ? [
+                    //     "id" => $appointment->speciality->id,
+                    //     "name" => $appointment->speciality->name,
+                    //     "price" => $appointment->speciality->price,
+                    // ] : NULL,
                 ];
             }),
         ];

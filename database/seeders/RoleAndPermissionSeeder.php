@@ -92,6 +92,7 @@ class RoleAndPermissionSeeder extends Seeder
         ['id' => 65, 'guard_name' => 'api','name' => 'transferencia_doctor'],
         ['id' => 66, 'guard_name' => 'api','name' => 'payment_settings'],
         ['id' => 67, 'guard_name' => 'api','name' => 'list_presupuesto_doctor'],
+        ['id' => 68, 'guard_name' => 'api','name' => 'tasa_bcv'],
         ];
 
         foreach ($permissions as $permission) {
@@ -136,13 +137,13 @@ class RoleAndPermissionSeeder extends Seeder
         // $personaladicionalRole = Role::find(5);
 
         // Assign permissions based on the provided SQL dump
-        $adminRole->givePermissionTo([2,5,8,9,10,12,13.14,15,17,18,19,20,22,23,24,26,27,28,29,30,35,38,40,41,42,44,52,53,54]);
-        $doctorRole->givePermissionTo([3,6,7,10,12,13,15,17,49,50,52,53,54,55,56,57,62,63,64,65,66, 67]); // doctor specific permissions
+        $adminRole->givePermissionTo([2,5,8,9,10,12,13.14,15,17,18,19,20,22,23,24,26,27,28,29,30,35,38,40,41,42,44,52,53,54, 68]);
+        $doctorRole->givePermissionTo([3,6,7,10,12,13,15,17,49,50,52,53,54,55,56,57,62,63,64,65,66, 67, 68]); // doctor specific permissions
         $guestRole->givePermissionTo([12,20]); // doctor specific permissions
-        $recepcionRole->givePermissionTo([2,9,13,14,18,19,22,23,24,26,27,30,35,38,40,41,44]);
-        $laboratorioRole->givePermissionTo([12,41,42]); // doctor specific permissions
-        $asistenteRole->givePermissionTo([3,10,12,13,14,22,23,24,30,35,38]); // doctor specific permissions
-        $enfermeraRole->givePermissionTo([13,14,22,23]); // doctor specific permissions
+        $recepcionRole->givePermissionTo([2,9,13,14,18,19,22,23,24,26,27,30,35,38,40,41,44, 68]);
+        $laboratorioRole->givePermissionTo([12,41,42, 68]); // doctor specific permissions
+        $asistenteRole->givePermissionTo([3,10,12,13,14,22,23,24,30,35,38, 68]); // doctor specific permissions
+        $enfermeraRole->givePermissionTo([13,14,22,23, 68]); // doctor specific permissions
 
     }
 }

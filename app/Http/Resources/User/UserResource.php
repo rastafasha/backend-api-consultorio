@@ -58,7 +58,7 @@ class UserResource extends JsonResource
             "n_doc"=>$this->resource->n_doc,
             "full_name"=> $this->resource->name.' '.$this->resource->surname,
             "email"=>$this->resource->email,
-            "password"=>$this->resource->password,
+            // "password"=>$this->resource->password,
             "status"=>$this->resource->status,
             "rolename"=>$this->resource->rolename,
             "mobile"=>$this->resource->mobile,

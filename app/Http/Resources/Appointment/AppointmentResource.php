@@ -23,6 +23,7 @@ class AppointmentResource extends JsonResource
                 "id" => $this->resource->doctor->id,
                 "address" => $this->resource->doctor->address,
                 "email" => $this->resource->doctor->email,
+                "mobile" => $this->resource->doctor->mobile,
                 "precio_cita" => $this->resource->doctor->precio_cita,
                 "full_name" => $this->resource->doctor->name . ' ' . $this->resource->doctor->surname,
                 "avatar" => $this->resource->doctor->avatar ? env("APP_URL") . $this->resource->doctor->avatar : null,
@@ -48,13 +49,13 @@ class AppointmentResource extends JsonResource
 
             "date_appointment" => $this->resource->date_appointment,
             "date_appointment_format" => $this->resource->date_appointment ? Carbon::parse($this->resource->date_appointment)->format("Y-m-d") : null,
-            "speciality_id" => $this->resource->speciality_id,
-            "speciality" => $this->resource->speciality ?
-                [
-                    "id" => $this->resource->speciality->id,
-                    "name" => $this->resource->speciality->name,
-                    "price" => $this->resource->speciality->price,
-                ] : NULL,
+            // "speciality_id" => $this->resource->speciality_id,
+            // "speciality" => $this->resource->speciality ?
+            //     [
+            //         "id" => $this->resource->speciality->id,
+            //         "name" => $this->resource->speciality->name,
+            //         "price" => $this->resource->speciality->price,
+            //     ] : NULL,
             "doctor_schedule_join_hour_id" => $this->resource->doctor_schedule_join_hour_id,
             "segment_hour" => $this->resource->doctor_schedule_join_hour ? [
                "id" => $this->resource->doctor_schedule_join_hour->id,
