@@ -8,9 +8,7 @@ use App\Models\Patient\Patient;
 use App\Models\Doctor\Specialitie;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Presupuesto>
- */
+
 class PresupuestoFactory extends Factory
 {
     protected $model = Presupuesto::class;

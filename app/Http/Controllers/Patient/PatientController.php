@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Auth\AuthController;
 
 class PatientController extends Controller
 {
@@ -231,42 +232,59 @@ class PatientController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
-        $patient_is_valid = Patient::where("n_doc", $request->n_doc)->first();
+  public function store(Request $request)
+{
+    $patient_is_valid = Patient::where("n_doc", $request->n_doc)->first();
 
-        if ($patient_is_valid) {
-            return response()->json([
-                "message" => 403,
-                "message_text" => 'el paciente ya existe'
-            ]);
-        }
-
-        if ($request->hasFile('imagen')) {
-            $path = Storage::putFile("patients", $request->file('imagen'));
-            $request->request->add(["avatar" => $path]);
-        }
-
-        if ($request->birth_date) {
-            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
-            $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
-        }
-
-        $patient = Patient::create($request->all());
-
-
-
-        $request->request->add([
-            "patient_id" => $patient->id
-        ]);
-        PatientPerson::create($request->all());
-
-        Mail::to($patient->email)->send(new NewPatientRegisterMail($patient));
-
+    if ($patient_is_valid) {
         return response()->json([
-            "message" => 200,
+            "message" => 403,
+            "message_text" => 'el paciente ya existe'
         ]);
     }
+
+    if ($request->hasFile('imagen')) {
+        $path = Storage::putFile("patients", $request->file('imagen'));
+        $request->request->add(["avatar" => $path]);
+    }
+
+    if ($request->birth_date) {
+        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
+        $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
+    }
+
+    // 1. Guardamos la ficha del paciente
+    $patient = Patient::create($request->all());
+
+    // 2. Vinculamos al doctor logueado con el paciente
+    if (auth()->check()) {
+        $patient->doctors()->attach(auth()->id());
+    }
+
+    $request->request->add([
+        "patient_id" => $patient->id
+    ]);
+    PatientPerson::create($request->all());
+
+    if ($patient->email && !str_contains($patient->email, '@klyntic.local')) {
+        Mail::to($patient->email)->send(new NewPatientRegisterMail($patient));
+    }
+
+    // 🚀 --- LLAMADA INTERNA AL AUTH CONTROLLER ---
+    // Le pedimos a Laravel que resuelva el AuthController con todas sus dependencias
+    $authController = app(AuthController::class);
+    
+    // Ejecutamos la función. Ella se encargará de crear el usuario y disparar el JSON a Node.js
+    $authController->registerPaciente($request);
+    // ----------------------------------------------
+
+    return response()->json([
+        "message" => 200,
+        "patient" => $patient
+    ]);
+}
+
+
 
     /**
      * Display the specified resource.

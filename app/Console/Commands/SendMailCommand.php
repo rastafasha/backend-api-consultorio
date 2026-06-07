@@ -36,15 +36,19 @@ class SendMailCommand extends Command
      *
      * @return int
      */
-    public function handle()
+   public function handle()
     {
+        $this->info('Iniciando el procesador de colas en el Hosting Compartido...');
+
+        // Ejecuta el trabajador de colas, procesa lo que haya en 'high', 'emails' y 'low'
+        // Y se apaga inmediatamente cuando la cola quede vacía de forma segura.
         return Artisan::call('queue:work', [
             '--sleep' => 3,
-            '--tries' =>3,
-            '--backoff' =>3,
-            '--timeout' => 30,
-            '--queue' => 'high,emails,low', // remove this if queue is default
-            '--stop-when-empty' => null,
+            '--tries' => 3,
+            '--backoff' => 3,
+            '--timeout' => 20, // Lo bajamos a 20 para proteger el Shared Hosting
+            '--queue' => 'high,emails,low', 
+            '--stop-when-empty' => true, // En algunas versiones es mejor pasar true en lugar de null
         ]);
     }
 }

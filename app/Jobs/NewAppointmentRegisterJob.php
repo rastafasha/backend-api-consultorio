@@ -3,19 +3,21 @@
 namespace App\Jobs;
 
 
-use Illuminate\Bus\Queueable;
-use App\Models\Patient\Patient;
-use Illuminate\Support\Facades\Log;
+use App\Mail\NewAppointmentRegisterMail;
 use App\Mail\NewPaymentRegisterMail;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
+use App\Mail\RegisterAppointment;
+use App\Models\Appointment\Appointment;
+use App\Models\Patient\Patient;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
-use App\Mail\NewAppointmentRegisterMail;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
-class AppointmentRegisterJob implements ShouldQueue
+class NewAppointmentRegisterJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -29,9 +31,19 @@ class AppointmentRegisterJob implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(Patient $patient)
+     // Cambiamos la propiedad para que guarde la cita completa
+    public $appointment;
+
+    /**
+     * Create a new job instance.
+     *
+     * @param Appointment $appointment
+     * @return void
+     */
+    public function __construct(Appointment $appointment)
     {
-        $this->patient = $patient;
+        // Guardamos la instancia de la cita recibida
+        $this->appointment = $appointment;
     }
 
     /**
@@ -40,16 +52,13 @@ class AppointmentRegisterJob implements ShouldQueue
      * @return void
      */
     public function handle()
-    {
-        // try {
-        //     Mail::to('citasmedicas@malcolmcordova.com')
-        //         ->send(
-        //             new NewAppointmentRegisterMail(
-        //             $this->patient,
-        //             )
-        //         );
-        // } catch (\Exception $exception) {
-        //     Log::info($exception->getMessage());
-        // }
+{
+    try {
+        // El comando 'send:notification' ejecutará esto de forma silenciosa cada minuto
+        Mail::to($this->appointment->patient->email)->send(new RegisterAppointment($this->appointment));
+        Mail::to($this->appointment->doctor->email)->send(new NewAppointmentRegisterMail($this->appointment));
+    } catch (\Exception $exception) {
+        Log::error('Fallo al enviar correos de la cita desde la cola: ' . $exception->getMessage());
     }
+}
 }

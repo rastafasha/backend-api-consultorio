@@ -235,14 +235,11 @@ class DoctorController extends Controller
      */
     public function store(Request $request)
     {
-
-        // if(!auth('api')->user()->can('create_doctor')){
-        //     return response()->json(["message"=>"El usuario no esta autenticado"],403);
-        //    }
+        // 1. Decodificamos el horario que viene de Angular
         $schedule_hours = json_decode($request->schedule_hours, 1);
 
+        // 2. Validamos duplicados
         $user_is_valid = User::where("email", $request->email)->first();
-
         if ($user_is_valid) {
             return response()->json([
                 "message" => 403,
@@ -250,48 +247,69 @@ class DoctorController extends Controller
             ]);
         }
 
+        // 3. Procesamos el Avatar
         if ($request->hasFile('imagen')) {
             $path = Storage::putFile("staffs", $request->file('imagen'));
             $request->request->add(["avatar" => $path]);
         }
 
+        // 4. Encriptamos contraseña si viene en la petición
         if ($request->password) {
             $request->request->add(["password" => Hash::make($request->password)]);
         }
 
-        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
+        // 5. 🔧 CORRECCIÓN: Cambiamos 'h:i:s' a 'H:i:s' (24 horas) para evitar errores de fecha en MySQL
+        if ($request->birth_date) {
+            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
+            $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
+        }
 
-        $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
-
+        // 6. Creamos el médico en MySQL
         $user = User::create($request->all());
-        // error_log($user);
 
+        // 7. Asignamos su Rol (Médico/Staff)
         $role = Role::findOrFail($request->role_id);
         $user->assignRole($role);
 
+        // 8. Enviamos el correo de bienvenida tradicional
         Mail::to($user->email)->send(new NewUserRegisterMail($user));
 
-        //almacenar la disponibilidad de horario del doctor
-        foreach ($schedule_hours as $key => $schedule_hour) {
-            if (sizeof($schedule_hour["children"]) > 0) {
-                $schedule_day = DoctorScheduleDay::create([
-                    "user_id" => $user->id,
-                    "day" => $schedule_hour["day_name"],
-                ]);
-
-                foreach ($schedule_hour["children"] as $children) {
-                    DoctorScheduleJoinHour::create([
-                        "doctor_schedule_day_id" => $schedule_day->id,
-                        "doctor_schedule_hour_id" => $children["item"]["id"],
+        // 9. Almacenamos la disponibilidad de horario (Tu lógica compleja de agenda)
+        if (is_array($schedule_hours)) {
+            foreach ($schedule_hours as $key => $schedule_hour) {
+                if (isset($schedule_hour["children"]) && sizeof($schedule_hour["children"]) > 0) {
+                    $schedule_day = DoctorScheduleDay::create([
+                        "user_id" => $user->id,
+                        "day" => $schedule_hour["day_name"],
                     ]);
+
+                    foreach ($schedule_hour["children"] as $children) {
+                        DoctorScheduleJoinHour::create([
+                            "doctor_schedule_day_id" => $schedule_day->id,
+                            "doctor_schedule_hour_id" => $children["item"]["id"],
+                        ]);
+                    }
                 }
             }
         }
+
+        // --- 🚀 CONEXIÓN EN TIEMPO REAL CON NODE.JS (MongoDB) ---
+        // Registramos este nuevo médico en klyntic_consultorios usando su ID de MySQL como String
+        try {
+            Http::post('https://tu-node-en-render.com', [
+                'doctor_id' => (string) $user->id // Se guardará como el _id en tu MongoDB
+            ]);
+        } catch (\Exception $e) {
+            Log::error('No se pudo inicializar el consultorio en el microservicio Node: ' . $e->getMessage());
+        }
+        // --------------------------------------------------------
+
         return response()->json([
             "message" => 200,
             "user" => $user
         ]);
     }
+
 
     /**
      * Display the specified resource.

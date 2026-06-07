@@ -2,24 +2,16 @@
 
 namespace App\Models;
 
-use App\Jobs\NewUserRegisterJob;
-use App\Mail\NewUserRegisterMail;
 use App\Models\Doctor\DoctorScheduleDay;
 use App\Models\Doctor\Specialitie;
-use App\Models\Pais;
 use App\Models\Patient\Patient;
-use App\Models\Payment;
 use App\Traits\HavePermission;
 use Carbon\Carbon;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -90,14 +82,14 @@ class User extends Authenticatable implements JWTSubject
 
     public function setCreatedAtAttribute($value)
     {
-        date_default_timezone_set('America/Caracas');
-        $this->attributes["created_at"] = Carbon::now();
+        // Captura la hora actual de Caracas y la convierte a UTC de forma segura para MySQL
+        $this->attributes['created_at'] = Carbon::now('America/Caracas')->setTimezone('UTC');
     }
 
     public function setUpdatedAtAttribute($value)
     {
-        date_default_timezone_set("America/Caracas");
-        $this->attributes["updated_at"] = Carbon::now();
+        // Corrige el nombre del método y convierte la hora de actualización a UTC
+        $this->attributes['updated_at'] = Carbon::now('America/Caracas')->setTimezone('UTC');
     }
 
 
@@ -179,10 +171,5 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(Patient::class, 'user_id');
     }
-
-
-
-
-
 
 }

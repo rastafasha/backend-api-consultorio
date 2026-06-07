@@ -4,8 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
@@ -18,7 +16,6 @@ class UserSeeder extends Seeder
     {
         $users = [
             [
-                // "rolename" => User::SUPERADMIN,
                 "name" => "super",
                 'surname' => 'Johnson',
                 "email" => "superadmin@superadmin.com",
@@ -27,27 +24,11 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369874',
                 "password" => bcrypt("superadmin"),
-                'roles' => [
-                    [
-                        "id"=> 1,
-                        "name"=> "SUPERADMIN",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 1,
-                            "role_id"=> 1,  
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
+                'roles' => [["id" => 1, "name" => "SUPERADMIN"]], // Procesado automático por ID
                 "email_verified_at" => now(),
                 "created_at" => now(),
             ],
             [
-                // "rolename" => User::ADMIN,
                 "name" => "admin",
                 'surname' => 'Johnson',
                 "email" => "admin@admin.com",
@@ -56,27 +37,12 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369871',
                 "password" => bcrypt("password"),
-                'roles' => [
-                    [
-                        "id"=> 1,
-                        "name"=> "ADMIN",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 2,
-                            "role_id"=> 2,  
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
+                'roles' => [["id" => 2, "name" => "ADMIN"]], // Nota: ID 2 para Administrador regular
                 "email_verified_at" => now(),
                 "created_at" => now(),
             ],
+            // --- 🏥 SECCIÓN: DOCTORES ---
             [
-                // "rolename" => User::DOCTOR,
                 "name" => "Jhon",
                 'surname' => 'Johnson',
                 "email" => "doctor@doctor.com",
@@ -85,58 +51,23 @@ class UserSeeder extends Seeder
                 'speciality_id' => 1,
                 'mobile' => '1234567893',
                 'n_doc' => '5421369872',
-                'roles' => [
-                    [
-                        "id"=> 3,
-                        "name"=> "DOCTOR",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 2,
-                            "role_id"=> 3,
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
                 "password" => bcrypt("password"),
-                "email_verified_at" => now(),
-                "created_at" => now(),
+                'roles' => [["id" => 3, "name" => "DOCTOR"]]
             ],
             [
-                // "rolename" => User::DOCTOR,
                 "name" => "Jane",
                 'surname' => 'Johnson',
                 "email" => "doctora@doctora.com",
-                'gender' => 1,
+                'gender' => 2,
                 'pais_id' => 2,
                 'speciality_id' => 2,
                 'mobile' => '1234567893',
                 'n_doc' => '5421369850',
-                'roles' => [
-                    [
-                        "id"=> 3,
-                        "name"=> "DOCTOR",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 2,
-                            "role_id"=> 3,
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
                 "password" => bcrypt("password"),
-                "email_verified_at" => now(),
-                "created_at" => now(),
+                'roles' => [["id" => 3, "name" => "DOCTOR"]]
             ],
+            // --- 👔 SECCIÓN: PERSONAL DE APOYO (Filtrados automáticamente de Mongo) ---
             [
-                // "rolename" => User::LABORATORIO,
                 "name" => "laboratorio",
                 'surname' => 'Johnson',
                 "email" => "laboratorio@laboratorio.com",
@@ -145,27 +76,9 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369873',
                 "password" => bcrypt("password"),
-                'roles' => [
-                    [
-                        "id"=> 5,
-                        "name"=> "LABORATORIO",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 3,
-                            "role_id"=> 5,    
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
-                "email_verified_at" => now(),
-                "created_at" => now(),
+                'roles' => [["id" => 5, "name" => "LABORATORIO"]]
             ],
             [
-                // "rolename" => User::RECEPCION,
                 "name" => "recepcion",
                 'surname' => 'Johnson',
                 "email" => "recepcion@recepcion.com",
@@ -174,27 +87,9 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369875',
                 "password" => bcrypt("password"),
-                'roles' => [
-                    [
-                        "id"=> 4,
-                        "name"=> "RECEPCION",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 4,
-                            "role_id"=> 4,    
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
-                "email_verified_at" => now(),
-                "created_at" => now(),
+                'roles' => [["id" => 4, "name" => "RECEPCION"]]
             ],
             [
-                // "rolename" => User::PERSONAL,
                 "name" => "personal",
                 'surname' => 'Johnson',
                 "email" => "personal@personal.com",
@@ -203,27 +98,9 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369876',
                 "password" => bcrypt("password"),
-                'roles' => [
-                    [
-                        "id"=> 8,
-                        "name"=> "PERSONAL",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 5,
-                            "role_id"=> 8, 
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
-                "email_verified_at" => now(),
-                "created_at" => now(),
+                'roles' => [["id" => 8, "name" => "PERSONAL"]]
             ],
             [
-                // "rolename" => User::ENFERMERA,
                 "name" => "enfermera",
                 'surname' => 'Johnson',
                 "email" => "enfermera@enfermera.com",
@@ -232,27 +109,9 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369878',
                 "password" => bcrypt("password"),
-                'roles' => [
-                    [
-                        "id"=> 7,
-                         "name"=> "ENFERMERA",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 6,
-                            "role_id"=> 7,  
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
-                "email_verified_at" => now(),
-                "created_at" => now(),
+                'roles' => [["id" => 7, "name" => "ENFERMERA"]]
             ],
             [
-                // "rolename" => User::ASISTENTE,
                 "name" => "asistente",
                 'surname' => 'Johnson',
                 "email" => "asistente@asistente.com",
@@ -261,27 +120,9 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369877',
                 "password" => bcrypt("password"),
-                'roles' => [
-                    [
-                        "id"=> 6,
-                        "name"=> "ASISTENTE",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 7,
-                            "role_id"=> 6,   
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
-                "email_verified_at" => now(),
-                "created_at" => now(),
+                'roles' => [["id" => 6, "name" => "ASISTENTE"]]
             ],
             [
-                // "rolename" => User::GUEST,
                 "name" => "invitado",
                 'surname' => 'Johnson',
                 "email" => "invitado@invitado.com",
@@ -290,44 +131,48 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369870',
                 "password" => bcrypt("password"),
-                'roles' => [
-                    [
-                        "id"=> 9,
-                        "name"=> "GUEST",
-                        "guard_name"=> "api",
-                        "created_at"=> "2025-02-16T06:49:18.000000Z",
-                        "updated_at"=> "2025-02-16T06:49:18.000000Z",
-                    ],
-                    'pivot' => [
-                        [
-                            "model_id"=> 8,
-                            "role_id"=> 9,   
-                            "model_type"=> "App\\Models\\User"
-                        ]
-                    ],
-                ],
+                // Estructura simplificada que procesa tu bucle foreach
+                'roles' => [["id" => 9, "name" => "GUEST"]],
                 "email_verified_at" => now(),
                 "created_at" => now(),
             ]
+
         ];
 
         foreach ($users as $user) {
-            // Extract roles before creating user
+            // 1. Extraemos los roles antes de crear el usuario para no ensuciar el create
             $roles = $user['roles'] ?? null;
             unset($user['roles']);
-            
-            // Create user
-            //si no tiene asignado un rol, se le asigna el rol de invitado
-            if (!$roles) {
-                $createdUser->assignRole(User::GUEST);
-                    } 
+
+            // 2. CORREGIDO: Creamos primero el usuario en MySQL
             $createdUser = User::create($user);
-            
-            // Attach roles if they exist
+
+            // 3. Asignamos los roles de forma segura y en el orden correcto
             if ($roles) {
+                // Si el JSON traía roles, extraemos los IDs y usamos el método nativo de Spatie
                 $roleIds = array_column($roles, 'id');
-                $createdUser->roles()->sync($roleIds);
+                $createdUser->roles()->sync($roleIds); // Mantiene tu sincronización por IDs
+            } else {
+                // Si no tenía roles asignados en el JSON, ahora sí le asignamos el rol de invitado de forma segura
+                $createdUser->assignRole(User::GUEST);
             }
+
+            // --- 🚀 SINCRONIZACIÓN AUTOMÁTICA KLYNTIC (Node.js/Render) ---
+            // Si el usuario creado tiene el rol de DOCTOR, le notificamos a tu Node.js en Render
+            // para que cree su documento en MongoDB (klyntic_consultorios) con su _id correspondiente.
+            if ($createdUser->hasRole('DOCTOR')) {
+                try {
+                    $nodeUrl = env('KLYNTIC_NODE_URL', 'https://back-klyntic-envios.onrender.com');
+
+                    \Illuminate\Support\Facades\Http::post($nodeUrl . '/api/klyntic/consultorios/sync', [
+                        'doctor_id' => (string) $createdUser->id // Su ID numérico de MySQL se vuelve su string _id en Mongo
+                    ]);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Seeder Klyntic: Falló el enlace a Render para el doctor ID ' . $createdUser->id . ': ' . $e->getMessage());
+                }
+            }
+            // --------------------------------------------------------------
         }
+
     }
 }

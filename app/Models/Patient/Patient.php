@@ -36,18 +36,19 @@ class Patient extends Model
         'current_desease',
         'location_id',
         'user_id',
+        'mongo_user_id',
     ];
 
     public function setCreatedAtAttribute($value)
     {
-        date_default_timezone_set("America/Caracas");
-        $this->attributes['created_at'] = Carbon::now();
+        // Captura la hora actual de Caracas y la convierte a UTC de forma segura para MySQL
+        $this->attributes['created_at'] = Carbon::now('America/Caracas')->setTimezone('UTC');
     }
 
-    public function setUpdateAttribute($value)
+    public function setUpdatedAtAttribute($value)
     {
-        date_default_timezone_set("America/Caracas");
-        $this->attributes['updated_at'] = Carbon::now();
+        // Corrige el nombre del método y convierte la hora de actualización a UTC
+        $this->attributes['updated_at'] = Carbon::now('America/Caracas')->setTimezone('UTC');
     }
 
     public function person()

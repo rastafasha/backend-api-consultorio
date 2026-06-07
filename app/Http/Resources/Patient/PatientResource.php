@@ -17,6 +17,7 @@ class PatientResource extends JsonResource
     {
         return [
             "id" => $this->resource->id,
+            "mongo_user_id" => $this->resource->mongo_user_id,
             "name" => $this->resource->name,
             "surname" => $this->resource->surname,
             "full_name" => $this->resource->name . ' ' . $this->resource->surname,
@@ -24,8 +25,6 @@ class PatientResource extends JsonResource
             "n_doc" => $this->resource->n_doc,
 
             "phone" => $this->resource->phone,
-            // "avatar"=> $this->resource->avatar ? env("APP_URL")."storage/".$this->resource->avatar : null,
-            "avatar" => $this->resource->avatar ? env("APP_URL") . $this->resource->avatar : null,
             "birth_date" => $this->resource->birth_date ? Carbon::parse($this->resource->birth_date)->format("Y/m/d") : NULL,
             "gender" => $this->resource->gender,
             "education" => $this->resource->education,

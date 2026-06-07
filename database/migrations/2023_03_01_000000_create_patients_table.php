@@ -16,6 +16,7 @@ class CreatePatientsTable extends Migration
         Schema::create('patients', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('user_id')->nullable(); 
+            $table->string('mongo_user_id')->nullable();
             $table->foreignId('location_id')->nullable();
             $table->string('name', 250);
             $table->string('surname', 250);

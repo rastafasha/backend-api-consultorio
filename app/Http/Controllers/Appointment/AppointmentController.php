@@ -2,25 +2,24 @@
 
 namespace App\Http\Controllers\Appointment;
 
-use Carbon\Carbon;
-use App\Models\User;
-use Illuminate\Http\Request;
-use App\Models\Patient\Patient;
-use App\Mail\RegisterAppointment;
-use App\Models\Doctor\Specialitie;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\ConfirmationAppointment;
-use App\Models\Patient\PatientPerson;
-use App\Models\Appointment\Appointment;
-use App\Mail\NewAppointmentRegisterMail;
-use App\Models\Doctor\DoctorScheduleDay;
-use App\Mail\CancellationAppointmentMail;
-use App\Models\Appointment\AppointmentPay;
-use App\Models\Doctor\DoctorScheduleJoinHour;
-use App\Http\Resources\Appointment\AppointmentResource;
 use App\Http\Resources\Appointment\AppointmentCollection;
+use App\Http\Resources\Appointment\AppointmentResource;
+use App\Jobs\NewAppointmentRegisterJob;
+use App\Mail\CancellationAppointmentMail;
+use App\Models\Appointment\Appointment;
+use App\Models\Appointment\AppointmentPay;
+use App\Models\Doctor\DoctorScheduleDay;
+use App\Models\Doctor\DoctorScheduleJoinHour;
+use App\Models\Doctor\Specialitie;
+use App\Models\Patient\Patient;
+use App\Models\Patient\PatientPerson;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class AppointmentController extends Controller
 {
@@ -364,9 +363,9 @@ class AppointmentController extends Controller
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
 
         $patient = null;
@@ -416,49 +415,34 @@ class AppointmentController extends Controller
 
 
 
-        // if($request->doctor_id){
-        //     $doctor = User::findOrFail($id);
-
-        //     return response()->json([
-        //         "doctor"=>[
-        //                 "id"=> $doctor->doctor_id,
-        //                 "email"=> $doctor->email,
-        //                 "full_name" =>$doctor->name.' '.$doctor->user->surname,
-        //             ]
-        //         ]);
-        // }
-
         // Mail::to($appointment->patient->email)->send(new RegisterAppointment($appointment));
         // Mail::to($doctor->email)->send(new NewAppointmentRegisterMail($appointment));
+        NewAppointmentRegisterJob::dispatch($appointment)->onQueue('emails');
+
 
         return response()->json([
-            "message" => 200,
-            "appointment" => $appointment,
-            "amount" => $request->amount,
-            "paymentmethod" => $request->method_payment,
-            "amountadd" => $request->amount_add,
-            "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-            "patient" => $appointment->patient_id ?
-                [
-                    "id" => $appointment->patient->id,
-                    "email" => $appointment->patient->email,
-                    "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
-                ] : NULL,
-            "speciality" => $appointment->speciality,
-            "speciality" => $appointment->speciality ?
-                [
-                    "id" => $appointment->speciality->id,
-                    "name" => $appointment->speciality->name,
-                ] : NULL,
-            "doctor_id" => $appointment->doctor_id,
-            "doctor" => $appointment->doctor_id ?
-                [
-                    "id" => $doctor->id,
-                    "email" => $doctor->email,
-                    "full_name" => $doctor->name . ' ' . $doctor->surname,
-                ] : NULL,
-
-        ]);
+        "message" => 200,
+        "appointment" => $appointment,
+        "amount" => $request->amount,
+        "paymentmethod" => $request->method_payment,
+        "amountadd" => $request->amount_add,
+        "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
+        "patient" => $appointment->patient_id ? [
+            "id" => $appointment->patient->id,
+            "email" => $appointment->patient->email,
+            "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+        ] : NULL,
+        "speciality" => $appointment->speciality ? [ // Dejamos solo la versión formateada limpia
+            "id" => $appointment->speciality->id,
+            "name" => $appointment->speciality->name,
+        ] : NULL,
+        "doctor_id" => $appointment->doctor_id,
+        "doctor" => $appointment->doctor_id ? [
+            "id" => $doctor->id,
+            "email" => $doctor->email,
+            "full_name" => $doctor->name . ' ' . $doctor->surname,
+        ] : NULL,
+    ]);
     }
 
 
@@ -468,7 +452,7 @@ class AppointmentController extends Controller
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show($id)
     {
@@ -493,7 +477,7 @@ class AppointmentController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
@@ -525,7 +509,7 @@ class AppointmentController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {

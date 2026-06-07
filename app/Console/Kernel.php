@@ -24,12 +24,24 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // 📧 1. Filtra las citas y mete los correos en la cola (Hora de Caracas)
+        $schedule->command('command:notification-appointments')
+                 ->timezone('America/Caracas')
+                 ->everyFifteenMinutes() // Cambiado a 15 min para ser más amigable con el Shared Hosting
+                 ->withoutOverlapping(); // Evita que se ejecute dos veces si el hosting se pone lento
 
-        $schedule->command('command:notification-appointments')->timezone('America/Caracas')->everyMinutes();
-        // $schedule->command('command:notification-appointment-whatsapp')->timezone('America/Caracas')->everyMinutes();
+        // 🟢 2. NUEVO: Filtra las citas y mete el lote de WhatsApp en la cola para Render
+        // Activamos tu comando de Klyntic que unificamos hace un momento
+        $schedule->command('command:notification-appointment-whatsapp')
+                 ->timezone('America/Caracas')
+                 ->everyFifteenMinutes()
+                 ->withoutOverlapping();
         
-        $schedule->command('send:notification')->everyMinute(); //para envio al admin cuando se registra un nuevo appointment
+        // 🚀 3. El Trabajador de Colas (Procesa tanto correos como los WhatsApps hacia Render)
+        // Se ejecuta cada minuto, limpia la cola gracias al '--stop-when-empty' y se apaga limpiamente
+        $schedule->command('send:notification')
+                 ->everyMinute()
+                 ->withoutOverlapping(5); // Bloquea por 5 minutos si se queda colgado procesando
     }
 
     /**

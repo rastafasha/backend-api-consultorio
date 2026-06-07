@@ -136,6 +136,7 @@ class AdminPaymentController extends Controller
 
         return response()->json([
             "message" => 200,
+            "payment"=>$payment,
         ]);
     }
 
@@ -227,31 +228,7 @@ class AdminPaymentController extends Controller
         }
     }
 
-    protected function paymentInput(string $file = null): array
-    {
-        return [
-            "referencia" => request("referencia"),
-            "metodo" => request("metodo"),
-            "bank_name" => request("bank_name"),
-            "monto" => request("monto"),
-            "validacion" => request("validacion"),
-            "currency_id" => request("currency_id"),
-            "nombre" => request("nombre"),
-            "email" => request("email"),
-            "user_id" => request("user_id"),
-            "plan_id" => request("plan_id"),
-            "status" => request("status"),
-            "image" => $file,
-        ];
-    }
-
-    protected function paymentInputUpdate(string $file = null): array
-    {
-        return [
-            "validacion" => request("validacion"),
-            "status" => request("status"),
-        ];
-    }
+   
 
     public function recientes()
     {
