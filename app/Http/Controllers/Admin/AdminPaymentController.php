@@ -2,24 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\User;
-use App\Models\Payment;
 use App\Helpers\Uploader;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
-use App\Models\Patient\Patient;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Mail\NewPaymentRegisterMail;
-use Illuminate\Support\Facades\Mail;
+use App\Http\Resources\Appointment\Payment\PaymentCollection;
+use App\Http\Resources\Appointment\Payment\PaymentResource;
 use App\Mail\ConfirmationAppointment;
 use App\Models\Appointment\Appointment;
-use App\Http\Requests\PaymentStoreRequest;
 use App\Models\Appointment\AppointmentPay;
-use App\Http\Requests\PaymentUpdateRequest;
-use App\Http\Resources\Appointment\Payment\PaymentResource;
-use App\Http\Resources\Appointment\Payment\PaymentCollection;
+use App\Models\Payment;
+use App\Models\User;
+use App\Services\NotificacionService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+
 class AdminPaymentController extends Controller
 {
     // /**
@@ -134,9 +131,23 @@ class AdminPaymentController extends Controller
         //envio de correo al doctor
         // Mail::to($appointment->doctor->email)->send(new NewPaymentRegisterMail($payment));
 
+        // =========================================================================
+        // 🧪 VENENO INYECTADO: ALERTA DE PAGO REPORTADO AL MÉDICO (KLYNTIC)
+        // =========================================================================
+        NotificacionService::enviar(
+            $payment->doctor_id,                                                  // Consultorio ID para mapeo interno
+            null,                                                                 // Teléfono null porque al médico no le enviamos WhatsApp por esto
+            "El paciente " . $payment->nombre . " ha reportado un pago de $" . $payment->monto . " (Ref: " . $payment->referencia . ") para su cita.",
+            $payment->doctor_id,                                                  // ID del médico para encender su campana en el CRM
+            'MEDICO',                                                             // Rol destinatario
+            '💰 Nuevo Pago por Verificar',                                        // Título del Toastr
+            'PAGO_RECIBIDO',                                                      // Enum tipo
+            $payment->id                                                          // ID del pago en MySQL como referencia
+        );
+
         return response()->json([
             "message" => 200,
-            "payment"=>$payment,
+            "payment" => $payment,
         ]);
     }
 
@@ -228,7 +239,7 @@ class AdminPaymentController extends Controller
         }
     }
 
-   
+
 
     public function recientes()
     {
@@ -276,6 +287,21 @@ class AdminPaymentController extends Controller
 
         // 2. Si es RECHAZADO, terminamos aquí para evitar errores de null
         if ($request->status === 'REJECTED') {
+
+            // =========================================================================
+            // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE PAGO RECHAZADO AL PACIENTE
+            // =========================================================================
+            NotificacionService::enviar(
+                $payment->doctor_id,                                              // Consultorio ID para WhatsApp
+                $payment->patient->phone,                                         // Teléfono del paciente
+                "Hola " . $payment->nombre . ", tu pago reportado por $" . $payment->monto . " (Ref: " . $payment->referencia . ") no pudo ser verificado. Motivo: " . $payment->motivo_rechazo . ". Por favor, verifica los datos e intenta de nuevo.",
+                $payment->patient_id,                                             // ID del paciente para la campana de Angular
+                'PACIENTE',                                                       // Rol
+                '❌ Pago Rechazado',                                               // Título Toastr
+                'PAGO_RECHAZADO',                                                 // Enum tipo
+                $payment->id                                                      // Referencia del pago en MySQL
+            );
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Pago rechazado y notificado correctamente'
@@ -312,12 +338,29 @@ class AdminPaymentController extends Controller
                 "amount" => $request->monto,
                 "method_payment" => $request->bank_name,
             ]);
-        }
 
-        if ($request->status === 'APPROVED') {
-            Mail::to($appointment->patient->email)->send(new ConfirmationAppointment($appointment));
-
+            // =========================================================================
+            // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE PAGO APROBADO AL PACIENTE
+            // =========================================================================
+            NotificacionService::enviar(
+                $payment->doctor_id,                                              // Consultorio ID para WhatsApp
+                $payment->patient->phone,                                         // Teléfono del paciente
+                "Hola " . $payment->nombre . ", te confirmamos que tu pago de $" . $payment->monto . " (Ref: " . $payment->referencia . ") ha sido VERIFICADO y aprobado con éxito. ¡Gracias!",
+                $payment->patient_id,                                             // ID del paciente para la campana de Angular
+                'PACIENTE',                                                       // Rol
+                '✅ Tu Pago ha sido Verificado',                                  // Título Toastr
+                'PAGO_RECIBIDO',                                                  // Enum tipo
+                $payment->id                                                      // Referencia del pago en MySQL
+            );
         }
+        // Ejemplo para el futuro: Solo envía el correo si el campo no está vacío
+        // if (!empty($appointment->patient->email)) {
+        //     NewAppointmentRegisterJob::dispatch($appointment)->onQueue('emails');
+        // }
+        // if ($request->status === 'APPROVED') {
+        //     Mail::to($appointment->patient->email)->send(new ConfirmationAppointment($appointment));
+
+        // }
 
         return response()->json([
             "message" => 200,

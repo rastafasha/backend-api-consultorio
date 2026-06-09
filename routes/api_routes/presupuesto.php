@@ -23,6 +23,6 @@ Route::get('presupuesto/pendientesbydoctor/{doctor_id}', [PresupuestoController:
 Route::put('/presupuesto/update/cofirmation/{presupuesto:id}', [PresupuestoController::class, 'updateConfirmation'])
 ->name('presupuesto.updateConfirmation');
 
-Route::post('presupuesto/store', [PresupuestoController::class, 'store'])->name('presupuesto.store');
+Route::post('presupuesto/store', [PresupuestoController::class, 'storePresupuesto'])->name('presupuesto.store');
 Route::put('presupuesto/update/{id}', [PresupuestoController::class, 'update'])->name('presupuesto.update');
 Route::delete('presupuesto/destroy/{id}', [PresupuestoController::class, 'destroy'])->name('presupuesto.destroy');

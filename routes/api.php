@@ -40,10 +40,10 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     // users
     require __DIR__ . '/api_routes/users.php';
-    
+
     // roles
     require __DIR__ . '/api_routes/roles.php';
-    
+
     // staff
     require __DIR__ . '/api_routes/staff.php';
 
@@ -58,34 +58,34 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     // appointment
     require __DIR__ . '/api_routes/appointment.php';
-    
+
     // appointmentpay
     require __DIR__ . '/api_routes/appointmentpay.php';
-    
+
     // citamedica
     require __DIR__ . '/api_routes/citamedica.php';
-    
+
     // dashboard
     require __DIR__ . '/api_routes/dashboard.php';
 
     // pagos
     require __DIR__ . '/api_routes/payment.php';
-    
+
     // tipos de pago
     require __DIR__ . '/api_routes/paymentMethod.php';
-    
+
     // setting
     require __DIR__ . '/api_routes/setting.php';
-    
+
     // pub
     require __DIR__ . '/api_routes/pub.php';
-    
+
     // location
     require __DIR__ . '/api_routes/location.php';
-    
+
     // laboratory
     require __DIR__ . '/api_routes/laboratory.php';
-    
+
     // whatsapp
     // require __DIR__ . '/api_routes/whatsapp.php';
 
@@ -94,10 +94,10 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     // pais
     require __DIR__ . '/api_routes/pais.php';
-    
+
     // tasabcv
     require __DIR__ . '/api_routes/tasabcv.php';
-        
+
 
 
     //comandos desde la url del backend
@@ -108,20 +108,20 @@ Route::group(['middleware' => 'api'], function ($router) {
     });
 
     Route::get('/clear-all', function () {
-    // Limpia el caché de la aplicación
-    Artisan::call('cache:clear');
-    
-    // Limpia el caché de la configuración (crucial para cambios en el .env)
-    Artisan::call('config:clear');
-    
-    // Limpia el caché de las rutas
-    Artisan::call('route:clear');
-    
-    // Limpia las vistas compiladas
-    Artisan::call('view:clear');
+        // Limpia el caché de la aplicación
+        Artisan::call('cache:clear');
 
-    return "✅ Sistema optimizado: Caché, Configuración, Rutas y Vistas han sido limpiadas.";
-});
+        // Limpia el caché de la configuración (crucial para cambios en el .env)
+        Artisan::call('config:clear');
+
+        // Limpia el caché de las rutas
+        Artisan::call('route:clear');
+
+        // Limpia las vistas compiladas
+        Artisan::call('view:clear');
+
+        return "✅ Sistema optimizado: Caché, Configuración, Rutas y Vistas han sido limpiadas.";
+    });
 
     Route::get('/optimize', function () {
         Artisan::call('optimize:clear');
@@ -146,42 +146,23 @@ Route::group(['middleware' => 'api'], function ($router) {
     });
 
     Route::get('/migrate-update', function () {
-    try {
-        // Ejecuta solo las migraciones pendientes sin tocar la data actual
-        Artisan::call('migrate', [
-            '--force' => true // Necesario si estás en entorno de producción
-        ]);
-        
-        return "Migración completada: Estructura actualizada sin pérdida de datos.";
-    } catch (\Exception $e) {
-        return "Error al migrar: " . $e->getMessage();
-    }
-});
+        try {
+            // Ejecuta solo las migraciones pendientes sin tocar la data actual
+            Artisan::call('migrate', [
+                '--force' => true // Necesario si estás en entorno de producción
+            ]);
+
+            return "Migración completada: Estructura actualizada sin pérdida de datos.";
+        } catch (\Exception $e) {
+            return "Error al migrar: " . $e->getMessage();
+        }
+    });
 
     Route::get('/route-clear', function () {
-    Artisan::call('route:clear');
-    return "Route cache cleared successfully.";
-});
-    
-    
-    Route::get('/send-notification', function () {
-        Artisan::call('command:notification-appointments');
-        return "Send All notifications";
-    });
-    
-    Route::get('/send-whatsapp', function () {
-        Artisan::call('command:notification-appointment-whatsapp');
-        return "Send All whatsapp";
+        Artisan::call('route:clear');
+        return "Route cache cleared successfully.";
     });
 
-
-
-
-    //rutas libres
-
-
-    // Route::get('/categories', [CategoryController::class, 'index'])
-    //     ->name('category.index');
 
 
 });

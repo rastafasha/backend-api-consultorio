@@ -2,6 +2,9 @@
 
 namespace App\Console;
 
+use App\Models\Appointment\Appointment;
+use App\Services\NotificacionService;
+use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -24,24 +27,32 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // 📧 1. Filtra las citas y mete los correos en la cola (Hora de Caracas)
-        $schedule->command('command:notification-appointments')
-                 ->timezone('America/Caracas')
-                 ->everyFifteenMinutes() // Cambiado a 15 min para ser más amigable con el Shared Hosting
-                 ->withoutOverlapping(); // Evita que se ejecute dos veces si el hosting se pone lento
+        // =========================================================================
+// ⏰ TAREA AUTOMÁTICA: Recordatorio Diario de Citas Médicas (Klyntic)
+// =========================================================================
+        Schedule::call(function () {
 
-        // 🟢 2. NUEVO: Filtra las citas y mete el lote de WhatsApp en la cola para Render
-        // Activamos tu comando de Klyntic que unificamos hace un momento
-        $schedule->command('command:notification-appointment-whatsapp')
-                 ->timezone('America/Caracas')
-                 ->everyFifteenMinutes()
-                 ->withoutOverlapping();
-        
-        // 🚀 3. El Trabajador de Colas (Procesa tanto correos como los WhatsApps hacia Render)
-        // Se ejecuta cada minuto, limpia la cola gracias al '--stop-when-empty' y se apaga limpiamente
-        $schedule->command('send:notification')
-                 ->everyMinute()
-                 ->withoutOverlapping(5); // Bloquea por 5 minutos si se queda colgado procesando
+            // 1. Buscamos todas las citas de mañana que estén confirmadas (status o confirmation = 2)
+            $manana = Carbon::tomorrow()->format('Y-m-d');
+            $citasDeManana = Appointment::whereDate('date_appointment', $manana)
+                ->where('confimation', 2)
+                ->get();
+
+            // 2. Iteramos y disparamos el recordatorio a Node.js
+            foreach ($citasDeManana as $cita) {
+                NotificacionService::enviar(
+                    $cita->consultorio_id,
+                    $cita->patient->phone, // WhatsApp automático
+                    "Hola " . $cita->patient->name . ", te recordamos que tienes una cita médica programada para el día de mañana " . Carbon::parse($cita->date_appointment)->format('d-m-Y') . " a las " . Carbon::parse($cita->date_appointment)->format('h:i A') . ". Por favor, asiste con 15 minutos de anticipación.",
+                    $cita->patient_id,    // Campana interna en Angular Paciente
+                    'PACIENTE',
+                    '⏰ Recordatorio de Cita',
+                    'RECORDATORIO',
+                    $cita->id
+                );
+            }
+
+        })->dailyAt('07:00'); // Se ejecuta solo todas las mañanas a las 7:00 AM
     }
 
     /**

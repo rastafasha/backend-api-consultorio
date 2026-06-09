@@ -15,9 +15,10 @@ use App\Models\Doctor\Specialitie;
 use App\Models\Patient\Patient;
 use App\Models\Patient\PatientPerson;
 use App\Models\User;
+use App\Services\NotificacionService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -417,32 +418,49 @@ class AppointmentController extends Controller
 
         // Mail::to($appointment->patient->email)->send(new RegisterAppointment($appointment));
         // Mail::to($doctor->email)->send(new NewAppointmentRegisterMail($appointment));
-        NewAppointmentRegisterJob::dispatch($appointment)->onQueue('emails');
+        // NewAppointmentRegisterJob::dispatch($appointment)->onQueue('emails');
 
+        // =========================================================================
+        // 🧪 VENENO INYECTADO: ÚNICAMENTE SE NOTIFICA AL MÉDICO (KLYNTIC)
+        // =========================================================================
+        
+        // El paciente va a su listado por flujo de Angular. Solo avisamos al Médico.
+        NotificacionService::enviar(
+            $appointment->doctor_id,
+            null, // No WhatsApp
+            "Tienes un nuevo paciente agendado para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'), 
+            $appointment->doctor_id,
+            'MEDICO',
+            '📅 Nueva Cita Agendada',
+            'CONSULTA_NUEVA', // Tu enum corregido
+            $appointment->id
+        );
+
+       
 
         return response()->json([
-        "message" => 200,
-        "appointment" => $appointment,
-        "amount" => $request->amount,
-        "paymentmethod" => $request->method_payment,
-        "amountadd" => $request->amount_add,
-        "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-        "patient" => $appointment->patient_id ? [
-            "id" => $appointment->patient->id,
-            "email" => $appointment->patient->email,
-            "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
-        ] : NULL,
-        "speciality" => $appointment->speciality ? [ // Dejamos solo la versión formateada limpia
-            "id" => $appointment->speciality->id,
-            "name" => $appointment->speciality->name,
-        ] : NULL,
-        "doctor_id" => $appointment->doctor_id,
-        "doctor" => $appointment->doctor_id ? [
-            "id" => $doctor->id,
-            "email" => $doctor->email,
-            "full_name" => $doctor->name . ' ' . $doctor->surname,
-        ] : NULL,
-    ]);
+            "message" => 200,
+            "appointment" => $appointment,
+            "amount" => $request->amount,
+            "paymentmethod" => $request->method_payment,
+            "amountadd" => $request->amount_add,
+            "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
+            "patient" => $appointment->patient_id ? [
+                "id" => $appointment->patient->id,
+                "email" => $appointment->patient->email,
+                "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+            ] : NULL,
+            "speciality" => $appointment->speciality ? [ // Dejamos solo la versión formateada limpia
+                "id" => $appointment->speciality->id,
+                "name" => $appointment->speciality->name,
+            ] : NULL,
+            "doctor_id" => $appointment->doctor_id,
+            "doctor" => $appointment->doctor_id ? [
+                "id" => $doctor->id,
+                "email" => $doctor->email,
+                "full_name" => $doctor->name . ' ' . $doctor->surname,
+            ] : NULL,
+        ]);
     }
 
 
@@ -576,6 +594,26 @@ class AppointmentController extends Controller
         //     Mail::to($appointment->patient->email)->send(new ConfirmationAppointment($appointment));
 
         // }
+        // Ejemplo para el futuro: Solo envía el correo si el campo no está vacío
+        // if (!empty($appointment->patient->email)) {
+        //     NewAppointmentRegisterJob::dispatch($appointment)->onQueue('emails');
+        // }
+
+         // =========================================================================
+        // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE CONFIRMACIÓN AL PACIENTE (KLYNTIC)
+        // =========================================================================
+        if ($request->confimation == 2) {
+            NotificacionService::enviar(
+                $appointment->doctor_id,                                              // Consultorio ID para WhatsApp
+                $appointment->patient->phone,                                         // Teléfono del paciente
+                "Hola " . $appointment->patient->name . ", te confirmamos que tu cita médica para el día " . Carbon::parse($appointment->date_appointment)->format('d-m-Y') . " se encuentra oficialmente CONFIRMADA. ¡Te esperamos!",
+                $appointment->patient_id,                                             // ID del paciente para la campana de Angular
+                'PACIENTE',                                                           // Rol
+                '📅 Tu Cita ha sido Confirmada',                                      // Título Toastr
+                'CITA_AGENDADA',                                                      // Enum tipo
+                $appointment->id                                                      // Referencia de la cita en MySQL
+            );
+        }
         return response()->json([
             "message" => 200,
             "status" => $request->confimation == 2 ? 'Confirmada' : 'Pendiente',
