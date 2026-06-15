@@ -44,31 +44,36 @@ class PatientController extends Controller
         ]);
     }
 
-    public function patientsByDoctor(Request $request, $doctor_id)
-    {
-        $search = $request->search;
-
-        // Filtramos los pacientes que TIENEN una relación con el doctor_id dado
-        $patients = Patient::whereHas('doctors', function ($query) use ($doctor_id) {
-            $query->where('users.id', $doctor_id); // Filtro en la tabla pivot/doctors
-        })
-            ->where(function ($query) use ($search) {
-                if ($search) {
-                    $query->where(
-                        DB::raw("CONCAT(name, ' ', IFNULL(surname, ''), ' ', email)"),
-                        "like",
-                        "%" . $search . "%"
-                    );
-                }
-            })
-            ->orderBy("id", "desc")
-            ->paginate(10);
-
-        return response()->json([
-            "total" => $patients->total(),
-            "patients" => PatientCollection::make($patients)
-        ]);
+public function patientsByDoctor(Request $request, $doctor_id)
+{
+    // Limpiamos la variable de espacios en blanco y forzamos a que si viene un "null" de Angular se vuelva falso
+    $search = trim($request->search);
+    if ($search === 'null' || $search === 'undefined') {
+        $search = '';
     }
+
+    $patients = Patient::whereHas('doctors', function ($query) use ($doctor_id) {
+        $query->where('doctor_patient.doctor_id', $doctor_id); 
+    })
+    ->where(function ($query) use ($search) {
+        // 💡 Solo aplicamos los filtros si realmente el usuario escribió algo real en el buscador
+        if (!empty($search)) {
+            $query->where('name', 'like', "%" . $search . "%")
+                  ->orWhere('surname', 'like', "%" . $search . "%")
+                  ->orWhere('email', 'like', "%" . $search . "%")
+                  ->orWhere('n_doc', 'like', "%" . $search . "%"); // 👈 Agregamos tu validación de número de documento
+        }
+    })
+    ->orderBy("id", "desc")
+    ->paginate(10);
+
+    return response()->json([
+        "total" => $patients->total(),
+        "patients" => PatientCollection::make($patients)
+    ]);
+}
+
+
 
     /**
      * Show the form for creating a new resource.
@@ -603,4 +608,14 @@ class PatientController extends Controller
 
         ]);
     }
+
+ public function verificarDocumento($n_doc)
+{
+    $existe = Patient::withTrashed()->where('n_doc', trim($n_doc))->exists();
+
+    return response()->json([
+        'existe' => $existe
+    ], 200);
+}
+
 }

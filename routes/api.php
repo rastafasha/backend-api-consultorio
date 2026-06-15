@@ -1,16 +1,6 @@
 <?php
-
-use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Auth\PasswordResetController;
-use App\Http\Controllers\Admin\Doctor\DoctorController;
-use App\Http\Controllers\Auth\ChangePasswordController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\ChangeForgotPasswordControllerController;
-
 
 /*
 |--------------------------------------------------------------------------
@@ -95,8 +85,6 @@ Route::group(['middleware' => 'api'], function ($router) {
     // pais
     require __DIR__ . '/api_routes/pais.php';
 
-    // tasabcv
-    require __DIR__ . '/api_routes/tasabcv.php';
 
 
 
