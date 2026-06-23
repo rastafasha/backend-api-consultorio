@@ -1,0 +1,7 @@
+{
+  "providers": {
+    "php": {
+      "phpVersion": "8.2"
+    }
+  }
+}
