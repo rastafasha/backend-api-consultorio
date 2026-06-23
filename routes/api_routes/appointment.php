@@ -24,7 +24,6 @@ Route::get('appointments/show/{id}', [AppointmentController::class, 'show'])->na
 Route::put('appointments/update/{appointment}', [AppointmentController::class, 'update'])->name('appointment.update');
 Route::delete('appointments/destroy/{id}', [AppointmentController::class, 'destroy'])->name('appointment.destroy');
 
-Route::get('appointments/atendidas/{id}', [AppointmentController::class, 'atendidas'])->name('appointment.atendidas');
 // Route::get('appointments/byDoctor/{doctor_id}', [AppointmentController::class, 'appointmensByDoctor'])->name('appointmensByDoctor');
 
 Route::post('appointments/calendar', [AppointmentController::class, 'calendar'])->name('appointment.calendar');

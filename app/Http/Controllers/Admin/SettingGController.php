@@ -38,7 +38,7 @@ class SettingGController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function settingStore(Request $request)
     {
         if($request->hasFile('imagen')){
             $path = Storage::putFile("settings", $request->file('imagen'));
@@ -61,7 +61,7 @@ class SettingGController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show( Settingeneral $id)
+    public function settingShow( Settingeneral $id)
     {
         $setting = Settingeneral::findOrFail($id);
         return response()->json([
@@ -77,7 +77,7 @@ class SettingGController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function settingUpdate(Request $request, $id)
     {
         $user_is_valid = User::where("email", $request->email)->first();
 
@@ -109,7 +109,7 @@ class SettingGController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function settingDestroy($id)
     {
         $setting = Settingeneral::findOrFail($id);
         $setting->delete();
