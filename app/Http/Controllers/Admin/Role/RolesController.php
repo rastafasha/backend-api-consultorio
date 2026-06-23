@@ -35,16 +35,6 @@ class RolesController extends Controller
 
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create(Request $request)
-    {
-        
-
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -52,7 +42,7 @@ class RolesController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function roleStore(Request $request)
     {
         $is_role = Role::where("name", $request->name)->first();
         if($is_role){
@@ -82,7 +72,7 @@ class RolesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(string $id)
+    public function roleShow(string $id)
     {
         $role = Role::findOrFail($id);
         return response()->json([
@@ -94,16 +84,6 @@ class RolesController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
@@ -112,7 +92,7 @@ class RolesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function roleUpdate(Request $request, $id)
     {
         $is_role = Role::where("id", "<>", $id)->where("name", $request->name)->first();
         if($is_role){
@@ -138,7 +118,7 @@ class RolesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function roleDestroy($id)
     {
         $role = Role::findOrFail($id);
         if($role->users->count() > 0){
