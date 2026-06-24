@@ -6,10 +6,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
+        "ext-pdo_mysql": "*",
+        "cloudinary-labs/cloudinary-laravel": "^2.1",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.83",
-        "ext-pdo_mysql": "*",
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.5",
         "predis/predis": "^2.2",

@@ -12,6 +12,7 @@ use App\Models\Appointment\AppointmentPay;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\NotificacionService;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -107,9 +108,23 @@ class AdminPaymentController extends Controller
             return response()->json(['message' => 'Appointment not found.'], 404);
         }
 
-        if ($request->hasFile('image')) {
-            $path = Storage::putFile("payments", $request->file('image'));
-            $request->request->add(["image" => $path]);
+        // if ($request->hasFile('image')) {
+        //     $path = Storage::putFile("payments", $request->file('image'));
+        //     $request->request->add(["image" => $path]);
+        // }
+
+        // 3. Procesamos el Avatar con Cloudinary (Compatible con v3)
+        if ($request->hasFile('imagen')) {
+            // Sube la imagen utilizando el uploadApi nativo del SDK
+            $cloudinaryResponse = Cloudinary::uploadApi()->upload(
+                $request->file('imagen')->getRealPath(),
+                ['folder' => 'klyntic/payments']
+            );
+
+            // Obtenemos la URL de manera directa desde el arreglo de respuesta
+            $path = $cloudinaryResponse['secure_url'];
+
+            $request->request->add(["avatar" => $path]);
         }
 
 

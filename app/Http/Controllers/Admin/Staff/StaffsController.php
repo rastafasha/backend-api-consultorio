@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers\Admin\Staff;
 
-use Carbon\Carbon;
-use App\Models\User;
-use Illuminate\Http\Request;
-use App\Mail\NewUserRegisterMail;
-use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\User\UserCollection;
+use App\Http\Resources\User\UserResource;
+use App\Mail\NewUserRegisterMail;
+use App\Models\User;
+use Carbon\Carbon;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Resources\User\UserResource;
-use App\Http\Resources\User\UserCollection;
+use Spatie\Permission\Models\Role;
 
 class StaffsController extends Controller
 {
@@ -74,9 +75,23 @@ class StaffsController extends Controller
             ]);
         }
 
-        if($request->hasFile('imagen')){
-            $path = Storage::putFile("staffs", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+        // if($request->hasFile('imagen')){
+        //     $path = Storage::putFile("staffs", $request->file('imagen'));
+        //     $request->request->add(["avatar"=>$path]);
+        // }
+
+        // 3. Procesamos el Avatar con Cloudinary (Compatible con v3)
+        if ($request->hasFile('imagen')) {
+            // Sube la imagen utilizando el uploadApi nativo del SDK
+            $cloudinaryResponse = Cloudinary::uploadApi()->upload(
+                $request->file('imagen')->getRealPath(),
+                ['folder' => 'klyntic/staffs']
+            );
+
+            // Obtenemos la URL de manera directa desde el arreglo de respuesta
+            $path = $cloudinaryResponse['secure_url'];
+
+            $request->request->add(["avatar" => $path]);
         }
 
         if($request->password){
@@ -115,17 +130,7 @@ class StaffsController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
+   
     /**
      * Update the specified resource in storage.
      *
@@ -146,12 +151,30 @@ class StaffsController extends Controller
         
         $user = User::findOrFail($id);
         
-        if($request->hasFile('imagen')){
-            if($user->avatar){
-                Storage::delete($user->avatar);
+        // if($request->hasFile('imagen')){
+        //     if($user->avatar){
+        //         Storage::delete($user->avatar);
+        //     }
+        //     $path = Storage::putFile("staffs", $request->file('imagen'));
+        //     $request->request->add(["avatar"=>$path]);
+        // }
+
+        //upload a cloudinary
+        if ($request->hasFile('imagen')) {
+            // 1. Si el usuario ya tiene un avatar en Cloudinary, lo borramos de la nube
+            if ($user->avatar) {
+                // Extraemos el public_id de la URL completa (ej: staffs/nombre_archivo)
+                $publicId = 'klyntic/staffs/' . pathinfo($user->avatar, PATHINFO_FILENAME);
+
+                // Eliminamos la imagen vieja de Cloudinary
+                Cloudinary::uploadApi()->destroy($publicId);
             }
-            $path = Storage::putFile("staffs", $request->file('imagen'));
-            $request->request->add(["avatar"=>$path]);
+
+            // 2. Subimos la nueva imagen utilizando el método compatible con tu versión
+            $uploadedFile = $request->file('imagen')->storeOnCloudinary('klyntic/staffs');
+            $path = $uploadedFile->getSecurePath();
+
+            $request->request->add(["avatar" => $path]);
         }
         
         if($request->password){

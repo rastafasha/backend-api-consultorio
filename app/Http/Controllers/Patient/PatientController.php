@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Patient;
 
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Appointment\AppointmentCollection;
 use App\Http\Resources\Patient\PatientCollection;
@@ -12,12 +13,12 @@ use App\Models\Patient\Patient;
 use App\Models\Patient\PatientPerson;
 use App\Models\User;
 use Carbon\Carbon;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Controllers\Auth\AuthController;
 
 class PatientController extends Controller
 {
@@ -248,10 +249,23 @@ public function patientsByDoctor(Request $request, $doctor_id)
         ]);
     }
 
-    if ($request->hasFile('imagen')) {
-        $path = Storage::putFile("patients", $request->file('imagen'));
-        $request->request->add(["avatar" => $path]);
-    }
+    // if ($request->hasFile('imagen')) {
+    //     $path = Storage::putFile("patients", $request->file('imagen'));
+    //     $request->request->add(["avatar" => $path]);
+    // }
+    // 3. Procesamos el Avatar con Cloudinary (Compatible con v3)
+        if ($request->hasFile('imagen')) {
+            // Sube la imagen utilizando el uploadApi nativo del SDK
+            $cloudinaryResponse = Cloudinary::uploadApi()->upload(
+                $request->file('imagen')->getRealPath(),
+                ['folder' => 'klyntic/patients']
+            );
+
+            // Obtenemos la URL de manera directa desde el arreglo de respuesta
+            $path = $cloudinaryResponse['secure_url'];
+
+            $request->request->add(["avatar" => $path]);
+        }
 
     if ($request->birth_date) {
         $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
@@ -339,11 +353,29 @@ public function patientsByDoctor(Request $request, $doctor_id)
             $patient->doctors()->sync($request->doctor_id);
         }
 
+        // if ($request->hasFile('imagen')) {
+        //     if ($patient->avatar) {
+        //         Storage::delete($patient->avatar);
+        //     }
+        //     $path = Storage::putFile("patients", $request->file('imagen'));
+        //     $request->request->add(["avatar" => $path]);
+        // }
+
+        //upload a cloudinary
         if ($request->hasFile('imagen')) {
+            // 1. Si el usuario ya tiene un avatar en Cloudinary, lo borramos de la nube
             if ($patient->avatar) {
-                Storage::delete($patient->avatar);
+                // Extraemos el public_id de la URL completa (ej: staffs/nombre_archivo)
+                $publicId = 'klyntic/patients/' . pathinfo($patient->avatar, PATHINFO_FILENAME);
+
+                // Eliminamos la imagen vieja de Cloudinary
+                Cloudinary::uploadApi()->destroy($publicId);
             }
-            $path = Storage::putFile("patients", $request->file('imagen'));
+
+            // 2. Subimos la nueva imagen utilizando el método compatible con tu versión
+            $uploadedFile = $request->file('imagen')->storeOnCloudinary('klyntic/staffs');
+            $path = $uploadedFile->getSecurePath();
+
             $request->request->add(["avatar" => $path]);
         }
 
