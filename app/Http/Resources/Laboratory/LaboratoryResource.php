@@ -20,6 +20,7 @@ class LaboratoryResource extends JsonResource
             'name_file'=> $this->resource->name_file,
                     'size'=> $this->resource->size,
                     'resolution'=> $this->resource->resolution,
+                    // "avatar" => $this->resource->avatar  ? (str_starts_with($this->resource->avatar, 'http') ? $this->resource->avatar : env("APP_URL") . $this->resource->avatar) : null,
                     'file'=> env("APP_URL")."storage/".$this->resource->file,
                     // 'file'=> env("APP_URL").$this->resource->file,
                     'type'=> $this->resource->type,

@@ -47,7 +47,8 @@ class PatientResource extends JsonResource
             "peso" => $this->resource->peso,
             "current_desease" => $this->resource->current_desease,
             // "avatar"=> $this->resource->avatar ? env("APP_URL")."storage/".$this->resource->avatar : null,
-            "avatar" => $this->resource->avatar ? env("APP_URL") . $this->resource->avatar : null,
+            // "avatar" => $this->resource->avatar ? env("APP_URL") . $this->resource->avatar : null,
+            "avatar" => $this->resource->avatar  ? (str_starts_with($this->resource->avatar, 'http') ? $this->resource->avatar : env("APP_URL") . $this->resource->avatar) : null,
             "created_at" => $this->resource->created_at ? Carbon::parse($this->resource->created_at)->format("Y-m-d h:i A") : NULL,
 
             "person" => $this->resource->person ? [
