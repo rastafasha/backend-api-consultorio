@@ -37,6 +37,18 @@ class Patient extends Model
         'location_id',
         'user_id',
         'mongo_user_id',
+        
+        'talla',
+        'historia_enfermedad',
+        'enfermedad_actual',
+        'tratamiento',
+        'examen_fisico',
+        'reporte_laboratorio',
+        'evolucion',
+        //solo pediatria
+        'vacunas',
+        'peso_al_nacer',
+        'talla_al_nacer',
     ];
 
     public function setCreatedAtAttribute($value)

@@ -38,6 +38,16 @@ class CreatePatientsTable extends Migration
             $table->string('fr', 25)->nullable();
             $table->string('temperature', 25)->nullable();
             $table->string('peso', 250)->nullable();
+            $table->string('talla', 250)->nullable();
+            $table->string('historia_enfermedad', 250)->nullable();
+            $table->string('enfermedad_actual', 250)->nullable();
+            $table->string('tratamiento', 250)->nullable();
+            $table->string('examen_fisico', 250)->nullable();
+            $table->string('reporte_laboratorio', 250)->nullable();
+            $table->json('evolucion')->nullable();
+            $table->json('vacunas')->nullable();
+            $table->string('peso_al_nacer', 250)->nullable();
+            $table->string('talla_al_nacer', 250)->nullable();
             
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
