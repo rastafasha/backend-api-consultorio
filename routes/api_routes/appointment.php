@@ -16,22 +16,28 @@ Route::get('appointments/atendidas/', [AppointmentController::class, 'atendidas'
 Route::get('appointments/pendientes', [AppointmentController::class, 'pendientes'])
 ->name('appointment.pendientes');
 
+Route::get('appointments/show/{id}', [AppointmentController::class, 'show'])->name('appointment.show');
 Route::get('appointments/pendientesbydoctor/{doctor_id}', [AppointmentController::class, 'pagosPendientesShowId'])
     ->name('appointment.pagosPendientesShowId');
 
+
+
 Route::post('appointments/store', [AppointmentController::class, 'store'])->name('appointment.store');
-Route::get('appointments/show/{id}', [AppointmentController::class, 'show'])->name('appointment.show');
+
 Route::put('appointments/update/{appointment}', [AppointmentController::class, 'update'])->name('appointment.update');
 Route::delete('appointments/destroy/{id}', [AppointmentController::class, 'destroy'])->name('appointment.destroy');
 
-// Route::get('appointments/byDoctor/{doctor_id}', [AppointmentController::class, 'appointmensByDoctor'])->name('appointmensByDoctor');
 
 Route::post('appointments/calendar', [AppointmentController::class, 'calendar'])->name('appointment.calendar');
 
 Route::put('/appointments/update/cofirmation/{appointment:id}', [AppointmentController::class, 'updateConfirmation'])
     ->name('appointment.updateConfirmation');
 
-   
-
 Route::post('/appointment/{id}/cancel', [AppointmentController::class, 'cancelarCita'])
     ->name('appointment.cancelarCita');
+
+// Rutas exclusivas para el Extractor Médico / Cron Job
+Route::get('/appointments/cron-pendientes', [AppointmentController::class, 'pendientesCron']);
+Route::post('/appointments/update-cron-state/{id}', [AppointmentController::class, 'updateCronState']);
+   
+

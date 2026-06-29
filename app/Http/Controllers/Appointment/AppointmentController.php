@@ -684,4 +684,35 @@ class AppointmentController extends Controller
             "appointment" => $appointment
         ]);
     }
+
+    public function updateCronState($id)
+{
+    // Buscamos la cita por su ID
+    $appointment = Appointment::find($id);
+
+    if (!$appointment) {
+        return response()->json(['message' => 'Cita no encontrada'], 404);
+    }
+
+    // Cambiamos el estado a 2 (Notificado) para que ya no salga en "pendientes"
+    $appointment->cron_state = 2; 
+    $appointment->save();
+
+    return response()->json(['message' => 'Estado del cron actualizado con éxito']);
+}
+
+public function pendientesCron()
+{
+    // 1. Buscamos citas activas (status 1) Y que NO hayan sido notificadas (cron_state 1)
+    // 2. Quitamos la paginación para procesarlas todas de golpe (.get() o .take())
+    $appointments = Appointment::where('status', 1)
+        ->where('cron_state', 1) 
+        ->orderBy("id", "desc")
+        ->get(); // Trae todas las pendientes reales sin paginar
+
+    return response()->json(
+        AppointmentCollection::make($appointments)
+    );
+}
+
 }
