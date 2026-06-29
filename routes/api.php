@@ -75,6 +75,8 @@ Route::group(['middleware' => 'api'], function ($router) {
 
     // laboratory
     require __DIR__ . '/api_routes/laboratory.php';
+    // laboratory
+    require __DIR__ . '/api_routes/reporteLaboratory.php';
 
     // whatsapp
     // require __DIR__ . '/api_routes/whatsapp.php';

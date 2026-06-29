@@ -23,7 +23,6 @@ class PatientResource extends JsonResource
             "full_name" => $this->resource->name . ' ' . $this->resource->surname,
             "email" => $this->resource->email,
             "n_doc" => $this->resource->n_doc,
-
             "phone" => $this->resource->phone,
             "birth_date" => $this->resource->birth_date ? Carbon::parse($this->resource->birth_date)->format("Y/m/d") : NULL,
             "gender" => $this->resource->gender,
@@ -35,13 +34,6 @@ class PatientResource extends JsonResource
             "ta" => $this->resource->ta,
             "temperature" => $this->resource->temperature,
             "location_id" => $this->resource->location_id,
-            // "location_id"=>$this->resource->location_id,
-            //     "location"=>$this->resource->location ? [
-            //         "title"=>$this->resource->location->title,
-            //         "address"=>$this->resource->location->address,
-            //         "email"=>$this->resource->location->email,
-
-            //     ]:NULL,
             "fc" => $this->resource->fc,
             "fr" => $this->resource->fr,
             "peso" => $this->resource->peso,
@@ -56,8 +48,6 @@ class PatientResource extends JsonResource
             "peso_al_nacer" => $this->resource->peso_al_nacer,
             "talla_al_nacer" => $this->resource->talla_al_nacer,
             "current_desease" => $this->resource->current_desease,
-            // "avatar"=> $this->resource->avatar ? env("APP_URL")."storage/".$this->resource->avatar : null,
-            // "avatar" => $this->resource->avatar ? env("APP_URL") . $this->resource->avatar : null,
             "avatar" => $this->resource->avatar  ? (str_starts_with($this->resource->avatar, 'http') ? $this->resource->avatar : env("APP_URL") . $this->resource->avatar) : null,
             "created_at" => $this->resource->created_at ? Carbon::parse($this->resource->created_at)->format("Y-m-d h:i A") : NULL,
 
