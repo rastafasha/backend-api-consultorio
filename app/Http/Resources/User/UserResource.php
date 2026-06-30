@@ -86,6 +86,7 @@ class UserResource extends JsonResource
                 return $day->schedule_hours->map(function ($pivot) use ($day) {
                     return [
                         "day_name" => $day->day,
+                        'doctor_address_id' => $day->doctor_address_id, 
                         "item" => [
                             "id" => $pivot->doctor_schedule_hour_id,
                             "hour_start" => optional($pivot->doctor_schedule_hour)->hour_start,

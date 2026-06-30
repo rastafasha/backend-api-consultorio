@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Doctor\DoctorAddress;
 use App\Models\Doctor\DoctorScheduleDay;
 use App\Models\Doctor\Specialitie;
 use App\Models\Patient\Patient;
@@ -171,5 +172,9 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(Patient::class, 'user_id');
     }
+
+    public function addresses() {
+    return $this->hasMany(DoctorAddress::class, 'user_id');
+}
 
 }

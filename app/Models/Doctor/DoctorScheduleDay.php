@@ -2,11 +2,12 @@
 
 namespace App\Models\Doctor;
 
-use Carbon\Carbon;
+use App\Models\Doctor\DoctorAddress;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DoctorScheduleDay extends Model
 {
@@ -14,6 +15,7 @@ class DoctorScheduleDay extends Model
     use SoftDeletes;
     protected $fillable =[
         "user_id",
+        "doctor_address_id",
         "day",
     ];
 
@@ -39,5 +41,10 @@ class DoctorScheduleDay extends Model
    public function user() // Cambiaste de 'doctor' a 'user'
 {
     return $this->belongsTo(User::class, "user_id");
+}
+
+// Relación inversa: El día de la agenda pertenece a un consultorio específico
+public function doctor_address(){
+    return $this->belongsTo(DoctorAddress::class, "doctor_address_id");
 }
 }

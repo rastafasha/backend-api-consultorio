@@ -29,65 +29,141 @@ class RLaboratoryController extends Controller
      */
     public function store(Request $request)
     {
-        // 🛡️ Validación inicial de seguridad
-        if (!$request->hasFile('files')) {
-            return response()->json(['message' => 'No se recibieron archivos de laboratorio'], 400);
+        if (!$request->input('patient_id')) {
+            return response()->json(['message' => 'El ID del paciente es requerido'], 400);
         }
 
         $laboratoriesSaved = [];
+        $comentarioGeneral = $request->input('comentario_general');
+        $metaData = json_decode($request->input('file_metadata'), true) ?: [];
 
-        // 🔄 Recorremos cada archivo enviado en el arreglo 'files' desde Angular
-        foreach ($request->file("files") as $file) {
+        if (empty($metaData) && (is_null($comentarioGeneral) || trim($comentarioGeneral) === '')) {
+            return response()->json(['message' => 'No se recibió información para guardar'], 400);
+        }
 
-            $extension = $file->getClientOriginalExtension();
-            $size = $file->getSize();
-            $name_file = $file->getClientOriginalName();
-            $dimensions = null;
+        // --- CASO 1: COLA LOCAL CON REGISTROS (Vía "FilesAdded") ---
+        if (!empty($metaData)) {
+            // 📦 Forzamos a Laravel a darnos TODOS los archivos de 'files' como un array limpio indexado por números
+            $allUploadedFiles = $request->file('files') ?: [];
 
-            // 🖼️ Extraemos la resolución si es una imagen
-            if (in_array(strtolower($extension), ["jpeg", "bmp", "jpg", "png"])) {
-                $dimensions = getimagesize($file); // Corrección: la función nativa es en minúsculas
-            }
+            foreach ($metaData as $data) {
+                $path = NULL;
+                $name_file = 'Nota de texto (Sin archivo)';
+                $size = '0';
+                $extension = 'text';
+                $resolution = NULL;
 
-            try {
-                // 🚀 SUBIDA NATIVA A CLOUDINARY (Usando la variable del ciclo $file)
-                $cloudinaryResponse = Cloudinary::uploadApi()->upload(
-                    $file->getRealPath(),
-                    ['folder' => 'klyntic/rlaboratories']
-                );
+                $comentarioFinal = (!empty($data['comentario'])) ? $data['comentario'] : $comentarioGeneral;
 
-                // Obtenemos la URL segura directamente desde la respuesta
-                $path = $cloudinaryResponse['secure_url'];
+                // 🔍 EXTRACCIÓN MAESTRA DEL ARCHIVO:
+                // Buscamos directamente en el array indexado usando el file_index numérico que mandó Angular
+                $file = null;
+                if (isset($data['has_file']) && $data['has_file'] && is_numeric($data['file_index'])) {
+                    $idx = (int) $data['file_index'];
+                    $file = $allUploadedFiles[$idx] ?? null;
+                }
 
-                // 💾 Guardamos en la base de datos mapeando tu $fillable
-                $laboratory = RLaboratory::create([
-                    'patient_id' => $request->patient_id,
-                    'comentario' => $request->input('comentario'), // Corregido: leemos del request
-                    'name_file' => $name_file,
-                    'size' => $size,
-                    'resolution' => $dimensions ? $dimensions[0] . "x" . $dimensions[1] : NULL,
-                    'file' => $path, // Guardamos la URL de Cloudinary
-                    'type' => $extension,
-                    'time' => now()->toTimeString(), // Asegúrate de rellenar 'time' si es requerido
-                ]);
+                // Si el archivo físico fue encontrado en el array indexado
+                if ($file) {
+                    $extension = $file->getClientOriginalExtension();
+                    $size = number_format($file->getSize() / 1024, 1);
+                    $name_file = $file->getClientOriginalName();
 
-                // Acumulamos los laboratorios creados para la respuesta JSON
-                $laboratoriesSaved[] = $laboratory;
+                    if (in_array(strtolower($extension), ["jpeg", "bmp", "jpg", "png"])) {
+                        $dimensions = getimagesize($file);
+                        if ($dimensions) {
+                            $resolution = $dimensions[0] . "x" . $dimensions[1];
+                        }
+                    }
 
-            } catch (\Exception $e) {
-                error_log("❌ Error subiendo archivo a Cloudinary: " . $e->getMessage());
-                // Puedes decidir si continuar con el siguiente archivo o abortar
-                continue;
+                    try {
+                        // 🚀 SUBIDA A CLOUDINARY
+                        $uploadedFile = $file->storeOnCloudinary('klyntic/rlaboratories');
+
+                        // 🔍 PRUEBA EN CASCADA PARA RECOGER LA URL SEGÚN TU VERSIÓN DEL PAQUETE
+                        if (is_array($uploadedFile)) {
+                            $path = $uploadedFile['secure_url'] ?? $uploadedFile['url'] ?? NULL;
+                        } elseif (is_object($uploadedFile)) {
+                            if (method_exists($uploadedFile, 'getSecurePath')) {
+                                $path = $uploadedFile->getSecurePath();
+                            } elseif (method_exists($uploadedFile, 'getSecureUrl')) {
+                                $path = $uploadedFile->getSecureUrl();
+                            } elseif (method_exists($uploadedFile, 'url')) {
+                                $path = $uploadedFile->url();
+                            } else {
+                                // Si es un objeto genérico o un wrapper de CloudinaryEngine/ApiResponse
+                                $path = $uploadedFile->secure_url ?? $uploadedFile->url ?? NULL;
+                            }
+                        }
+
+                        // 🚨 DETECCIÓN DE EMERGENCIA: Si tras todos los intentos la URL sigue vacía, 
+                        // paramos el código aquí y te mostramos en Angular exactamente qué respondió Cloudinary
+                        if (is_null($path)) {
+                            return response()->json([
+                                'status' => 'error',
+                                'message' => 'Cloudinary procesó el archivo pero no devolvió ninguna URL válida.',
+                                'clase_objeto_recibido' => is_object($uploadedFile) ? get_class($uploadedFile) : 'Es un Array/Primitive',
+                                'respuesta_cruda_cloudinary' => $uploadedFile
+                            ], 500);
+                        }
+
+                    } catch (\Throwable $e) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Fallo la comunicación con Cloudinary usando storeOnCloudinary',
+                            'error_detallado' => $e->getMessage()
+                        ], 500);
+                    }
+
+                }
+
+                // 💾 Guardado definitivo en base de datos de MAMP
+                try {
+                    $laboratory = RLaboratory::create([
+                        'patient_id' => $request->patient_id,
+                        'comentario' => $comentarioFinal,
+                        'name_file' => $name_file,
+                        'size' => $size,
+                        'resolution' => $resolution,
+                        'file' => $path, // ¡Aquí por fin se guardará la URL de Cloudinary!
+                        'type' => $extension,
+                    ]);
+                    $laboratoriesSaved[] = $laboratory;
+                } catch (\Exception $dbEx) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Error al insertar en la base de datos',
+                        'error_detallado' => $dbEx->getMessage()
+                    ], 500);
+                }
             }
         }
 
-        // Retornamos la lista de laboratorios procesados usando tu Resource Collection o el último
+        // --- CASO 2: SOLO COMENTARIO DIRECTO ---
+        else if (!empty($comentarioGeneral)) {
+            try {
+                $laboratory = RLaboratory::create([
+                    'patient_id' => $request->patient_id,
+                    'comentario' => $comentarioGeneral,
+                    'name_file' => 'Nota de texto general',
+                    'size' => '0',
+                    'resolution' => NULL,
+                    'file' => NULL,
+                    'type' => 'text',
+                ]);
+                $laboratoriesSaved[] = $laboratory;
+            } catch (\Exception $dbEx) {
+                return response()->json(['message' => 'Error al insertar comentario general', 'error_detallado' => $dbEx->getMessage()], 500);
+            }
+        }
+
         return response()->json([
             'status' => 'success',
-            // Devolvemos una colección con todos los archivos guardados con éxito
             'laboratories' => RLaboratoryResource::collection(collect($laboratoriesSaved))
         ]);
     }
+
+
 
     /**
      * Display the specified resource.
@@ -209,6 +285,34 @@ class RLaboratoryController extends Controller
             'message' => 'Historial de laboratorios actualizado correctamente',
             'laboratories' => RLaboratoryResource::collection($allLaboratories)
         ]);
+    }
+
+    public function addFiles(Request $request)
+    {
+        $laboratory = RLaboratory::findOrFail($request->appointment_id);
+        foreach ($request->file("files") as $key => $file) {
+            $extension = $file->getClientOriginalExtension();
+            $size = $file->getSize();
+            $name_file = $file->getClientOriginalName();
+            $data = null;
+            if (in_array(strtolower($extension), ["jpeg", "bmp", "jpg", "png"])) {
+                $data = getImageSize($file);
+
+            }
+            $path = Storage::putFile("laboratories", $file);
+
+            $laboratory = RLaboratory::create([
+                'appointment_id' => $request->appointment_id,
+                'name_file' => $name_file,
+                'size' => $size,
+                'resolution' => $data ? $data[0] . "x" . $data[1] : NULL,
+                'file' => $path,
+                'type' => $extension,
+            ]);
+        }
+
+        return response()->json(['laboratory' => RLaboratoryResource::make($laboratory)]);
+
     }
 
     public function removeFiles($id)

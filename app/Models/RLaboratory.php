@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class RLaboratory extends Model
 {
      use HasFactory;
+     protected $table = 'r_laboratories';
 
     protected $fillable =[
         'patient_id',

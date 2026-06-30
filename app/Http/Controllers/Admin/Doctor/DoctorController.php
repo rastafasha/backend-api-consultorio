@@ -20,6 +20,8 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
@@ -248,12 +250,6 @@ class DoctorController extends Controller
             ]);
         }
 
-        // // 3. Procesamos el Avatar
-        // if ($request->hasFile('imagen')) {
-        //     $path = Storage::putFile("staffs", $request->file('imagen'));
-        //     $request->request->add(["avatar" => $path]);
-        // }
-
         // 3. Procesamos el Avatar con Cloudinary (Compatible con v3)
         if ($request->hasFile('imagen')) {
             // Sube la imagen utilizando el uploadApi nativo del SDK
@@ -289,12 +285,18 @@ class DoctorController extends Controller
         // 8. Enviamos el correo de bienvenida tradicional
         Mail::to($user->email)->send(new NewUserRegisterMail($user));
 
-        // 9. Almacenamos la disponibilidad de horario (Tu lógica compleja de agenda)
+        // 9. Almacenamos la disponibilidad de horario (Tu lógica adaptada a multi-consultorio)
         if (is_array($schedule_hours)) {
             foreach ($schedule_hours as $key => $schedule_hour) {
                 if (isset($schedule_hour["children"]) && sizeof($schedule_hour["children"]) > 0) {
+
+                    // 🏥 Buscamos a qué dirección física pertenece este bloque horario.
+                    // Si por alguna razón viene vacío, usamos null como respaldo.
+                    $doctorAddressId = $schedule_hour["doctor_address_id"] ?? null;
+
                     $schedule_day = DoctorScheduleDay::create([
                         "user_id" => $user->id,
+                        "doctor_address_id" => $doctorAddressId, // ✨ NUEVO: Ahora el día se asocia a su consultorio
                         "day" => $schedule_hour["day_name"],
                     ]);
 
@@ -308,10 +310,11 @@ class DoctorController extends Controller
             }
         }
 
+
         // --- 🚀 CONEXIÓN EN TIEMPO REAL CON NODE.JS (MongoDB) ---
         // Registramos este nuevo médico en klyntic_consultorios usando su ID de MySQL como String
         try {
-            Http::post('https://tu-node-en-render.com', [
+            Http::post('https://back-klyntic-envios.onrender.com', [
                 'doctor_id' => (string) $user->id // Se guardará como el _id en tu MongoDB
             ]);
         } catch (\Exception $e) {
@@ -365,13 +368,7 @@ class DoctorController extends Controller
 
         $user = User::findOrFail($id);
 
-        // if ($request->hasFile('imagen')) {
-        //     if ($user->avatar) {
-        //         Storage::delete($user->avatar);
-        //     }
-        //     $path = Storage::putFile("staffs", $request->file('imagen'));
-        //     $request->request->add(["avatar" => $path]);
-        // }
+
 
         //upload a cloudinary
         if ($request->hasFile('imagen')) {
@@ -419,37 +416,49 @@ class DoctorController extends Controller
 
         $user->update($request->all());
 
-        // 1. Decodificar el JSON (Asegúrate de que sea schedule_hours)
+        // 1. Decodificar el JSON de la agenda estructurada por días que envía Angular
         $schedule_hours_raw = json_decode($request->schedule_hours, true);
 
         if (is_array($schedule_hours_raw)) {
-            $keep_join_ids = []; // Aquí guardaremos los IDs que el doctor quiere mantener
+            $keep_join_ids = [];
 
-            foreach ($schedule_hours_raw as $segment) {
-                $dayName = $segment['day_name'] ?? null;
-                $hour_id = $segment['item']['id'] ?? null;
+            // 🔄 PRIMER BUCLE: Recorremos los Días de la semana (Lunes, Martes, etc.)
+            foreach ($schedule_hours_raw as $daySegment) {
 
-                if ($dayName && $hour_id) {
-                    // 1. Buscamos o creamos el día
-                    $db_day = DoctorScheduleDay::firstOrCreate([
-                        "user_id" => $user->id,
-                        "day" => $dayName,
-                    ]);
+                // Verificamos si este día contiene segmentos de horas seleccionados en su interior
+                if (isset($daySegment['children']) && is_array($daySegment['children'])) {
 
-                    // 2. Buscamos o creamos la relación de la hora (Join)
-                    $join = DoctorScheduleJoinHour::firstOrCreate([
-                        "doctor_schedule_day_id" => $db_day->id,
-                        "doctor_schedule_hour_id" => $hour_id,
-                    ]);
+                    // 🔄 SEGUNDO BUCLE (NUEVO): Bajamos al nivel de los niños para procesar cada hora marcada
+                    foreach ($daySegment['children'] as $segment) {
 
-                    // 3. Guardamos este ID para NO borrarlo
-                    $keep_join_ids[] = $join->id;
+                        $dayName = $segment['day_name'] ?? null;
+                        $hour_id = $segment['item']['id'] ?? null;
+
+                        // 🏥 Extraemos el ID del consultorio asignado a esta celda
+                        $doctorAddressId = $segment['doctor_address_id'] ?? null;
+
+                        if ($dayName && $hour_id) {
+                            // 1. Buscamos o creamos el día amarrado al consultorio correspondiente en MAMP
+                            $db_day = DoctorScheduleDay::firstOrCreate([
+                                "user_id" => $user->id,
+                                "day" => $dayName,
+                                "doctor_address_id" => $doctorAddressId, // Segmentación por sede médica exitosa
+                            ]);
+
+                            // 2. Buscamos o creamos la relación de la hora (Join)
+                            $join = DoctorScheduleJoinHour::firstOrCreate([
+                                "doctor_schedule_day_id" => $db_day->id,
+                                "doctor_schedule_hour_id" => $hour_id,
+                            ]);
+
+                            // Guardamos el ID para protegerlo de la limpieza de borrado
+                            $keep_join_ids[] = $join->id;
+                        }
+                    }
                 }
             }
 
-            // --- LÓGICA DE LIMPIEZA SEGURA ---
-
-            // Obtenemos todos los IDs actuales del doctor que NO están en la nueva lista
+            // --- LÓGICA DE LIMPIEZA SEGURA HISTÓRICA (Se mantiene impecable) ---
             $joins_to_remove = DoctorScheduleJoinHour::whereHas('doctor_schedule_day', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
@@ -457,20 +466,20 @@ class DoctorController extends Controller
                 ->get();
 
             foreach ($joins_to_remove as $old_join) {
-                // IMPORTANTE: Solo borramos si el horario NO tiene citas asociadas
                 $has_appointments = Appointment::where('doctor_schedule_join_hour_id', $old_join->id)->exists();
-
                 if (!$has_appointments) {
                     $old_join->delete();
                 }
-                // Si tiene citas, no lo borramos para que segment_hour no sea null en el perfil
             }
 
-            // Limpieza de días que quedaron vacíos (sin horas)
+            // Limpieza de días que quedaron vacíos sin horas asignadas
             DoctorScheduleDay::where('user_id', $user->id)
                 ->doesntHave('schedule_hours')
                 ->delete();
         }
+
+
+
         return response()->json([
             "message" => 200
         ]);
