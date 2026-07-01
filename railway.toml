@@ -1,5 +1,6 @@
 [build]
 builder = "NIXPACKS"
+# Forzamos a Nixpacks a instalar solo dependencias de PHP e ignorar Node/NPM
 buildCmds = ["composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader"]
 
 [deploy]
