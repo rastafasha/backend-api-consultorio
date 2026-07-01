@@ -45,34 +45,34 @@ class PatientController extends Controller
         ]);
     }
 
-public function patientsByDoctor(Request $request, $doctor_id)
-{
-    // Limpiamos la variable de espacios en blanco y forzamos a que si viene un "null" de Angular se vuelva falso
-    $search = trim($request->search);
-    if ($search === 'null' || $search === 'undefined') {
-        $search = '';
-    }
-
-    $patients = Patient::whereHas('doctors', function ($query) use ($doctor_id) {
-        $query->where('doctor_patient.doctor_id', $doctor_id); 
-    })
-    ->where(function ($query) use ($search) {
-        // 💡 Solo aplicamos los filtros si realmente el usuario escribió algo real en el buscador
-        if (!empty($search)) {
-            $query->where('name', 'like', "%" . $search . "%")
-                  ->orWhere('surname', 'like', "%" . $search . "%")
-                  ->orWhere('email', 'like', "%" . $search . "%")
-                  ->orWhere('n_doc', 'like', "%" . $search . "%"); // 👈 Agregamos tu validación de número de documento
+    public function patientsByDoctor(Request $request, $doctor_id)
+    {
+        // Limpiamos la variable de espacios en blanco y forzamos a que si viene un "null" de Angular se vuelva falso
+        $search = trim($request->search);
+        if ($search === 'null' || $search === 'undefined') {
+            $search = '';
         }
-    })
-    ->orderBy("id", "desc")
-    ->paginate(10);
 
-    return response()->json([
-        "total" => $patients->total(),
-        "patients" => PatientCollection::make($patients)
-    ]);
-}
+        $patients = Patient::whereHas('doctors', function ($query) use ($doctor_id) {
+            $query->where('doctor_patient.doctor_id', $doctor_id);
+        })
+            ->where(function ($query) use ($search) {
+                // 💡 Solo aplicamos los filtros si realmente el usuario escribió algo real en el buscador
+                if (!empty($search)) {
+                    $query->where('name', 'like', "%" . $search . "%")
+                        ->orWhere('surname', 'like', "%" . $search . "%")
+                        ->orWhere('email', 'like', "%" . $search . "%")
+                        ->orWhere('n_doc', 'like', "%" . $search . "%"); // 👈 Agregamos tu validación de número de documento
+                }
+            })
+            ->orderBy("id", "desc")
+            ->paginate(10);
+
+        return response()->json([
+            "total" => $patients->total(),
+            "patients" => PatientCollection::make($patients)
+        ]);
+    }
 
 
 
@@ -142,9 +142,10 @@ public function patientsByDoctor(Request $request, $doctor_id)
         $data_patient = [];
         $patient = Patient::findOrFail($id);
 
-        // Cargamos todas las citas con sus relaciones de una vez para no repetir consultas
+        // 1. CORRECCIÓN: Agregamos la carga en cadena para llegar hasta doctor_address de forma eficiente
         $all_appointments = Appointment::with([
             'doctor_schedule_join_hour.doctor_schedule_hour',
+            'doctor_schedule_join_hour.doctor_schedule_day.doctor_address', // <-- Relación añadida aquí
             'patient',
             'doctor.speciality',
             'speciality',
@@ -153,7 +154,8 @@ public function patientsByDoctor(Request $request, $doctor_id)
             ->where('patient_id', $id)
             ->orderBy("id", "desc")
             ->get();
-        // Filtramos sobre la colección en memoria (más rápido que ir 3 veces a la DB)
+
+        // Filtramos sobre la colección en memoria
         $appointment_checkeds = $all_appointments->where('status', 2);
         $appointment_pendings = $all_appointments->where('status', 1);
 
@@ -162,7 +164,7 @@ public function patientsByDoctor(Request $request, $doctor_id)
             "num_appointment_checkeds" => $appointment_checkeds->count(),
             "num_appointment_pendings" => $appointment_pendings->count(),
             "money_of_appointments" => $all_appointments->sum("amount"),
-            // Ahora estas colecciones ya llevan el horario cargado
+
             "appointment_checkeds" => AppointmentCollection::make($appointment_checkeds),
             "appointment_pendings" => AppointmentCollection::make($appointment_pendings),
             "patient" => PatientResource::make($patient),
@@ -180,17 +182,27 @@ public function patientsByDoctor(Request $request, $doctor_id)
                             "format_hour_end" => Carbon::parse($appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
                         ] : null,
                     ] : null,
+
+                    // 2. MAPEO: Extraemos la dirección navegando por las relaciones de forma segura con operadores opcionales u objetos válidos
+                    "consultorio" => ($appointment->doctor_schedule_join_hour &&
+                        $appointment->doctor_schedule_join_hour->doctor_schedule_day &&
+                        $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address)
+                        ? [
+                            "id" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->id,
+                            "name_consultorio" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->name_consultorio,
+                            "address" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->address,
+                            "is_active" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->is_active,
+                        ]
+                        : null,
+
                     "patient" => [
                         "id" => $appointment->patient->id,
-
                         "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
-                        // "avatar"=> $appointment->patient->avatar ? env("APP_URL")."storage/".$appointment->patient->avatar : null,
                         "avatar" => $appointment->patient->avatar ? env("APP_URL") . $appointment->patient->avatar : null,
                     ],
                     "doctor" => [
                         "id" => $appointment->doctor->id,
                         "full_name" => $appointment->doctor->name . ' ' . $appointment->doctor->surname,
-                        // "avatar"=> $appointment->doctor->avatar ? env("APP_URL")."storage/".$appointment->doctor->avatar : null,
                         "avatar" => $appointment->doctor->avatar ? env("APP_URL") . $appointment->doctor->avatar : null,
                         "mobile" => $appointment->doctor->mobile,
                         "speciality_id" => $appointment->doctor->speciality_id,
@@ -202,7 +214,7 @@ public function patientsByDoctor(Request $request, $doctor_id)
                     ],
                     "date_appointment" => $appointment->date_appointment,
                     "date_appointment_format" => Carbon::parse($appointment->date_appointment)->format("d M Y"),
-                    // Estos campos ahora sí tendrán datos porque usamos with() arriba
+
                     "format_hour_start" => $appointment->doctor_schedule_join_hour?->doctor_schedule_hour
                         ? Carbon::parse(date("Y-m-d") . ' ' . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A")
                         : null,
@@ -218,15 +230,10 @@ public function patientsByDoctor(Request $request, $doctor_id)
                     "amount" => $appointment->amount,
                     "status_pay" => $appointment->status_pay,
                     "status" => $appointment->status,
-                    // "speciality_id" => $appointment->speciality_id,
-                    // "speciality" => $appointment->speciality ? [
-                    //     "id" => $appointment->speciality->id,
-                    //     "name" => $appointment->speciality->name,
-                    //     "price" => $appointment->speciality->price,
-                    // ] : NULL,
                 ];
             }),
         ];
+
         //sin redis
 
         return response()->json($data_patient);
@@ -238,22 +245,22 @@ public function patientsByDoctor(Request $request, $doctor_id)
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-  public function store(Request $request)
-{
-    $patient_is_valid = Patient::where("n_doc", $request->n_doc)->first();
+    public function store(Request $request)
+    {
+        $patient_is_valid = Patient::where("n_doc", $request->n_doc)->first();
 
-    if ($patient_is_valid) {
-        return response()->json([
-            "message" => 403,
-            "message_text" => 'el paciente ya existe'
-        ]);
-    }
+        if ($patient_is_valid) {
+            return response()->json([
+                "message" => 403,
+                "message_text" => 'el paciente ya existe'
+            ]);
+        }
 
-    // if ($request->hasFile('imagen')) {
-    //     $path = Storage::putFile("patients", $request->file('imagen'));
-    //     $request->request->add(["avatar" => $path]);
-    // }
-    // 3. Procesamos el Avatar con Cloudinary (Compatible con v3)
+        // if ($request->hasFile('imagen')) {
+        //     $path = Storage::putFile("patients", $request->file('imagen'));
+        //     $request->request->add(["avatar" => $path]);
+        // }
+        // 3. Procesamos el Avatar con Cloudinary (Compatible con v3)
         if ($request->hasFile('imagen')) {
             // Sube la imagen utilizando el uploadApi nativo del SDK
             $cloudinaryResponse = Cloudinary::uploadApi()->upload(
@@ -267,41 +274,41 @@ public function patientsByDoctor(Request $request, $doctor_id)
             $request->request->add(["avatar" => $path]);
         }
 
-    if ($request->birth_date) {
-        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
-        $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
+        if ($request->birth_date) {
+            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
+            $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
+        }
+
+        // 1. Guardamos la ficha del paciente
+        $patient = Patient::create($request->all());
+
+        // 2. Vinculamos al doctor logueado con el paciente
+        if (auth()->check()) {
+            $patient->doctors()->attach(auth()->id());
+        }
+
+        $request->request->add([
+            "patient_id" => $patient->id
+        ]);
+        PatientPerson::create($request->all());
+
+        if ($patient->email && !str_contains($patient->email, '@klyntic.local')) {
+            Mail::to($patient->email)->send(new NewPatientRegisterMail($patient));
+        }
+
+        // 🚀 --- LLAMADA INTERNA AL AUTH CONTROLLER ---
+        // Le pedimos a Laravel que resuelva el AuthController con todas sus dependencias
+        $authController = app(AuthController::class);
+
+        // Ejecutamos la función. Ella se encargará de crear el usuario y disparar el JSON a Node.js
+        $authController->registerPaciente($request);
+        // ----------------------------------------------
+
+        return response()->json([
+            "message" => 200,
+            "patient" => $patient
+        ]);
     }
-
-    // 1. Guardamos la ficha del paciente
-    $patient = Patient::create($request->all());
-
-    // 2. Vinculamos al doctor logueado con el paciente
-    if (auth()->check()) {
-        $patient->doctors()->attach(auth()->id());
-    }
-
-    $request->request->add([
-        "patient_id" => $patient->id
-    ]);
-    PatientPerson::create($request->all());
-
-    if ($patient->email && !str_contains($patient->email, '@klyntic.local')) {
-        Mail::to($patient->email)->send(new NewPatientRegisterMail($patient));
-    }
-
-    // 🚀 --- LLAMADA INTERNA AL AUTH CONTROLLER ---
-    // Le pedimos a Laravel que resuelva el AuthController con todas sus dependencias
-    $authController = app(AuthController::class);
-    
-    // Ejecutamos la función. Ella se encargará de crear el usuario y disparar el JSON a Node.js
-    $authController->registerPaciente($request);
-    // ----------------------------------------------
-
-    return response()->json([
-        "message" => 200,
-        "patient" => $patient
-    ]);
-}
 
 
 
@@ -641,13 +648,13 @@ public function patientsByDoctor(Request $request, $doctor_id)
         ]);
     }
 
- public function verificarDocumento($n_doc)
-{
-    $existe = Patient::withTrashed()->where('n_doc', trim($n_doc))->exists();
+    public function verificarDocumento($n_doc)
+    {
+        $existe = Patient::withTrashed()->where('n_doc', trim($n_doc))->exists();
 
-    return response()->json([
-        'existe' => $existe
-    ], 200);
-}
+        return response()->json([
+            'existe' => $existe
+        ], 200);
+    }
 
 }

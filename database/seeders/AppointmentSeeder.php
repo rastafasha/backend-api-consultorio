@@ -6,6 +6,7 @@ use App\Models\Appointment\Appointment;
 use App\Models\Appointment\AppointmentAttention;
 use App\Models\Appointment\AppointmentPay;
 use App\Models\Doctor\DoctorScheduleJoinHour;
+use App\Models\Doctor\DoctorAddress; // Importamos el modelo de direcciones
 use Faker\Factory as Faker;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -17,19 +18,40 @@ class AppointmentSeeder extends Seeder
      */
     public function run(): void
     {
-        // Esto borra las citas viejas con 'null' y resetea el contador de IDs
+        $faker = Faker::create();
+
+        // 1. Limpieza de seguridad
         \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         Appointment::truncate();
         \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
+        // 2. SALVAGUARDA DE DIRECCIÓN: Aseguramos que el doctor 3 tenga al menos un consultorio activo
+        $doctor_id = 3;
+        $address = DoctorAddress::firstOrCreate(
+            ['user_id' => $doctor_id],
+            [
+                'name_consultorio' => 'Consultorio Clínico Central',
+                'address' => 'Av. Francisco de Miranda, Edif. Centro, Piso 3',
+                'is_active' => 1
+            ]
+        );
 
         $firstSchedule = DoctorScheduleJoinHour::first();
-        // Create specific appointment
+
+        // 3. Forzar que el día de la agenda apunte a este consultorio si no tiene uno asignado
+        if ($firstSchedule && $firstSchedule->doctor_schedule_day) {
+            $day = $firstSchedule->doctor_schedule_day;
+            if (!$day->doctor_address_id) {
+                $day->update(['doctor_address_id' => $address->id]);
+            }
+        }
+
+        // 4. Crear la cita específica (ID: 1)
         $appointment = Appointment::firstOrCreate(
             ['id' => 1],
             [
                 'doctor_schedule_join_hour_id' => $firstSchedule ? $firstSchedule->id : null,
-                'date_appointment' => '2026-02-17 08:00:00',
+                'date_appointment' => '2026-07-02 09:00:00', // Actualizado a tus fechas de prueba recientes
                 'date_attention' => null,
                 'amount' => 30,
                 'cron_state' => 1,
@@ -38,22 +60,21 @@ class AppointmentSeeder extends Seeder
                 'confimation' => 1,
                 'laboratory' => 1,
                 'patient_id' => 9,
-                'doctor_id' => 3,
+                'doctor_id' => $doctor_id,
                 'speciality_id' => 1,
                 'user_id' => 9,
-                'created_at' => '2025-02-16 20:41:51',
-                'updated_at' => '2025-02-16 20:41:51',
+                'created_at' => now(),
+                'updated_at' => now(),
                 'deleted_at' => null
             ]
         );
 
-        // Create related records for the specific appointment
-        $faker = Faker::create();
+        // Crear registros médicos vinculados a la cita 1
         if ($appointment->status == 2) {
             AppointmentAttention::create([
                 "appointment_id" => $appointment->id,
                 "patient_id" => $appointment->patient_id,
-                "description" => $faker->text($maxNbChars = 300),
+                "description" => $faker->text(300),
                 "receta_medica" => json_encode([
                     [
                         "name_medical" => $faker->word(),
@@ -64,42 +85,24 @@ class AppointmentSeeder extends Seeder
                 ])
             ]);
         }
-        if ($appointment->status_pay == 2) {
-            AppointmentPay::create([
-                "appointment_id" => $appointment->id,
-                "amount" => 50,
-                "method_payment" => $faker->randomElement([
-                    "Efectivo",
-                    "Transferencia",
-                    "Pago Movil",
-                    "Zelle",
-                    "Square",
-                    "T.Debito",
-                    "T.Credito"
-                ]),
-            ]);
-        } else {
 
-            AppointmentPay::create([
-                "appointment_id" => $appointment->id,
-                "amount" => $appointment->amount,
-                "method_payment" => $faker->randomElement(["Efectivo", "Trasferencia", "Pago Movil", "Zelle", "Square", "T.Debito", "T.Credito"]),
-            ]);
-        }
+        AppointmentPay::create([
+            "appointment_id" => $appointment->id,
+            "amount" => $appointment->status_pay == 2 ? 50 : $appointment->amount,
+            "method_payment" => $faker->randomElement(["Efectivo", "Transferencia", "Pago Movil", "Zelle"]),
+        ]);
 
-        // Create additional random appointments for testing
+        // 5. Crear las 9 citas aleatorias restantes a través del Factory
         Appointment::factory()->count(9)->create([
-            'doctor_schedule_join_hour_id' => $firstSchedule ? $firstSchedule->id : null
+            'doctor_schedule_join_hour_id' => $firstSchedule ? $firstSchedule->id : null,
+            'doctor_id' => $doctor_id
         ])->each(function ($p) use ($faker) {
 
-
-            $faker = Faker::create();
             if ($p->status == 2) {
                 AppointmentAttention::create([
                     "appointment_id" => $p->id,
                     "patient_id" => $p->patient_id,
-                    "description" => $faker->text($maxNbChars = 300),
-
+                    "description" => $faker->text(300),
                     "receta_medica" => json_encode([
                         [
                             "name_medical" => $faker->word(),
@@ -110,28 +113,12 @@ class AppointmentSeeder extends Seeder
                     ])
                 ]);
             }
-            if ($p->status_pay == 2) {
-                AppointmentPay::create([
-                    "appointment_id" => $p->id,
-                    "amount" => 50,
-                    "method_payment" => $faker->randomElement([
-                        "Efectivo",
-                        "Transferencia",
-                        "Pago Movil",
-                        "Zelle",
-                        "Square",
-                        "T.Debito",
-                        "T.Credito"
-                    ]),
-                ]);
-            } else {
-                AppointmentPay::create([
-                    "appointment_id" => $p->id,
-                    "amount" => $p->amount,
-                    "method_payment" => $faker->randomElement(["Efectivo", "Trasferencia", "Pago Movil", "Zelle", "Square", "T.Debito", "T.Credito"]),
-                ]);
-            }
+
+            AppointmentPay::create([
+                "appointment_id" => $p->id,
+                "amount" => $p->status_pay == 2 ? 50 : $p->amount,
+                "method_payment" => $faker->randomElement(["Efectivo", "Transferencia", "Pago Movil", "Zelle"]),
+            ]);
         });
-        // php artisan db:seed --class=AppointmentSeeder
     }
 }

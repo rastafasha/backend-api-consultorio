@@ -9,6 +9,7 @@ use App\Models\Appointment\Appointment;
 use App\Models\Doctor\DoctorScheduleDay;
 use App\Models\Doctor\DoctorScheduleJoinHour;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Carbon\Carbon;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Appointment\Appointment>
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class AppointmentFactory extends Factory
 {
     protected $model = Appointment::class;
+
     /**
      * Define the model's default state.
      *
@@ -23,28 +25,52 @@ class AppointmentFactory extends Factory
      */
     public function definition(): array
     {
-        // 1. Buscamos un horario que YA exista en la base de datos
-        // Esto nos asegura que el doctor_id y el horario coincidan perfectamente
-       $schedule = DoctorScheduleJoinHour::with('doctor_schedule_day.doctor')->inRandomOrder()->first();
-        // 2. Si no hay horarios creados, usamos IDs por defecto (ajusta según tus seeders)
+        // 1. Buscamos un horario que YA exista en la base de datos junto con su día
+        $schedule = DoctorScheduleJoinHour::with('doctor_schedule_day')->inRandomOrder()->first();
+        
+        // 2. Extraer el doctor y el ID de horario con salvaguarda
         $doctor_id = $schedule ? $schedule->doctor_schedule_day->user_id : 3;
         $schedule_id = $schedule ? $schedule->id : 1;
 
-        $date_appointment = $this->faker->dateTimeBetween("2024-01-01 00:00:00", "2026-01-01 23:59:59");
+        // 3. Generar una fecha base aleatoria entre 2024 y 2026
+        $randomDate = $this->faker->dateTimeBetween("2024-01-01", "2026-12-31");
+        $carbonDate = Carbon::instance($randomDate);
+
+        // COHERENCIA CRÍTICA: Ajustamos la fecha para que caiga EXACTAMENTE en el día de la semana del horario
+        if ($schedule && $schedule->doctor_schedule_day) {
+            $targetDayName = strtolower($schedule->doctor_schedule_day->day); // ej: "jueves" o "viernes"
+            
+            // Diccionario para convertir el string de tu BD al ID de día de Carbon
+            $daysOfWeek = [
+                'lunes' => Carbon::MONDAY,
+                'martes' => Carbon::TUESDAY,
+                'miercoles' => Carbon::WEDNESDAY,
+                'jueves' => Carbon::THURSDAY,
+                'viernes' => Carbon::FRIDAY,
+                'sabado' => Carbon::SATURDAY,
+                'domingo' => Carbon::SUNDAY,
+            ];
+
+            if (array_key_exists($targetDayName, $daysOfWeek)) {
+                // Forzamos a Carbon a moverse al día de la semana correspondiente
+                $carbonDate->next($daysOfWeek[$targetDayName]);
+            }
+        }
+
+        $date_appointment = $carbonDate->format('Y-m-d H:i:s');
         $status = $this->faker->randomElement([1, 2]);
 
         return [
-            'doctor_id' => $schedule ? $schedule->doctor_schedule_day->user_id : 3, // Usamos el doctor que es dueño del horario
+            'doctor_id' => $doctor_id, 
             "patient_id" => Patient::inRandomOrder()->first()?->id ?? 1,
             "date_appointment" => $date_appointment,
             "speciality_id" => Specialitie::inRandomOrder()->first()?->id ?? 1,
-            'doctor_schedule_join_hour_id' => $schedule_id, // <--- ID dinámico y real
+            'doctor_schedule_join_hour_id' => $schedule_id, 
             "user_id" => User::role('ADMIN')->inRandomOrder()->first()?->id ?? 1,
             "amount" => $this->faker->randomElement([100, 150, 200, 250, 80, 120, 95, 75, 160, 230, 110]),
             "status" => $status,
             "status_pay" => $this->faker->randomElement([1, 2]),
-            "date_attention" => $status == 2 ? $this->faker->dateTimeBetween($date_appointment, "2026-12-25 23:59:59") : NULL,
+            "date_attention" => $status == 2 ? Carbon::parse($date_appointment)->addMinutes(30)->format('Y-m-d H:i:s') : NULL,
         ];
     }
-
 }

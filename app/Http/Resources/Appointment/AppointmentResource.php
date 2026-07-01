@@ -73,6 +73,18 @@ class AppointmentResource extends JsonResource
                 "email" => $this->resource->user->email,
             ] : null,
 
+            // INYECTAMOS EL CONSULTORIO DEL DÍA DE LA CITA
+            "consultorio" => ($this->doctor_schedule_join_hour && 
+                              $this->doctor_schedule_join_hour->doctor_schedule_day && 
+                              $this->doctor_schedule_join_hour->doctor_schedule_day->doctor_address) 
+                ? [
+                    "id" => $this->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->id,
+                    "name_consultorio" => $this->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->name_consultorio,
+                    "address" => $this->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->address,
+                    "is_active" => $this->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->is_active,
+                ] 
+                : null,
+
             "amount" => $this->resource->amount,
             "status_pay" => $this->resource->status_pay,
             // "deuda" =>$this->resource->deuda,

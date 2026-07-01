@@ -5,6 +5,7 @@ namespace App\Models\Doctor;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Doctor\DoctorScheduleHour;
+use App\Models\Appointment\Appointment; // <-- Asegúrate de importar el namespace correcto de tu modelo Appointment
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -34,5 +35,11 @@ class DoctorScheduleJoinHour extends Model
     }
     public function doctor_schedule_hour(){
         return $this->belongsTo(DoctorScheduleHour::class);
+    }
+
+    // <-- NUEVA RELACIÓN
+    public function appointments(){
+        // Vincula el segmento con las citas usando tu llave foránea correspondinete
+        return $this->hasMany(Appointment::class, "doctor_schedule_join_hour_id");
     }
 }

@@ -161,9 +161,6 @@ class DoctorController extends Controller
         //con redis    
         //sin redis   
         $data_doctor = [];
-
-
-        // $user = User::findOrFail($id);
         $user = User::with(['schedule_days.schedule_hours.doctor_schedule_hour'])->findOrFail($id);
 
         $num_appointment = Appointment::where("doctor_id", $id)->count();
@@ -172,7 +169,6 @@ class DoctorController extends Controller
         $appointment_pendings = Appointment::where("doctor_id", $id)
             ->where("status", 1)
             ->paginate(10);
-        // ->get();
         $appointments = Appointment::where("doctor_id", $id)->get();
         $data_doctor = [
             "num_appointment" => $num_appointment,
