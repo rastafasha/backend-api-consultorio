@@ -8,6 +8,7 @@ use App\Http\Resources\RLaboratory\RLaboratoryCollection;
 use App\Http\Resources\RLaboratory\RLaboratoryResource;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class RLaboratoryController extends Controller
 {
@@ -60,13 +61,16 @@ class RLaboratoryController extends Controller
                 $file = null;
                 if (isset($data['has_file']) && $data['has_file'] && is_numeric($data['file_index'])) {
                     $idx = (int) $data['file_index'];
-                    $file = $allUploadedFiles[$idx] ?? null;
+
+                    // 🟢 Buscamos directamente usando el índice de punto ("files.0", "files.1")
+                    // Esto garantiza atrapar el archivo binario real sin importar la estructura del FormData
+                    $file = $request->file("files." . $idx);
                 }
 
                 // Si el archivo físico fue encontrado en el array indexado
                 if ($file) {
                     $extension = $file->getClientOriginalExtension();
-                    $size = number_format($file->getSize() / 1024, 1);
+                    $size = $file->getSize();
                     $name_file = $file->getClientOriginalName();
 
                     if (in_array(strtolower($extension), ["jpeg", "bmp", "jpg", "png"])) {
@@ -80,41 +84,19 @@ class RLaboratoryController extends Controller
                         // 🚀 SUBIDA A CLOUDINARY
                         $uploadedFile = $file->storeOnCloudinary('klyntic/rlaboratories');
 
-                        // 🔍 PRUEBA EN CASCADA PARA RECOGER LA URL SEGÚN TU VERSIÓN DEL PAQUETE
-                        if (is_array($uploadedFile)) {
-                            $path = $uploadedFile['secure_url'] ?? $uploadedFile['url'] ?? NULL;
-                        } elseif (is_object($uploadedFile)) {
-                            if (method_exists($uploadedFile, 'getSecurePath')) {
-                                $path = $uploadedFile->getSecurePath();
-                            } elseif (method_exists($uploadedFile, 'getSecureUrl')) {
-                                $path = $uploadedFile->getSecureUrl();
-                            } elseif (method_exists($uploadedFile, 'url')) {
-                                $path = $uploadedFile->url();
-                            } else {
-                                // Si es un objeto genérico o un wrapper de CloudinaryEngine/ApiResponse
-                                $path = $uploadedFile->secure_url ?? $uploadedFile->url ?? NULL;
-                            }
+                       
+                        // Intentamos extraer la URL con el método oficial
+                        if (is_object($uploadedFile) && method_exists($uploadedFile, 'getSecurePath')) {
+                            $path = $uploadedFile->getSecurePath();
+                        } else {
+                            // Alternativa si es un array o respuesta mágica
+                            $path = $uploadedFile['secure_url'] ?? $uploadedFile->secure_url ?? null;
                         }
 
-                        // 🚨 DETECCIÓN DE EMERGENCIA: Si tras todos los intentos la URL sigue vacía, 
-                        // paramos el código aquí y te mostramos en Angular exactamente qué respondió Cloudinary
-                        if (is_null($path)) {
-                            return response()->json([
-                                'status' => 'error',
-                                'message' => 'Cloudinary procesó el archivo pero no devolvió ninguna URL válida.',
-                                'clase_objeto_recibido' => is_object($uploadedFile) ? get_class($uploadedFile) : 'Es un Array/Primitive',
-                                'respuesta_cruda_cloudinary' => $uploadedFile
-                            ], 500);
-                        }
 
                     } catch (\Throwable $e) {
-                        return response()->json([
-                            'status' => 'error',
-                            'message' => 'Fallo la comunicación con Cloudinary usando storeOnCloudinary',
-                            'error_detallado' => $e->getMessage()
-                        ], 500);
+                        Log::error('Error crítico en Cloudinary: ' . $e->getMessage());
                     }
-
                 }
 
                 // 💾 Guardado definitivo en base de datos de MAMP
