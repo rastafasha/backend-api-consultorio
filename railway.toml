@@ -1,0 +1,8 @@
+[build]
+builder = "NIXPACKS"
+# Anulamos los comandos automáticos de Artisan durante la compilación
+buildCmds = ["composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader"]
+
+[deploy]
+# Ejecutamos la limpieza y las migraciones en la fase de inicio real
+startCommand = "php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
