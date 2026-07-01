@@ -3,5 +3,5 @@ builder = "NIXPACKS"
 buildCmds = ["composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader"]
 
 [deploy]
-# Limpia, migra y arranca el proceso nativo del servidor web para mantener vivo el contenedor
-startCommand = "php artisan config:clear && php artisan cache:clear && php artisan migrate --force && node /assets/index.js"
+# Limpia caché, migra y arranca los procesos nativos en segundo plano de Railway
+startCommand = "php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
