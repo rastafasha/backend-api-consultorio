@@ -1,14 +1,12 @@
 [build]
 builder = "NIXPACKS"
-# Fase 1: Instalación limpia de dependencias PHP
+# Forzamos los paquetes nativos de PHP 8.4 que entienden perfectamente SHA2
+nixPkgs = ["php84", "php84Packages.composer", "php84Packages.pdo_mysql"]
 buildCmds = ["composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader"]
 
 [phases.predeploy]
-# Fase 2: Ejecutar tareas de Laravel ANTES de iniciar el servidor web
 cmds = [
     "php artisan config:clear",
     "php artisan cache:clear",
     "php artisan migrate --force"
 ]
-
-# Dejamos que Railway controle el [deploy] de manera nativa sin sobreescribir el inicio
