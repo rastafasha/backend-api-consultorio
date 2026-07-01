@@ -1,5 +1,6 @@
 [build]
-builder = "DOCKERFILE"
+builder = "NIXPACKS"
 
 [deploy]
+# Forzamos a Nixpacks a levantar la IP global y el puerto 8080 de tu dominio
 startCommand = "php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8080"
