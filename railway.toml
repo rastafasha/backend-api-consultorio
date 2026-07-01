@@ -1,7 +1,5 @@
 [build]
 builder = "NIXPACKS"
-# Forzamos PHP 8.2 y sus paquetes nativos estables
-nixPkgs = ["php82", "php82Packages.composer", "php82Packages.pdo_mysql"]
 buildCmds = ["composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader"]
 
 [phases.predeploy]
