@@ -14,10 +14,12 @@ class AddDoctorAddressIdToDoctorScheduleDaysTable extends Migration
     public function up()
 {
     Schema::table('doctor_schedule_days', function (Blueprint $table) {
-        // Añadimos la columna aceptando null temporalmente para no romper datos viejos
-        $table->unsignedBigInteger('doctor_address_id')->nullable()->after('user_id');
-        
-        $table->foreign('doctor_address_id')->references('id')->on('doctor_addresses')->onDelete('cascade');
+        // Añadimos la columna de forma segura después de user_id
+        $table->foreignId('doctor_address_id')
+              ->nullable()
+              ->after('user_id')
+              ->constrained('doctor_addresses') // Vincula directamente con la tabla anterior
+              ->onDelete('cascade');
     });
 }
 

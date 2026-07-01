@@ -15,15 +15,17 @@ class CreateDoctorAddressesTable extends Migration
 {
     Schema::create('doctor_addresses', function (Blueprint $table) {
         $table->bigIncrements('id');
-        $table->unsignedBigInteger('user_id'); // Enlace al doctor (User)
-        $table->string('name_consultorio', 150)->nullable(); // Ej: "Consultorio Clínico Norte"
-        $table->text('address'); // Dirección física que antes estaba fija
+        
+        // Sintaxis moderna y segura para la relación con la tabla 'users'
+        $table->foreignId('user_id')
+              ->constrained('users') // Busca automáticamente la tabla 'users' y su campo 'id'
+              ->onDelete('cascade');
+
+        $table->string('name_consultorio', 150)->nullable();
+        $table->text('address');
         $table->boolean('is_active')->default(true);
         $table->timestamps();
         $table->softDeletes();
-
-        // Clave foránea apuntando a tu tabla de usuarios/médicos
-        $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
     });
 }
 
