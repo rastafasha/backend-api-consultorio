@@ -38,9 +38,7 @@ class AdminUserController extends Controller
         //     return response()->json(["message"=>"El usuario no esta autenticado"],403);
         //    }
         
-        $users = User::select([
-            "id", "name", "email", "rolename"
-        ])->orderBy('id', 'desc')
+        $users = User::select([ "id", "name", "email"])->orderBy('id', 'desc')
             ->get();
 
             return response()->json([
