@@ -1,7 +1,7 @@
 [build]
 builder = "NIXPACKS"
-# Forzamos los paquetes nativos de PHP 8.4 que entienden perfectamente SHA2
-nixPkgs = ["php84", "php84Packages.composer", "php84Packages.pdo_mysql"]
+# Forzamos PHP 8.2 y sus paquetes nativos estables
+nixPkgs = ["php82", "php82Packages.composer", "php82Packages.pdo_mysql"]
 buildCmds = ["composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader"]
 
 [phases.predeploy]
