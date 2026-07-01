@@ -27,5 +27,5 @@ RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoload
 EXPOSE 80
 
 # Limpiar, migrar base de datos y arrancar el servidor web
-CMD php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-80}
+CMD ["sh", "-c", "php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php -S 0.0.0.0:${PORT} -t public"]
 
