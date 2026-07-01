@@ -40,12 +40,7 @@ class AdminUserController extends Controller
         
         $users = User::select([
             "id", "name", "email", "rolename"
-        ])
-            ->withCount([
-                // "payments",
-                "profiles",
-            ])
-            ->orderBy('id', 'desc')
+        ])->orderBy('id', 'desc')
             ->get();
 
             return response()->json([
