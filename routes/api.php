@@ -123,10 +123,10 @@ Route::group(['middleware' => 'api'], function ($router) {
         return "Storage Link";
     });
 
-    Artisan::call('migrate', [
-    '--path' => '/database/migrations/',
-    '--force' => true
-]);
+//     Artisan::call('migrate', [
+//     '--path' => '/database/migrations/',
+//     '--force' => true
+// ]);
 
 
     Route::get('/migrate-fresh', function () {
