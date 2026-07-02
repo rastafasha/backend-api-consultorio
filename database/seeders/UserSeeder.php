@@ -158,20 +158,26 @@ class UserSeeder extends Seeder
             }
 
             // --- 🚀 SINCRONIZACIÓN AUTOMÁTICA KLYNTIC (Node.js/Render) ---
-            // Si el usuario creado tiene el rol de DOCTOR, le notificamos a tu Node.js en Render
-            // para que cree su documento en MongoDB (klyntic_consultorios) con su _id correspondiente.
             if ($createdUser->hasRole('DOCTOR')) {
                 try {
                     $nodeUrl = env('KLYNTIC_NODE_URL', 'https://back-klyntic-envios.onrender.com');
 
-                    \Illuminate\Support\Facades\Http::post($nodeUrl . '/api/klyntic/consultorios/sync', [
-                        'doctor_id' => (string) $createdUser->id // Su ID numérico de MySQL se vuelve su string _id en Mongo
-                    ]);
+                    // SOLUCIÓN: Agregamos timeout() para que Laravel no espere infinitamente
+                    \Illuminate\Support\Facades\Http::timeout(5) // Máximo 5 segundos de espera
+                        ->post($nodeUrl . '/api/klyntic/consultorios/sync', [
+                            'doctor_id' => (string) $createdUser->id
+                        ]);
+
                 } catch (\Exception $e) {
+                    // Si Render está dormido o da timeout, se registra en el log y el seeder CONTINÚA
                     \Illuminate\Support\Facades\Log::error('Seeder Klyntic: Falló el enlace a Render para el doctor ID ' . $createdUser->id . ': ' . $e->getMessage());
+
+                    // Opcional: Imprime una alerta en tu consola de Railway para que sepas qué pasó
+                    $this->command->warn("Aviso: Render tardó en responder para el Doctor ID " . $createdUser->id . ", saltando sincronización externa para continuar seeder.");
                 }
             }
             // --------------------------------------------------------------
+
         }
 
     }
