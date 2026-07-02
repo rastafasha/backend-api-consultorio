@@ -49,6 +49,7 @@ class Patient extends Model
         'vacunas',
         'peso_al_nacer',
         'talla_al_nacer',
+        'is_vacuna',
     ];
 
     public function setCreatedAtAttribute($value)

@@ -48,6 +48,7 @@ class CreatePatientsTable extends Migration
             $table->json('vacunas')->nullable();
             $table->string('peso_al_nacer', 250)->nullable();
             $table->string('talla_al_nacer', 250)->nullable();
+            $table->tinyInteger('is_vacuna')->default(1);
             
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');

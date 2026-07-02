@@ -48,6 +48,7 @@ class PatientResource extends JsonResource
             "peso_al_nacer" => $this->resource->peso_al_nacer,
             "talla_al_nacer" => $this->resource->talla_al_nacer,
             "current_desease" => $this->resource->current_desease,
+            "is_vacuna" =>$this->resource->is_vacuna,
             "avatar" => $this->resource->avatar  ? (str_starts_with($this->resource->avatar, 'http') ? $this->resource->avatar : env("APP_URL") . $this->resource->avatar) : null,
             "created_at" => $this->resource->created_at ? Carbon::parse($this->resource->created_at)->format("Y-m-d h:i A") : NULL,
 
