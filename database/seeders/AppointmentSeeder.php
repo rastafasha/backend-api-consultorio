@@ -20,10 +20,8 @@ class AppointmentSeeder extends Seeder
     {
         $faker = Faker::create();
 
-        // 1. Limpieza de seguridad
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        Appointment::truncate();
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        // 1. Limpieza de seguridad (Actualizado para incluir tablas hijas)
+        \DB::statement('TRUNCATE TABLE appointment_attentions, appointment_pays, appointments RESTART IDENTITY CASCADE;');
 
         // 2. SALVAGUARDA DE DIRECCIÓN: Aseguramos que el doctor 3 tenga al menos un consultorio activo
         $doctor_id = 3;
@@ -91,6 +89,11 @@ class AppointmentSeeder extends Seeder
             "amount" => $appointment->status_pay == 2 ? 50 : $appointment->amount,
             "method_payment" => $faker->randomElement(["Efectivo", "Transferencia", "Pago Movil", "Zelle"]),
         ]);
+
+        // ====================================================================================
+        // 🔥 LÍNEA MÁGICA: Sincroniza la secuencia de IDs de Postgres antes de usar el Factory
+        // ====================================================================================
+        \DB::statement("SELECT setval(pg_get_serial_sequence('appointments', 'id'), coalesce(max(id), 0) + 1, false) FROM appointments;");
 
         // 5. Crear las 9 citas aleatorias restantes a través del Factory
         Appointment::factory()->count(9)->create([
