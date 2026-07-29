@@ -64,22 +64,27 @@ return [
         ],
 
         'pgsql' => [
-            'driver' => 'pgsql',
-            'url' => null, 
-            'host' => env('DB_HOST', 'aws-0-ca-central-1.pooler.supabase.com'),
-            'port' => env('DB_PORT', '6543'),
-            'database' => env('DB_DATABASE', 'postgres'),
-            'username' => env('DB_USERNAME', 'postgres'),
-            'password' => env('DB_PASSWORD', 'hVovCluMixG2OqrK'),
-            'charset' => 'utf8',
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'schema' => 'public',
-            'sslmode' => 'disable', 
-            'options' => [
-                PDO::ATTR_EMULATE_PREPARES => true,
-            ],
+        'driver' => 'pgsql',
+        'url' => null, // Deja esto explícitamente en null para ignorar la variable de URL vieja
+        'host' => env('DB_HOST', '://supabase.com'),
+        'port' => env('DB_PORT', '6543'),
+        'database' => env('DB_DATABASE', 'postgres'),
+        'username' => env('DB_USERNAME', 'postgres'),
+        'password' => env('DB_PASSWORD', ''),
+        'charset' => 'utf8',
+        'prefix' => '',
+        'prefix_indexes' => true,
+        'schema' => 'public',
+        
+        // --- ESTOS TRES PARÁMETROS ELIMINAN EL 504 Y EL CORS ---
+        'sslmode' => 'disable', 
+        'connect_timeout' => 5, 
+        'options' => [
+            PDO::ATTR_EMULATE_PREPARES => true, 
+            PDO::ATTR_TIMEOUT => 5, 
         ],
+    ],
+
 
         'sqlsrv' => [
             'driver' => 'sqlsrv',
