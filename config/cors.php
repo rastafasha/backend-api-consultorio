@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*', 'http://localhost:4200'],
+    'allowed_origins' => ['https://consultorio.klyntic.com', 'https://pconsultorio.klyntic.com'],
 
     'allowed_origins_patterns' => ['*'],
 
