@@ -19,9 +19,14 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://consultorio.klyntic.com', 'https://pconsultorio.klyntic.com'],
+    // Especificas tus dominios de Angular de forma limpia
+    'allowed_origins' => [
+        'https://consultorio.klyntic.com', 
+        'https://pconsultorio.klyntic.com'
+    ],
 
-    'allowed_origins_patterns' => ['*'],
+    // --- DEJA ESTO COMPLETAMENTE VACÍO PARA EVITAR EL CONFLICTO ---
+    'allowed_origins_patterns' => [], 
 
     'allowed_headers' => ['*'],
 
