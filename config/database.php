@@ -76,6 +76,9 @@ return [
             'prefix_indexes' => true,
             'schema' => 'public',
             'sslmode' => 'prefer',
+            'options' => [
+                PDO::ATTR_EMULATE_PREPARES => true, // Emula sentencias preparadas a nivel local en PHP
+            ],
         ],
 
         'sqlsrv' => [
