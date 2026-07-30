@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Admin\Role;
 
-use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 
 class RolesController extends Controller
 {
@@ -32,7 +33,7 @@ class RolesController extends Controller
                 "permision_pluck" => $rol->permissions->pluck("name"),
                 
                 // 🛠️ FIX PARA POSTGRESQL: Parseamos el string a fecha real antes de formatear
-                "created_at" => $rol->created_at ? \Carbon\Carbon::parse($rol->created_at)->format("Y-m-d H:i:s") : null
+                "created_at" => $rol->created_at ? Carbon::parse($rol->created_at)->format("Y-m-d H:i:s") : null
             ];
         }),
     ]);
