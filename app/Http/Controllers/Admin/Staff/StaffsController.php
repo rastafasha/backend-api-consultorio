@@ -30,7 +30,7 @@ class StaffsController extends Controller
         //    }
 
         $search = $request->search;
-        $users = User::where(DB::raw("CONCAT(users.name,' ',IFNULL(users.surname,''),' ',users.email)"),"like","%".$search."%")
+        $users = User::where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',users.email)"),"like","%".$search."%")
                     // "name", "like", "%".$search."%"
                     // ->orWhere("surname", "like", "%".$search."%")
                     // ->orWhere("email", "like", "%".$search."%")

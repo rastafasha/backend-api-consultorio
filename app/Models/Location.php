@@ -47,7 +47,7 @@ class Location extends Model
         
         if($name_client){
             $query->whereHas("patient", function($q)use($name_client){
-                $q->where(DB::raw("CONCAT(patients.first_name,' ',IFNULL(patients.last_name,''),' ',IFNULL(patients.email,''))"),"like","%".$name_client."%");
+                $q->where(DB::raw("CONCAT(patients.first_name,' ',COALESCE(patients.last_name,''),' ',COALESCE(patients.email,''))"),"like","%".$name_client."%");
                 
             });
         }
@@ -63,7 +63,7 @@ class Location extends Model
         
         if($name_doctor){
             $query->whereHas("doctor", function($q)use($name_doctor){
-                $q->where(DB::raw("CONCAT(doctors.first_name,' ',IFNULL(doctors.last_name,''),' ',IFNULL(doctors.email,''))"),"like","%".$name_doctor."%");
+                $q->where(DB::raw("CONCAT(doctors.first_name,' ',COALESCE(doctors.last_name,''),' ',COALESCE(doctors.email,''))"),"like","%".$name_doctor."%");
                 
             });
         }

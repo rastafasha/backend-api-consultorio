@@ -32,7 +32,7 @@ class PatientController extends Controller
         $search = $request->search;
 
         $patients = Patient::where(
-            DB::raw("CONCAT(patients.name,' ', IFNULL(patients.surname,''),' ',patients.email)"),
+            DB::raw("CONCAT(patients.name,' ', COALESCE(patients.surname,''),' ',patients.email)"),
             "like",
             "%" . $search . "%"
         )->orderBy("id", "desc")

@@ -161,13 +161,13 @@ class Appointment extends Model
 
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
-                $q->where(DB::raw("CONCAT(users.name,' ',IFNULL(users.surname,''),' ',IFNULL(users.email,''))"), "like", "%" . $search_doctor . "%");
+                $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "like", "%" . $search_doctor . "%");
 
             });
         }
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
-                $q->where(DB::raw("CONCAT(patients.name,' ',IFNULL(patients.surname,''),' ',IFNULL(patients.email,''))"), "like", "%" . $search_patient . "%");
+                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "like", "%" . $search_patient . "%");
 
             });
         }
@@ -193,13 +193,13 @@ class Appointment extends Model
 
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
-                $q->where(DB::raw("CONCAT(users.name,' ',IFNULL(users.surname,''),' ',IFNULL(users.email,''))"), "like", "%" . $search_doctor . "%");
+                $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "like", "%" . $search_doctor . "%");
 
             });
         }
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
-                $q->where(DB::raw("CONCAT(patients.name,' ',IFNULL(patients.surname,''),' ',IFNULL(patients.email,''))"), "like", "%" . $search_patient . "%");
+                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "like", "%" . $search_patient . "%");
 
             });
         }
@@ -219,14 +219,14 @@ class Appointment extends Model
 
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
-                $q->where(DB::raw("CONCAT(users.name,' ',IFNULL(users.surname,''),' ',IFNULL(users.email,''))"), "like", "%" . $search_doctor . "%");
+                $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "like", "%" . $search_doctor . "%");
 
             });
         }
 
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
-                $q->where(DB::raw("CONCAT(patients.name,' ',IFNULL(patients.surname,''),' ',IFNULL(patients.email,''))"), "like", "%" . $search_patient . "%");
+                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "like", "%" . $search_patient . "%");
 
             });
         }
