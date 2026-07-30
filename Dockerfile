@@ -1,7 +1,7 @@
 # 1. Usamos la imagen oficial de PHP con FPM incluido
 FROM php:8.2-fpm
 
-# 2. Instalamos dependencias del sistema y Nginx
+# 2. Instalamos dependencias del sistema y Nginx de forma limpia
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -22,16 +22,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# 5. Copiamos el proyecto
+# 5. Copiamos todo el proyecto Laravel
 COPY . .
 
-# 6. Instalamos paquetes de Composer optimizados
+# 6. Instalamos paquetes de Composer optimizados para producción
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
-# 7. Damos permisos correctos a las carpetas de Laravel para evitar errores 500
+# 7. Damos permisos correctos a las carpetas para que PHP pueda escribir la sesión
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# 8. Creamos una configuración de Nginx ultra ligera para Render al vuelo
+# 8. CONFIGURACIÓN CORRECTA DE NGINX USANDO EL SOCKET DE PHP-FPM
+# Reemplazamos el puerto 9000 por la ruta del archivo físico de comunicación de PHP 8.2-FPM
 RUN echo 'server { \
     listen 80; \
     root /var/www/public; \
@@ -41,14 +42,14 @@ RUN echo 'server { \
     } \
     location ~ \.php$ { \
         include fastcgi_params; \
-        fastcgi_pass 127.0.0.1:9000; \
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock; \
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
     } \
 }' > /etc/nginx/sites-available/default
 
 EXPOSE 80
 
-# 9. Encendemos PHP-FPM en segundo plano, limpiamos la caché y arrancamos Nginx en primer plano
+# 9. Encendemos PHP-FPM, trituramos la caché residual y arrancamos Nginx en primer plano
 CMD php-fpm -D && \
     php artisan config:clear && \
     php artisan route:clear && \
