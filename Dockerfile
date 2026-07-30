@@ -26,4 +26,5 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 EXPOSE 80
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=80"]
+CMD php artisan config:clear && php artisan route:clear && php artisan cache:clear && php -S 0.0.0.0:$PORT -t public
+
