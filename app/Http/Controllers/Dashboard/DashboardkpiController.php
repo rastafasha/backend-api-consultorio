@@ -20,7 +20,7 @@ class DashboardkpiController extends Controller
     {
         $users = User::orderBy("id", "desc")
             ->whereHas("roles", function ($q) {
-                $q->where("name", "like", "%DOCTOR%");
+                $q->where("name", "ilike", "%DOCTOR%");
             })
             ->get();
 

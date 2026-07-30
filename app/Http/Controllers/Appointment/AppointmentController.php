@@ -87,7 +87,7 @@ public function filter(Request $request)
     $name_day = Carbon::parse($date_appointment)->dayName;
 
     // 1. Consulta optimizada usando comparación exacta (=) para la hora
-    $doctor_query = DoctorScheduleDay::where("day", "like", "%" . $name_day . "%")
+    $doctor_query = DoctorScheduleDay::where("day", "ilike", "%" . $name_day . "%")
         ->whereHas("doctor", function ($q) use ($speciality_id) {
             $q->where("speciality_id", $speciality_id);
         })
@@ -197,14 +197,14 @@ public function filter(Request $request)
 
         // 5. Ejecutar la consulta unificada con Eager Loading
         $segments = DoctorScheduleJoinHour::whereHas("doctor_schedule_day", function ($q) use ($doctor_id, $name_day) {
-            $q->where("day", "like", "%" . $name_day . "%")
+            $q->where("day", "ilike", "%" . $name_day . "%")
                 ->where("user_id", $doctor_id)
                 ->whereNull("deleted_at");
         })
             ->whereHas("doctor_schedule_hour", function ($q) use ($hour) {
                 // Si en tu BD el campo 'hour' guarda solo el número (ej: 9 o 09), esto funcionará.
                 // Si guarda la hora completa (ej: "09:00:00"), usa: $q->where("hour", "like", $hour . "%");
-                $q->where("hour", "like", "%" . $hour . "%");
+                $q->where("hour", "ilike", "%" . $hour . "%");
             })
             ->with([
                 'doctor_schedule_hour',

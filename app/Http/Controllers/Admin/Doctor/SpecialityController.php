@@ -16,7 +16,7 @@ class SpecialityController extends Controller
         // QUE EL FILTRO POR NOMBRE DE ROL
         $name = $request->search;
 
-        $specialities = Specialitie::where("name","like","%".$name."%")->orderBy("id","desc")->get();
+        $specialities = Specialitie::where("name","ilike","%".$name."%")->orderBy("id","desc")->get();
 
         return response()->json([
             "specialities" => $specialities->map(function($rol) {

@@ -20,7 +20,7 @@ class PresupuestoFactory extends Factory
     public function definition(): array
     {
         $doctor = User::whereHas("roles",function($q){
-            $q->where("name","like","%DOCTOR%");
+            $q->where("name","ilike","%DOCTOR%");
         })->inRandomOrder()->first();
         
         $date_presupuesto = $this->faker->dateTimeBetween("2024-01-01 00:00:00", "2024-12-25 23:59:59");

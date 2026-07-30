@@ -14,26 +14,30 @@ class RolesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
-    {
-        //filtro por nombre de rol
-        $name = $request->search;
+    public function index(Request $request) {
+    // Filtro por nombre de rol
+    $name = $request->search;
+    
+    // Agregamos un condicional por si $name viene vacío
+    $roles = Role::where("name", "ilike", "%".$name."%")
+                 ->orderBy("id", "desc")
+                 ->get();
+                 
+    return response()->json([
+        "roles" => $roles->map(function($rol){
+            return [
+                "id" => $rol->id,
+                "name" => $rol->name,
+                "permision" => $rol->permissions,
+                "permision_pluck" => $rol->permissions->pluck("name"),
+                
+                // 🛠️ FIX PARA POSTGRESQL: Parseamos el string a fecha real antes de formatear
+                "created_at" => $rol->created_at ? \Carbon\Carbon::parse($rol->created_at)->format("Y-m-d H:i:s") : null
+            ];
+        }),
+    ]);
+}
 
-        $roles = Role::where("name","like", "%".$name."%")->orderBy("id","desc")->get();
-
-        return response()->json([
-            "roles"=>$roles->map(function($rol){
-                return [
-                    "id"=>$rol->id,
-                    "name"=>$rol->name,
-                    "permision"=>$rol->permissions,
-                    "permision_pluck"=>$rol->permissions->pluck("name"),
-                    "created_at"=>$rol->created_at->format("Y-m-d h:i:s")
-                ];
-            }),
-        ]);
-
-    }
 
 
     /**

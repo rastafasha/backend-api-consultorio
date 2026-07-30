@@ -16,7 +16,7 @@ class DoctorScheduleDaySeeder extends Seeder
     {
         // Get or create a doctor user
         $doctor = User::whereHas('roles', function($q) {
-            $q->where('name', 'like', '%DOCTOR%');
+            $q->where('name', 'ilike', '%DOCTOR%');
         })->first();
 
         if (!$doctor) {

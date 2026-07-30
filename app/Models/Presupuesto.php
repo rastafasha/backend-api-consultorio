@@ -99,8 +99,8 @@ class Presupuesto extends Model
 
         if ($name_doctor) {
             $query->whereHas("doctor", function ($q) use ($name_doctor) {
-                $q->where("name", "like", "%" . $name_doctor . "%")
-                    ->orWhere("surname", "like", "%" . $name_doctor . "%");
+                $q->where("name", "ilike", "%" . $name_doctor . "%")
+                    ->orWhere("surname", "ilike", "%" . $name_doctor . "%");
             });
         }
 
@@ -130,7 +130,7 @@ class Presupuesto extends Model
         }
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
-                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "like", "%" . $search_patient . "%");
+                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "ilike", "%" . $search_patient . "%");
 
             });
         }

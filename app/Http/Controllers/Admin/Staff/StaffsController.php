@@ -30,13 +30,13 @@ class StaffsController extends Controller
         //    }
 
         $search = $request->search;
-        $users = User::where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',users.email)"),"like","%".$search."%")
+        $users = User::where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',users.email)"),"ilike","%".$search."%")
                     // "name", "like", "%".$search."%"
                     // ->orWhere("surname", "like", "%".$search."%")
                     // ->orWhere("email", "like", "%".$search."%")
                     ->orderBy("id", "desc")
                     ->whereHas("roles", function($q){
-                        $q->where("name","not like","%DOCTOR%");
+                        $q->where("name","not ilike","%DOCTOR%");
                     })
                     ->get();
                     

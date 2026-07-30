@@ -33,7 +33,7 @@ class PatientController extends Controller
 
         $patients = Patient::where(
             DB::raw("CONCAT(patients.name,' ', COALESCE(patients.surname,''),' ',patients.email)"),
-            "like",
+            "ilike",
             "%" . $search . "%"
         )->orderBy("id", "desc")
             ->paginate(10);
@@ -59,10 +59,10 @@ class PatientController extends Controller
             ->where(function ($query) use ($search) {
                 // 💡 Solo aplicamos los filtros si realmente el usuario escribió algo real en el buscador
                 if (!empty($search)) {
-                    $query->where('name', 'like', "%" . $search . "%")
-                        ->orWhere('surname', 'like', "%" . $search . "%")
-                        ->orWhere('email', 'like', "%" . $search . "%")
-                        ->orWhere('n_doc', 'like', "%" . $search . "%"); // 👈 Agregamos tu validación de número de documento
+                    $query->where('name', 'ilike', "%" . $search . "%")
+                        ->orWhere('surname', 'ilike', "%" . $search . "%")
+                        ->orWhere('email', 'ilike', "%" . $search . "%")
+                        ->orWhere('n_doc', 'ilike', "%" . $search . "%"); // 👈 Agregamos tu validación de número de documento
                 }
             })
             ->orderBy("id", "desc")

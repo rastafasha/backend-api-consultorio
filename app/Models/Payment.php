@@ -130,13 +130,13 @@ class Payment extends Model
 
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
-                $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "like", "%" . $search_doctor . "%");
+                $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "ilike", "%" . $search_doctor . "%");
 
             });
         }
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
-                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "like", "%" . $search_patient . "%");
+                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "ilike", "%" . $search_patient . "%");
 
             });
         }
@@ -159,7 +159,7 @@ class Payment extends Model
         if (empty($query)) {
             return self::all();
         }
-        return self::where('referencia', 'like', "%$query%")
+        return self::where('referencia', 'ilike', "%$query%")
             ->orWhere('status', 'like', "%$query%")
             ->get();
     }

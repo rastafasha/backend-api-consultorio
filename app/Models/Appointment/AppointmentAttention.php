@@ -40,8 +40,8 @@ class AppointmentAttention extends Model
 
         if($name_doctor){
             $query->whereHas("doctor", function($q)use($name_doctor){
-                $q->where("name", "like","%".$name_doctor."%")
-                    ->orWhere("surname", "like","%".$name_doctor."%");
+                $q->where("name", "ilike","%".$name_doctor."%")
+                    ->orWhere("surname", "ilike","%".$name_doctor."%");
             });
         }
 
