@@ -31,7 +31,5 @@ RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 EXPOSE 80
 
 # 8. Limpiamos la caché interna y encendemos el servidor en el puerto correcto de producción
-CMD php artisan config:clear && \
-    php artisan route:clear && \
-    php artisan cache:clear && \
-    php -S 0.0.0.0:80 -t public
+CMD php artisan config:clear && php artisan route:clear && php artisan cache:clear && php -S 0.0.0.0:80 -t public
+
