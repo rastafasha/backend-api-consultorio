@@ -32,13 +32,13 @@ class DoctorAddressController extends Controller
     ]); 
 
     // Forzamos a que el input se transforme en un true o false real de PHP
-    $isActive = filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN);
+    // $isActive = filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN);
 
     $address = DoctorAddress::create([ 
         'user_id' => $request->user_id, 
         'name_consultorio' => $request->name_consultorio, 
         'address' => $request->address, 
-        'is_active' => $isActive // Aquí pasamos la variable ya convertida
+        // 'is_active' => $isActive // Aquí pasamos la variable ya convertida
     ]); 
 
     return response()->json([ 
