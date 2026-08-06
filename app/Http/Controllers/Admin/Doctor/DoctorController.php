@@ -279,7 +279,7 @@ class DoctorController extends Controller
         $user->assignRole($role);
 
         // 8. Enviamos el correo de bienvenida tradicional
-        Mail::to($user->email)->send(new NewUserRegisterMail($user));
+        // Mail::to($user->email)->send(new NewUserRegisterMail($user));
 
         // 9. Almacenamos la disponibilidad de horario (Tu lógica adaptada a multi-consultorio)
         if (is_array($schedule_hours)) {

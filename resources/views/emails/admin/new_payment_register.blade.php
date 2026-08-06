@@ -378,7 +378,7 @@ Notificaciones automatizadas desde la app
 																				style="font-size:0pt; line-height:0pt; text-align:center; ">
 																				<a href="https://klytic.com/"
 																					target="_blank"><img
-																						src="https://klytic.com/varios/logoHealthConnect-01.png"
+																						src="https://consultorio.klyntic.com/assets/img/logoklyntic.png"
 																						width="75" height="50"
 																						editable="true" border="0"
 																						alt="" /></a>
