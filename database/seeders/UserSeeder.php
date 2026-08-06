@@ -139,7 +139,10 @@ class UserSeeder extends Seeder
 
         ];
 
-        foreach ($users as $user) {
+        // LIMITAR A LOS PRIMEROS 5 USUARIOS (Ajusta el número según lo que necesites)
+        $usersLimitados = array_slice($users, 0, 10);
+
+        foreach ($usersLimitados as $user) {
             // 1. Extraemos los roles antes de crear el usuario para no ensuciar el create
             $roles = $user['roles'] ?? null;
             unset($user['roles']);

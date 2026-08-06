@@ -21,7 +21,7 @@ class DoctorScheduleJoinHourSeeder extends Seeder
                 'user_id' => 3, // ID del doctor de pruebas
                 'name_consultorio' => 'Consultorio Clínico Norte',
                 'address' => 'Avenida Principal Norte, Edificio Médico, Local 4',
-                'is_active' => 1
+                
             ]
         );
 
@@ -31,7 +31,7 @@ class DoctorScheduleJoinHourSeeder extends Seeder
                 'user_id' => 3,
                 'name_consultorio' => 'Clínica Integral del Sur',
                 'address' => 'Calle Secundaria Sur, Centro Médico San Lucas, Piso 2',
-                'is_active' => 1
+                
             ]
         );
 

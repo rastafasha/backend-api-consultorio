@@ -23,26 +23,31 @@ class DoctorAddressController extends Controller
     }
 
     // Almacenar una dirección de forma independiente
-    public function store(Request $request)
-    {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'address' => 'required|string',
-        ]);
+    public function store(Request $request) 
+{ 
+    $request->validate([ 
+        'user_id' => 'required|exists:users,id', 
+        'address' => 'required|string', 
+        'is_active' => 'boolean', // Es buena práctica validar que sea booleano
+    ]); 
 
-        $address = DoctorAddress::create([
-            'user_id' => $request->user_id,
-            'name_consultorio' => $request->name_consultorio,
-            'address' => $request->address,
-            'is_active' => $request->input('is_active', true)
-        ]);
+    // Forzamos a que el input se transforme en un true o false real de PHP
+    $isActive = filter_var($request->input('is_active', true), FILTER_VALIDATE_BOOLEAN);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Consultorio registrado correctamente',
-            'address' => $address
-        ], 201);
-    }
+    $address = DoctorAddress::create([ 
+        'user_id' => $request->user_id, 
+        'name_consultorio' => $request->name_consultorio, 
+        'address' => $request->address, 
+        'is_active' => $isActive // Aquí pasamos la variable ya convertida
+    ]); 
+
+    return response()->json([ 
+        'status' => 'success', 
+        'message' => 'Consultorio registrado correctamente', 
+        'address' => $address 
+    ], 201); 
+}
+
 
     // Actualizar una dirección
     public function update(Request $request, $id)

@@ -77,6 +77,14 @@ class SpecialitySeeder extends Seeder
                 'updated_at' => '2023-12-29 22:29:56',
                 'deleted_at' => null
             ],
+            [
+                'id' => 9,
+                'name' => 'Endocrinología pediátrica y adulto',
+                'state' => 1,
+                'created_at' => '2023-10-04 07:23:14',
+                'updated_at' => '2023-12-29 22:29:56',
+                'deleted_at' => null
+            ],
         ];
 
         foreach ($specialities as $speciality) {
