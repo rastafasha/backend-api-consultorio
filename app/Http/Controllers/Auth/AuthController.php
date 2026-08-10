@@ -124,7 +124,7 @@ class AuthController extends Controller
     }
 
     // 2. Buscamos al paciente (usando LOWER y limpiando espacios)
-    $user = User::whereRaw('LOWER(name) = ?', [Str::lower($name)])
+    $user = Patient::whereRaw('LOWER(name) = ?', [Str::lower($name)])
                 ->where('n_doc', $n_doc)
                 ->first();
 
