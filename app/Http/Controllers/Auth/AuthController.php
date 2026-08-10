@@ -110,6 +110,8 @@ class AuthController extends Controller
     }
 public function loginPaciente(Request $request): \Illuminate\Http\JsonResponse
 {
+    // 🚀 LOG DE DIAGNÓSTICO TEMPORAL: Captura todo lo que entra al servidor remoto
+    \Log::info('Data recibida en loginPaciente:', $request->all());
     // 1. Validamos la entrada desde Angular (puerto 4203)
     $validator = Validator::make($request->all(), [
         'name'  => 'required|string',
