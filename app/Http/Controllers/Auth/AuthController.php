@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 ;
@@ -109,13 +108,11 @@ class AuthController extends Controller
             'access_token' => JWTAuth::fromUser($user),
         ], 201);
     }
-    public function loginPaciente(Request $request): \Illuminate\Http\JsonResponse { 
-    // 1. Limpiamos espacios y validamos la entrada
-    $name = trim($request->input('name'));
-    $n_doc = trim($request->input('n_doc'));
-
-    $validator = Validator::make(['name' => $name, 'n_doc' => $n_doc], [
-        'name' => 'required|string',
+public function loginPaciente(Request $request): \Illuminate\Http\JsonResponse
+{
+    // 1. Validamos la entrada desde Angular (puerto 4203)
+    $validator = Validator::make($request->all(), [
+        'name'  => 'required|string',
         'n_doc' => 'required|string',
     ]);
 
@@ -123,30 +120,30 @@ class AuthController extends Controller
         return response()->json($validator->errors(), 422);
     }
 
-    // 2. Buscamos al paciente (usando LOWER y limpiando espacios)
-    $user = Patient::whereRaw('LOWER(name) = ?', [Str::lower($name)])
-                ->where('n_doc', $n_doc)
+    // 2. Buscamos al paciente por su Nombre y Cédula para extraer su correo registrado
+    $user = Patient::whereRaw('LOWER(name) = ?', [strtolower($request->name)])
+                ->where('n_doc', $request->n_doc)
                 ->first();
 
     if (!$user) {
         return response()->json(['error' => 'Unauthorized - Datos del paciente incorrectos'], 401);
     }
 
-    // 3. Credenciales para JWT
+    // 3. 🚀 EL TRUCO MAESTRO: Autenticamos usando su correo y su cédula como contraseña
+    // Como tu seeder y tu registro automático guardan la contraseña cifrada con el n_doc,
+    // esto obliga a JWT a generar el token firmado original sin romper el guard de la API.
     $credentials = [
-        'email'    => $user->email,
-        'password' => $n_doc // Cédula como clave
+        'name'    => $user->name,
+        'password' => $request->n_doc // Su cédula actúa como su clave secreta
     ];
 
-    // Fuerza a JWT a usar el guard correcto (ejemplo: 'api')
-    if (!$token = auth('api')->attempt($credentials)) {
+    if (!$token = JWTAuth::attempt($credentials)) {
         return response()->json(['error' => 'Unauthorized - No se pudo verificar la firma del paciente'], 401);
     }
 
-    // 4. Respuesta exitosa
+    // 4. Despachamos la respuesta utilizando nuestro nuevo helper blindado
     return $this->respondWithTokenPaciente($token, $user);
 }
-
 
 
 
@@ -284,26 +281,26 @@ class AuthController extends Controller
     }
 
     protected function respondWithTokenPaciente($token, $user)
-    {
-        // El paciente de tipo GUEST no maneja permisos dinámicos, dejamos un array vacío
-        $permissions = collect([]);
+{
+    // El paciente de tipo GUEST no maneja permisos dinámicos, dejamos un array vacío
+    $permissions = collect([]);
 
-        return response()->json([
-            'message' => "Inicio de sesión de paciente exitoso",
-            'access_token' => $token, // El token firmado nativamente por la librería
-            'token_type' => 'Bearer',
-            'user' => [
-                "id" => $user->id,
-                "name" => $user->name,
-                "surname" => $user->surname,
-                "roles" => $user->getRoleNames(), // Devolverá ["GUEST"]
-                "avatar" => $user->avatar,
-                "email" => $user->email,
-                "n_doc" => $user->n_doc,
-                "permissions" => $permissions,
-            ],
-        ], 201);
-    }
+    return response()->json([
+        'message' => "Inicio de sesión de paciente exitoso",
+        'access_token' => $token, // El token firmado nativamente por la librería
+        'token_type' => 'Bearer',
+        'user' => [
+            "id"          => $user->id,
+            "name"        => $user->name,
+            "surname"     => $user->surname,
+            "roles"       => $user->getRoleNames(), // Devolverá ["GUEST"]
+            "avatar"      => $user->avatar,
+            "email"       => $user->email,
+            "n_doc"       => $user->n_doc,
+            "permissions" => $permissions,
+        ],
+    ], 201);
+}
 
 
     /**

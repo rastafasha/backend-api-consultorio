@@ -1,5 +1,6 @@
 <?php
 
+
 return [
 
     /*
@@ -46,6 +47,12 @@ return [
             'provider' => 'users',
             'hash' => false,
         ],
+        // 🚀 NUEVO GUARD PARA PACIENTES
+        // 'paciente-api' => [
+        //     'driver' => 'jwt',
+        //     'provider' => 'patients',
+        //     'hash' => false,
+        // ],
     ],
 
     /*
@@ -74,6 +81,11 @@ return [
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',
+        // ],
+        // 🚀 NUEVO PROVIDER PARA LA TABLA PATIENTS
+        // 'patients' => [
+        //     'driver' => 'eloquent',
+        //     'model' => App\Models\Patient\Patient::class, // <-- Asegúrate de que este sea el nombre de tu modelo de pacientes
         // ],
     ],
 
