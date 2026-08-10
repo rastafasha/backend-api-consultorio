@@ -48,11 +48,11 @@ return [
             'hash' => false,
         ],
         // 🚀 NUEVO GUARD PARA PACIENTES
-        // 'paciente-api' => [
-        //     'driver' => 'jwt',
-        //     'provider' => 'patients',
-        //     'hash' => false,
-        // ],
+        'paciente-api' => [
+            'driver' => 'jwt',
+            'provider' => 'patients',
+            'hash' => false,
+        ],
     ],
 
     /*
@@ -83,10 +83,10 @@ return [
         //     'table' => 'users',
         // ],
         // 🚀 NUEVO PROVIDER PARA LA TABLA PATIENTS
-        // 'patients' => [
-        //     'driver' => 'eloquent',
-        //     'model' => App\Models\Patient\Patient::class, // <-- Asegúrate de que este sea el nombre de tu modelo de pacientes
-        // ],
+        'patients' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Patient\Patient::class, // <-- Asegúrate de que este sea el nombre de tu modelo de pacientes
+        ],
     ],
 
     /*
