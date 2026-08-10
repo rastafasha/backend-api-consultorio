@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 ;
@@ -108,13 +109,14 @@ class AuthController extends Controller
             'access_token' => JWTAuth::fromUser($user),
         ], 201);
     }
-public function loginPaciente(Request $request): \Illuminate\Http\JsonResponse
-{
-    // 🚀 LOG DE DIAGNÓSTICO TEMPORAL: Captura todo lo que entra al servidor remoto
-    \Log::info('Data recibida en loginPaciente:', $request->all());
-    // 1. Validamos la entrada desde Angular (puerto 4203)
-    $validator = Validator::make($request->all(), [
-        'name'  => 'required|string',
+
+    public function loginPaciente(Request $request): \Illuminate\Http\JsonResponse { 
+    // 1. Limpiamos espacios
+    $name = trim($request->input('name'));
+    $n_doc = trim($request->input('n_doc'));
+
+    $validator = Validator::make(['name' => $name, 'n_doc' => $n_doc], [
+        'name' => 'required|string',
         'n_doc' => 'required|string',
     ]);
 
@@ -122,30 +124,27 @@ public function loginPaciente(Request $request): \Illuminate\Http\JsonResponse
         return response()->json($validator->errors(), 422);
     }
 
-    // 2. Buscamos al paciente por su Nombre y Cédula para extraer su correo registrado
-    $user = Patient::whereRaw('LOWER(name) = ?', [strtolower($request->name)])
-                ->where('n_doc', $request->n_doc)
-                ->first();
+    // 2. Buscamos al paciente (Forzando minúsculas compatible con Postgres)
+    $user = Patient::whereRaw('LOWER(TRIM(name)) = ?', [Str::lower($name)])
+                   ->whereRaw('TRIM(n_doc) = ?', [$n_doc])
+                   ->first();
 
     if (!$user) {
         return response()->json(['error' => 'Unauthorized - Datos del paciente incorrectos'], 401);
     }
 
-    // 3. 🚀 EL TRUCO MAESTRO: Autenticamos usando su correo y su cédula como contraseña
-    // Como tu seeder y tu registro automático guardan la contraseña cifrada con el n_doc,
-    // esto obliga a JWT a generar el token firmado original sin romper el guard de la API.
-    $credentials = [
-        'name'    => $user->name,
-        'password' => $request->n_doc // Su cédula actúa como su clave secreta
-    ];
-
-    if (!$token = JWTAuth::attempt($credentials)) {
+    // 3. 🚀 SOLUCIÓN SUPABASE: Autenticación directa por Instancia de Objeto
+    // En Postgres, usar attempt() con contraseñas dinámicas clonadas suele fallar por Collation.
+    // Usar login($user) salta el validador de Hash pero emite el token JWT firmado original 
+    // basándose en el ID del paciente que ya encontramos y validamos en el paso 2.
+    if (!$token = auth('paciente-api')->login($user)) {
         return response()->json(['error' => 'Unauthorized - No se pudo verificar la firma del paciente'], 401);
     }
 
-    // 4. Despachamos la respuesta utilizando nuestro nuevo helper blindado
+    // 4. Despachamos la respuesta exitosa
     return $this->respondWithTokenPaciente($token, $user);
 }
+
 
 
 
