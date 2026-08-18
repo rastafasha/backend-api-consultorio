@@ -44,124 +44,128 @@ class AppointmentController extends Controller
 
     }
 
-   public function appointmentByDoctor(Request $request, $doctor_id)
-{
-    $search_doctor = $request->search_doctor;
-    $search_patient = $request->search_patient;
-    $search = $request->search;
-    $date = $request->date;
+    public function appointmentByDoctor(Request $request, $doctor_id)
+    {
+        $search_doctor = $request->search_doctor;
+        $search_patient = $request->search_patient;
+        $search = $request->search;
+        $date = $request->date;
 
-    // Ejecutamos el filtro avanzado y añadimos el Eager Loading de la dirección del consultorio
-    $appointments = Appointment::filterAdvanceDoc($search_doctor, $search_patient, $date, $search)
-        ->where('doctor_id', $doctor_id)
-        ->with([
-            'patient',
-            'speciality',
-            'doctor_schedule_join_hour.doctor_schedule_hour',
-            'doctor_schedule_join_hour.doctor_schedule_day.doctor_address' // <-- CARGA LA DIRECCIÓN AQUÍ
-        ])
-        ->orderBy("id", "desc")
-        ->paginate(10);
+        // Ejecutamos el filtro avanzado y añadimos el Eager Loading de la dirección del consultorio
+        $appointments = Appointment::filterAdvanceDoc($search_doctor, $search_patient, $date, $search)
+            ->where('doctor_id', $doctor_id)
+            ->with([
+                'patient',
+                'speciality',
+                'doctor_schedule_join_hour.doctor_schedule_hour',
+                'doctor_schedule_join_hour.doctor_schedule_day.doctor_address' // <-- CARGA LA DIRECCIÓN AQUÍ
+            ])
+            ->orderBy("id", "desc")
+            ->paginate(10);
 
-    return response()->json([
-        "total" => $appointments->total(),
-        "appointments" => AppointmentCollection::make($appointments)
-    ]);
-}
-
-
-  
-public function filter(Request $request)
-{
-    date_default_timezone_set('America/Caracas');
-    Carbon::setLocale('es');
-    DB::statement("SET lc_time_names = 'es_ES'");
-
-    $date_appointment = Carbon::parse($request->date_appointment)
-        ->setTimezone('America/Caracas')
-        ->format('Y-m-d');
-
-    $hour = $request->hour; // Ej: "09"
-    $speciality_id = $request->speciality_id;
-
-    $name_day = Carbon::parse($date_appointment)->dayName;
-
-    // 1. Consulta optimizada usando comparación exacta (=) para la hora
-    $doctor_query = DoctorScheduleDay::where("day", "ilike", "%" . $name_day . "%")
-        ->whereHas("doctor", function ($q) use ($speciality_id) {
-            $q->where("speciality_id", $speciality_id);
-        })
-        ->whereHas("schedule_hours", function ($q) use ($hour) {
-            $q->whereHas("doctor_schedule_hour", function ($qs) use ($hour) {
-                // CORRECCIÓN: Cambiado de 'like' a '=' para evitar traer minutos/horas erróneas
-                $qs->where("hour", $hour); 
-            });
-        })
-        ->with([
-            'doctor.speciality', 
-            'doctor_address',
-            // CORRECCIÓN: Agregamos , $date_appointment aquí para heredarla a la capa intermedia
-            'schedule_hours' => function($q) use ($hour, $date_appointment) {
-                $q->whereHas("doctor_schedule_hour", function($qs) use ($hour) {
-                    $qs->where("hour", $hour);
-                })->with(['doctor_schedule_hour', 'appointments' => function($qa) use ($date_appointment) {
-                    $qa->whereDate("date_appointment", $date_appointment);
-                }]);
-            }
-        ])
-        ->get();
-
-    $doctors = collect([]);
-
-    foreach ($doctor_query as $doctor_q) {
-        $doctor = $doctor_q->doctor;
-        $address = $doctor_q->doctor_address;
-
-        if (!$doctor) continue; 
-
-        $segmentsData = $doctor_q->schedule_hours->map(function ($segment) use ($date_appointment) {
-            $is_appointment = $segment->appointments->isNotEmpty();
-
-            return [
-                "id" => $segment->id,
-                "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
-                "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
-                "is_appointment" => $is_appointment,
-                "format_segment" => [
-                    "id" => $segment->doctor_schedule_hour->id,
-                    "hour_start" => $segment->doctor_schedule_hour->hour_start,
-                    "hour_end" => $segment->doctor_schedule_hour->hour_end,
-                    "format_hour_start" => Carbon::parse($segment->doctor_schedule_hour->hour_start)->format("h:i A"),
-                    "format_hour_end" => Carbon::parse($segment->doctor_schedule_hour->hour_end)->format("h:i A"),
-                    "hour" => $segment->doctor_schedule_hour->hour,
-                ],
-            ];
-        });
-
-        $doctors->push([
-            "doctor" => [
-                "id" => $doctor->id,
-                "full_name" => trim($doctor->name . ' ' . $doctor->surname),
-                "precio_cita" => $doctor->precio_cita,
-                "speciality" => [
-                    "id" => $doctor->speciality->id ?? null,
-                    "name" => $doctor->speciality->name ?? null,
-                ],
-                "consultorio" => $address ? [
-                    "id" => $address->id,
-                    "name_consultorio" => $address->name_consultorio,
-                    "address" => $address->address,
-                    "is_active" => $address->is_active,
-                ] : null,
-            ],
-            "segments" => $segmentsData
+        return response()->json([
+            "total" => $appointments->total(),
+            "appointments" => AppointmentCollection::make($appointments)
         ]);
     }
 
-    return response()->json([
-        "doctors" => $doctors
-    ]);
-}
+
+
+    public function filter(Request $request)
+    {
+        date_default_timezone_set('America/Caracas');
+        Carbon::setLocale('es');
+        DB::statement("SET lc_time_names = 'es_ES'");
+
+        $date_appointment = Carbon::parse($request->date_appointment)
+            ->setTimezone('America/Caracas')
+            ->format('Y-m-d');
+
+        $hour = $request->hour; // Ej: "09"
+        $speciality_id = $request->speciality_id;
+
+        $name_day = Carbon::parse($date_appointment)->dayName;
+
+        // 1. Consulta optimizada usando comparación exacta (=) para la hora
+        $doctor_query = DoctorScheduleDay::where("day", "ilike", "%" . $name_day . "%")
+            ->whereHas("doctor", function ($q) use ($speciality_id) {
+                $q->where("speciality_id", $speciality_id);
+            })
+            ->whereHas("schedule_hours", function ($q) use ($hour) {
+                $q->whereHas("doctor_schedule_hour", function ($qs) use ($hour) {
+                    // CORRECCIÓN: Cambiado de 'like' a '=' para evitar traer minutos/horas erróneas
+                    $qs->where("hour", $hour);
+                });
+            })
+            ->with([
+                'doctor.speciality',
+                'doctor_address',
+                // CORRECCIÓN: Agregamos , $date_appointment aquí para heredarla a la capa intermedia
+                'schedule_hours' => function ($q) use ($hour, $date_appointment) {
+                    $q->whereHas("doctor_schedule_hour", function ($qs) use ($hour) {
+                        $qs->where("hour", $hour);
+                    })->with([
+                                'doctor_schedule_hour',
+                                'appointments' => function ($qa) use ($date_appointment) {
+                                    $qa->whereDate("date_appointment", $date_appointment);
+                                }
+                            ]);
+                }
+            ])
+            ->get();
+
+        $doctors = collect([]);
+
+        foreach ($doctor_query as $doctor_q) {
+            $doctor = $doctor_q->doctor;
+            $address = $doctor_q->doctor_address;
+
+            if (!$doctor)
+                continue;
+
+            $segmentsData = $doctor_q->schedule_hours->map(function ($segment) use ($date_appointment) {
+                $is_appointment = $segment->appointments->isNotEmpty();
+
+                return [
+                    "id" => $segment->id,
+                    "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
+                    "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
+                    "is_appointment" => $is_appointment,
+                    "format_segment" => [
+                        "id" => $segment->doctor_schedule_hour->id,
+                        "hour_start" => $segment->doctor_schedule_hour->hour_start,
+                        "hour_end" => $segment->doctor_schedule_hour->hour_end,
+                        "format_hour_start" => Carbon::parse($segment->doctor_schedule_hour->hour_start)->format("h:i A"),
+                        "format_hour_end" => Carbon::parse($segment->doctor_schedule_hour->hour_end)->format("h:i A"),
+                        "hour" => $segment->doctor_schedule_hour->hour,
+                    ],
+                ];
+            });
+
+            $doctors->push([
+                "doctor" => [
+                    "id" => $doctor->id,
+                    "full_name" => trim($doctor->name . ' ' . $doctor->surname),
+                    "precio_cita" => $doctor->precio_cita,
+                    "speciality" => [
+                        "id" => $doctor->speciality->id ?? null,
+                        "name" => $doctor->speciality->name ?? null,
+                    ],
+                    "consultorio" => $address ? [
+                        "id" => $address->id,
+                        "name_consultorio" => $address->name_consultorio,
+                        "address" => $address->address,
+                        "is_active" => $address->is_active,
+                    ] : null,
+                ],
+                "segments" => $segmentsData
+            ]);
+        }
+
+        return response()->json([
+            "doctors" => $doctors
+        ]);
+    }
 
 
 
@@ -170,7 +174,6 @@ public function filter(Request $request)
         // Establecer la zona horaria antes de cualquier procesamiento de Carbon
         date_default_timezone_set('America/Caracas');
         Carbon::setLocale('es');
-        DB::statement("SET lc_time_names = 'es_ES'");
 
         // 1. Normalizar la fecha ISO del Frontend a la zona horaria local de Caracas
         // Esto evita que "2026-07-02T04:00:00.000Z" se interprete erróneamente como otro día
