@@ -175,7 +175,7 @@ class AuthController extends Controller
         $emailFinal = $paciente->email ?? $request->email ?? ($request->n_doc . '@klyntic.local');
 
         // 4. Creamos el Usuario en MySQL
-        $user = User::create([
+        $user = Patient::create([
             'name' => $paciente->name,
             'surname' => $paciente->surname,
             'email' => $emailFinal,
@@ -185,7 +185,7 @@ class AuthController extends Controller
 
         // 5. Vinculamos la ficha médica con el nuevo usuario
         $paciente->update(['user_id' => $user->id]);
-        $user->assignRole(User::GUEST);
+        $user->assignRole(Patient::GUEST);
 
         // --- 🚀 CONEXIÓN EN TIEMPO REAL CON NODE.JS (MongoDB) ---
         // Extraemos el ID del doctor asignado. Si no tiene, por defecto dejamos vacío o un ID del sistema.
