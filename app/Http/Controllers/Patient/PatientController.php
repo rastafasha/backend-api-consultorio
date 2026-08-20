@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
@@ -245,70 +246,66 @@ class PatientController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
-        $patient_is_valid = Patient::where("n_doc", $request->n_doc)->first();
-
-        if ($patient_is_valid) {
-            return response()->json([
-                "message" => 403,
-                "message_text" => 'el paciente ya existe'
-            ]);
-        }
-
-        // if ($request->hasFile('imagen')) {
-        //     $path = Storage::putFile("patients", $request->file('imagen'));
-        //     $request->request->add(["avatar" => $path]);
-        // }
-        // 3. Procesamos el Avatar con Cloudinary (Compatible con v3)
-        if ($request->hasFile('imagen')) {
-            // Sube la imagen utilizando el uploadApi nativo del SDK
-            $cloudinaryResponse = Cloudinary::uploadApi()->upload(
-                $request->file('imagen')->getRealPath(),
-                ['folder' => 'klyntic/patients']
-            );
-
-            // Obtenemos la URL de manera directa desde el arreglo de respuesta
-            $path = $cloudinaryResponse['secure_url'];
-
-            $request->request->add(["avatar" => $path]);
-        }
-
-        if ($request->birth_date) {
-            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
-            $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
-        }
-
-        // 1. Guardamos la ficha del paciente
-        $patient = Patient::create($request->all());
-
-        // 2. Vinculamos al doctor logueado con el paciente
-        if (auth()->check()) {
-            $patient->doctors()->attach(auth()->id());
-        }
-
-        $request->request->add([
-            "patient_id" => $patient->id
-        ]);
-        PatientPerson::create($request->all());
-
-        if ($patient->email && !str_contains($patient->email, '@klyntic.local')) {
-            Mail::to($patient->email)->send(new NewPatientRegisterMail($patient));
-        }
-
-        // 🚀 --- LLAMADA INTERNA AL AUTH CONTROLLER ---
-        // Le pedimos a Laravel que resuelva el AuthController con todas sus dependencias
-        $authController = app(AuthController::class);
-
-        // Ejecutamos la función. Ella se encargará de crear el usuario y disparar el JSON a Node.js
-        $authController->registerPaciente($request);
-        // ----------------------------------------------
-
+   public function store(Request $request) 
+{
+    // 1. Validar que el paciente no exista
+    $patient_is_valid = Patient::where("n_doc", $request->n_doc)->first();
+    if ($patient_is_valid) {
         return response()->json([
-            "message" => 200,
-            "patient" => $patient
-        ]);
+            "message" => 403,
+            "message_text" => 'el paciente ya existe'
+        ], 403); // Es buena práctica pasar el código de estado HTTP real
     }
+
+    // 2. Procesar el Avatar con Cloudinary
+    if ($request->hasFile('imagen')) {
+        $cloudinaryResponse = Cloudinary::uploadApi()->upload(
+            $request->file('imagen')->getRealPath(), 
+            ['folder' => 'klyntic/patients']
+        );
+        $path = $cloudinaryResponse['secure_url'];
+        $request->merge(["avatar" => $path]); // Usa merge() en lugar de request->add()
+    }
+
+    // 3. Formatear fecha de nacimiento
+    if ($request->birth_date) {
+        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
+        $request->merge(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
+    }
+
+    // 4. Guardar la ficha del paciente
+    $patient = Patient::create($request->all());
+
+    // 5. Vincular al doctor logueado (Causa del error)
+    // Opción A: Si usas autenticación estándar de Laravel
+    $doctorId = auth()->id() ?? $request->doctor_id; 
+
+    if ($doctorId) {
+        $patient->doctors()->attach($doctorId);
+    } else {
+        // Log o manejo de error por si se intenta registrar sin doctor asignado
+        Log::warning("Paciente creado sin doctor asociado. Request data: " . json_serialize($request->all()));
+    }
+
+    // 6. Guardar datos complementarios
+    $request->merge(["patient_id" => $patient->id]);
+    PatientPerson::create($request->all());
+
+    // 7. Enviar correo electrónico
+    // if ($patient->email && !str_contains($patient->email, '@klyntic.local')) {
+    //     Mail::to($patient->email)->send(new NewPatientRegisterMail($patient));
+    // }
+
+    // 8. Llamada interna al Auth Controller
+    $authController = app(AuthController::class);
+    $authController->registerPaciente($request);
+
+    return response()->json([
+        "message" => 200,
+        "patient" => $patient
+    ]);
+}
+
 
 
 
