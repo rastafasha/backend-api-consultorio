@@ -38,7 +38,6 @@ class PatientResource extends JsonResource
             "fr" => $this->resource->fr,
             "peso" => $this->resource->peso,
             "talla" => $this->resource->talla,
-            "historia_enfermedad" => $this->resource->historia_enfermedad,
             "enfermedad_actual" => $this->resource->enfermedad_actual,
             "tratamiento" => $this->resource->tratamiento,
             "examen_fisico" => $this->resource->examen_fisico,

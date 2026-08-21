@@ -50,7 +50,6 @@ class Patient extends Authenticatable implements JWTSubject
         'mongo_user_id',
         
         'talla',
-        'historia_enfermedad',
         'enfermedad_actual',
         'tratamiento',
         'examen_fisico',

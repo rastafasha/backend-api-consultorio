@@ -297,8 +297,8 @@ class PatientController extends Controller
     // }
 
     // 8. Llamada interna al Auth Controller
-    $authController = app(AuthController::class);
-    $authController->registerPaciente($request);
+    // $authController = app(AuthController::class);
+    // $authController->registerPaciente($request);
 
     return response()->json([
         "message" => 200,
