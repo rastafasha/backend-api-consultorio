@@ -14,7 +14,7 @@ Route::get('appointments/byDoctor/{doctor_id}/', [AppointmentController::class, 
 
 Route::get('appointments/atendidas/', [AppointmentController::class, 'atendidas'])->name('appointment.atendidas');
 Route::get('appointments/pendientes', [AppointmentController::class, 'pendientes'])
-->name('appointment.pendientes');
+    ->name('appointment.pendientes');
 
 Route::get('appointments/show/{id}', [AppointmentController::class, 'show'])->name('appointment.show');
 Route::get('appointments/pendientesbydoctor/{doctor_id}', [AppointmentController::class, 'pagosPendientesShowId'])
@@ -39,5 +39,5 @@ Route::post('/appointment/{id}/cancel', [AppointmentController::class, 'cancelar
 // Rutas exclusivas para el Extractor Médico / Cron Job
 Route::get('/appointments/cron-pendientes', [AppointmentController::class, 'pendientesCron']);
 Route::post('/appointments/update-cron-state/{id}', [AppointmentController::class, 'updateCronState']);
-   
+
 

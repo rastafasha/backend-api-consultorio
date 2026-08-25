@@ -41,34 +41,9 @@ class Appointment extends Model
 
     ];
 
-    //notificaciones
+    public $incrementing = true;
+protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
 
-    // protected static function boot(){
-
-    //     parent::boot();
-
-    //     static::store(function($appointment){
-
-    //         // PaymentRegisterJob::dispatch(
-    //         //     $user
-    //         // )->onQueue("high");
-
-    //     Mail::to('mercadocreativo@gmail.com')->send(new NewAppointmentRegisterMail($appointment));
-
-    //     });
-    // }
-
-    public function setCreatedAtAttribute($value)
-    {
-        date_default_timezone_set('America/Caracas');
-        $this->attributes["created_at"] = Carbon::now();
-    }
-
-    public function setUpdatedAtAttribute($value)
-    {
-        date_default_timezone_set("America/Caracas");
-        $this->attributes["updated_at"] = Carbon::now();
-    }
 
     // relaciones
 
@@ -236,6 +211,23 @@ class Appointment extends Model
         return $query;
     }
 
+
+    //notificaciones
+
+    // protected static function boot(){
+
+    //     parent::boot();
+
+    //     static::store(function($appointment){
+
+    //         // PaymentRegisterJob::dispatch(
+    //         //     $user
+    //         // )->onQueue("high");
+
+    //     Mail::to('mercadocreativo@gmail.com')->send(new NewAppointmentRegisterMail($appointment));
+
+    //     });
+    // }
 
 
 }
