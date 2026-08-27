@@ -103,126 +103,148 @@ class DoctorController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function profile($id)
-    {
-        // if(!auth('api')->user()->can('profile_doctor')){
-        //     return response()->json(["message"=>"El usuario no esta autenticado"],403);
-        //    }
-        //con redis    
-        // $cachedRecord = Redis::get('profile_doctor_#'.$id);
-        // $data_doctor = [];
-        // if(isset($cachedRecord)) {
-        //     $data_doctor = json_decode($cachedRecord, FALSE);
-        // }else{
-        //     $user = User::findOrFail($id);
+{
+    // 1. Buscamos al usuario (médico) con sus horarios cargados de forma eficiente
+    $user = User::with(['schedule_days.schedule_hours.doctor_schedule_hour'])->findOrFail($id);
 
-        // $num_appointment = Appointment::where("doctor_id",$id)->count();
-        // $money_of_appointments = Appointment::where("doctor_id",$id)->sum("amount");
-        // $num_appointment_pendings = Appointment::where("doctor_id",$id)->where("status",1)->count();
-        // $appointment_pendings = Appointment::where("doctor_id",$id)->where("status",1)->get();
-        // $appointments = Appointment::where("doctor_id",$id)->get();
-        // $data_doctor = [
-        //     "num_appointment"=>$num_appointment,
-        //     "money_of_appointments"=> $money_of_appointments,
-        //     "num_appointment_pendings"=>$num_appointment_pendings,
-        //     "doctor" => UserResource::make($user),
-        //     "appointment_pendings"=> AppointmentCollection::make($appointment_pendings),
-        //     "appointments"=>$appointments->map(function($appointment){
-        //         return [
-        //             "id"=> $appointment->id,
-        //             "patient"=> [
-        //                 "id"=> $appointment->patient->id,
-        //                 "full_name"=> $appointment->patient->name.' '.$appointment->patient->surname,
-        //                 "avatar"=> $appointment->patient->avatar ? env("APP_URL")."storage/".$appointment->patient->avatar : 'https://cdn-icons-png.flaticon.com/512/1430/1430453.png',
-        //             ],
-        //             "doctor"=> [
-        //                 "id"=> $appointment->doctor->id,
-        //                 "full_name"=> $appointment->doctor->name.' '.$appointment->doctor->surname,
-        //                 "avatar"=> $appointment->doctor->avatar ? env("APP_URL")."storage/".$appointment->doctor->avatar : NULL,
-        //             ],
-        //             "date_appointment" =>$appointment->date_appointment,
-        //             "date_appointment_format" =>Carbon::parse($appointment->date_appointment)->format("d M Y"),
-        //             "format_hour_start" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A") ,
-        //             "format_hour_end" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
-        //             "appointment_attention"=> $appointment->attention ?[
-        //                 "id"=>$appointment->attention->id,
-        //                 "description"=>$appointment->attention->description,
-        //                 "receta_medica"=>$appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
-        //                 "created_at" => $appointment->attention->created_at->format("Y-m-d h:i A"),
-        //             ]: NULL,
-        //             "amount" =>$appointment->amount,
-        //             "status_pay" =>$appointment->status_pay,
-        //             "status" =>$appointment->status,
-        //         ];
-        //     }),
-        // ];
+    // 2. Filtros base seguros: Excluimos citas eliminadas lógicamente
+    $baseAppointmentQuery = Appointment::where("doctor_id", $id)->whereNull("deleted_at");
 
-        //     Redis::set('profile_doctor_#'.$id, json_encode($data_doctor),'EX', 3600);
-        // }
-        //con redis    
-        //sin redis   
-        $data_doctor = [];
-        $user = User::with(['schedule_days.schedule_hours.doctor_schedule_hour'])->findOrFail($id);
+    // 3. Totales rápidos calculados directamente en la Base de Datos (Muy veloz)
+    $num_appointment = (clone $baseAppointmentQuery)->count();
+    $money_of_appointments = (clone $baseAppointmentQuery)->sum("amount");
+    
+    // Contadores para citas pendientes (status = 1)
+    $num_appointment_pendings = (clone $baseAppointmentQuery)->where("status", 1)->count();
+    
+    // Paginación para la lista de pendientes (Evita sobrecargar el servidor)
+    $appointment_pendings = (clone $baseAppointmentQuery)
+        ->where("status", 1)
+        ->paginate(10);
 
-        $num_appointment = Appointment::where("doctor_id", $id)->count();
-        $money_of_appointments = Appointment::where("doctor_id", $id)->sum("amount");
-        $num_appointment_pendings = Appointment::where("doctor_id", $id)->where("status", 1)->count();
-        $appointment_pendings = Appointment::where("doctor_id", $id)
-            ->where("status", 1)
-            ->paginate(10);
-        $appointments = Appointment::where("doctor_id", $id)->get();
-        $data_doctor = [
-            "num_appointment" => $num_appointment,
-            "money_of_appointments" => $money_of_appointments,
-            "num_appointment_pendings" => $num_appointment_pendings,
-            "doctor" => UserResource::make($user),
-            "appointment_pendings" => AppointmentCollection::make($appointment_pendings),
-            "schedule_selecteds" => $user->schedule_days->flatMap(function ($day) {
-                return $day->schedule_hours->map(function ($pivot) use ($day) {
-                    return [
-                        "day_name" => $day->day,
-                        "item" => [
-                            "id" => $pivot->doctor_schedule_hour_id,
-                            "hour_start" => optional($pivot->doctor_schedule_hour)->hour_start,
-                            "hour_end" => optional($pivot->doctor_schedule_hour)->hour_end,
-                        ]
-                    ];
-                });
-            })->unique(function ($item) {
-                // Esto asegura que la combinación Día + ID de Hora sea única
-                return $item['day_name'] . $item['item']['id'];
-            })->values(), // values() resetea los índices del array para que Angular no reciba un objeto
-            "appointments" => $appointments->map(function ($appointment) {
+    // 4. 🚀 SOLUCIÓN AL PROBLEMA N+1 (Eager Loading)
+    // Traemos las relaciones del Paciente, Doctor y Atención Médica en UNA SOLA consulta masiva.
+    // Además limitamos a las últimas 100 citas para no congelar Angular, o puedes usar paginación.
+    $appointments = (clone $baseAppointmentQuery)
+        ->with(['patient', 'doctor', 'attention']) 
+        ->orderBy('date_appointment', 'desc')
+        ->limit(100) 
+        ->get();
+
+    $data_doctor = [
+        "num_appointment" => $num_appointment,
+        "money_of_appointments" => $money_of_appointments,
+        "num_appointment_pendings" => $num_appointment_pendings,
+        "doctor" => UserResource::make($user),
+        "appointment_pendings" => AppointmentCollection::make($appointment_pendings),
+        
+        // Mapeo limpio de horarios
+        "schedule_selecteds" => $user->schedule_days->flatMap(function ($day) {
+            return $day->schedule_hours->map(function ($pivot) use ($day) {
                 return [
-                    "id" => $appointment->id,
-                    "patient" => [
-                        "id" => $appointment->patient->id,
-                        "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
-                        "avatar" => $appointment->patient->avatar ? env("APP_URL") . "storage/" . $appointment->patient->avatar : 'https://cdn-icons-png.flaticon.com/512/1430/1430453.png',
+                    "day_name" => $day->day,
+                    "item" => [
+                        "id" => $pivot->doctor_schedule_hour_id,
+                        "hour_start" => optional($pivot->doctor_schedule_hour)->hour_start,
+                        "hour_end" => optional($pivot->doctor_schedule_hour)->hour_end,
+                    ]
+                ];
+            });
+        })->unique(function ($item) {
+            return $item['day_name'] . $item['item']['id'];
+        })->values(),
+
+        // Mapeo ultra optimizado de citas en memoria
+        "appointments" => $appointments->map(function ($appointment) {
+            return [
+                "id" => $appointment->id,
+                "patient" => [
+                    "id" => optional($appointment->patient)->id,
+                    "full_name" => $appointment->patient ? ($appointment->patient->name . ' ' . $appointment->patient->surname) : 'Paciente No Encontrado',
+                    "avatar" => optional($appointment->patient)->avatar ? env("APP_URL") . "storage/" . $appointment->patient->avatar : 'https://cdn-icons-png.flaticon.com/512/1430/1430453.png',
+                ],
+                "doctor" => [
+                    "id" => optional($appointment->doctor)->id,
+                    "full_name" => $appointment->doctor ? ($appointment->doctor->name . ' ' . $appointment->doctor->surname) : 'Médico No Encontrado',
+                    "avatar" => optional($appointment->doctor)->avatar ? env("APP_URL") . "storage/" . $appointment->doctor->avatar : NULL,
+                ],
+                "date_appointment" => $appointment->date_appointment,
+                "date_appointment_format" => $appointment->date_appointment ? Carbon::parse($appointment->date_appointment)->format("d M Y") : 'Sin fecha',
+                
+                "appointment_attention" => $appointment->attention ? [
+                    "id" => $appointment->attention->id,
+                    "description" => $appointment->attention->description,
+                    "receta_medica" => $appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
+                    "created_at" => $appointment->attention->created_at ? $appointment->attention->created_at->format("Y-m-d h:i A") : null,
+                ] : NULL,
+                
+                "amount" => $appointment->amount,
+                "status_pay" => $appointment->status_pay,
+                "status" => $appointment->status,
+            ];
+        }),
+    ];
+
+    return response()->json($data_doctor);
+}
+
+
+    public function profileRedis($id)
+    {
+        if(!auth('api')->user()->can('profile_doctor')){
+            return response()->json(["message"=>"El usuario no esta autenticado"],403);
+           }  
+        $cachedRecord = Redis::get('profile_doctor_#'.$id);
+        $data_doctor = [];
+        if(isset($cachedRecord)) {
+            $data_doctor = json_decode($cachedRecord, FALSE);
+        }else{
+            $user = User::findOrFail($id);
+
+        $num_appointment = Appointment::where("doctor_id",$id)->count();
+        $money_of_appointments = Appointment::where("doctor_id",$id)->sum("amount");
+        $num_appointment_pendings = Appointment::where("doctor_id",$id)->where("status",1)->count();
+        $appointment_pendings = Appointment::where("doctor_id",$id)->where("status",1)->get();
+        $appointments = Appointment::where("doctor_id",$id)->get();
+        $data_doctor = [
+            "num_appointment"=>$num_appointment,
+            "money_of_appointments"=> $money_of_appointments,
+            "num_appointment_pendings"=>$num_appointment_pendings,
+            "doctor" => UserResource::make($user),
+            "appointment_pendings"=> AppointmentCollection::make($appointment_pendings),
+            "appointments"=>$appointments->map(function($appointment){
+                return [
+                    "id"=> $appointment->id,
+                    "patient"=> [
+                        "id"=> $appointment->patient->id,
+                        "full_name"=> $appointment->patient->name.' '.$appointment->patient->surname,
+                        "avatar"=> $appointment->patient->avatar ? env("APP_URL")."storage/".$appointment->patient->avatar : 'https://cdn-icons-png.flaticon.com/512/1430/1430453.png',
                     ],
-                    "doctor" => [
-                        "id" => $appointment->doctor->id,
-                        "full_name" => $appointment->doctor->name . ' ' . $appointment->doctor->surname,
-                        "avatar" => $appointment->doctor->avatar ? env("APP_URL") . "storage/" . $appointment->doctor->avatar : NULL,
+                    "doctor"=> [
+                        "id"=> $appointment->doctor->id,
+                        "full_name"=> $appointment->doctor->name.' '.$appointment->doctor->surname,
+                        "avatar"=> $appointment->doctor->avatar ? env("APP_URL")."storage/".$appointment->doctor->avatar : NULL,
                     ],
-                    "date_appointment" => $appointment->date_appointment,
-                    "date_appointment_format" => Carbon::parse($appointment->date_appointment)->format("d M Y"),
-                    // "format_hour_start" => Carbon::parse(date("Y-m-d") . ' ' . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A"),
-                    // "format_hour_end" => Carbon::parse(date("Y-m-d") . ' ' . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
-                    "appointment_attention" => $appointment->attention ? [
-                        "id" => $appointment->attention->id,
-                        "description" => $appointment->attention->description,
-                        "receta_medica" => $appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
+                    "date_appointment" =>$appointment->date_appointment,
+                    "date_appointment_format" =>Carbon::parse($appointment->date_appointment)->format("d M Y"),
+                    "format_hour_start" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A") ,
+                    "format_hour_end" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
+                    "appointment_attention"=> $appointment->attention ?[
+                        "id"=>$appointment->attention->id,
+                        "description"=>$appointment->attention->description,
+                        "receta_medica"=>$appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
                         "created_at" => $appointment->attention->created_at->format("Y-m-d h:i A"),
-                    ] : NULL,
-                    "amount" => $appointment->amount,
-                    "status_pay" => $appointment->status_pay,
-                    "status" => $appointment->status,
+                    ]: NULL,
+                    "amount" =>$appointment->amount,
+                    "status_pay" =>$appointment->status_pay,
+                    "status" =>$appointment->status,
                 ];
             }),
         ];
 
-        //sin redis    
-
+            Redis::set('profile_doctor_#'.$id, json_encode($data_doctor),'EX', 3600);
+        }
+       
         return response()->json($data_doctor);
     }
 
