@@ -91,6 +91,7 @@ class AppointmentAttentionController extends Controller
         $appointment = Appointment::create([
             "doctor_id" => $request->doctor_id,                     // ID 11 (Sí existe en users)
             'patient_id' => $patient->id,                           // ID 29 (Existe en patients)
+                                      // ID 29 (Existe en patients)
             "date_appointment" => Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s"), // 'H' mayúscula para formato 24h
             "date_attention" => Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s"),
             "speciality_id" => $request->speciality_id,
@@ -100,7 +101,7 @@ class AppointmentAttentionController extends Controller
             // Si tienes un usuario logueado en el sistema (ej. recepcionista), usa auth()->id(). 
             // Si no hay login, usamos el ID del doctor ($request->doctor_id) para no romper la base de datos.
             // "user_id" => auth()->id() ?? $request->doctor_id,
-
+            
             "amount" => $request->amount,
             "status_pay" => $request->amount != $request->amount_add ? 2 : 1,
         ]);
@@ -120,7 +121,7 @@ class AppointmentAttentionController extends Controller
         AppointmentAttention::create($attentionData);
 
         date_default_timezone_set('America/Caracas');
-        $appointment->update(["status" => 2, "date_attention" => now()]);
+        $appointment->update(["status" => 1, "date_attention" => now()]);
 
         AppointmentPay::create([
             "appointment_id" => $appointment->id,
