@@ -386,8 +386,6 @@ class DoctorController extends Controller
 
         $user = User::findOrFail($id);
 
-
-
         //upload a cloudinary
         if ($request->hasFile('imagen')) {
             // 1. Si el usuario ya tiene un avatar en Cloudinary, lo borramos de la nube
@@ -494,6 +492,28 @@ class DoctorController extends Controller
             DoctorScheduleDay::where('user_id', $user->id)
                 ->doesntHave('schedule_hours')
                 ->delete();
+        }
+
+        // =========================================================================
+        // 🔒 ACTIVACIÓN AUTOMÁTICA CON ENVÍO DE CORREO (Modo CEO Exclusivo)
+        // =========================================================================
+        $user->refresh();
+        $tiene_agenda = DoctorScheduleDay::where('user_id', $user->id)->exists();
+
+        // Evaluamos si el médico configuró su horario y su estado es "inactivo" (asumiendo que 1 es inactivo y 2 es activo)
+        if ($tiene_agenda && $user->status != 2) {
+            $user->update([
+                'status' => 2, // Activamos la cuenta automáticamente
+                'trial_ends_at' => now()->addDays(7) // Inyectamos 7 días de prueba gratis
+            ]);
+
+            // 🚀 DISPARAMOS EL CORREO AUTOMÁTICO AL DOCTOR INMEDIATAMENTE
+            try {
+                Mail::to($user->email)->send(new UpdateStatusMail($user));
+                \Log::info("📧 Correo de bienvenida enviado al Médico ID {$user->id}");
+            } catch (\Exception $e) {
+                \Log::error("❌ No se pudo enviar el correo de activación: " . $e->getMessage());
+            }
         }
 
 
