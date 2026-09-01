@@ -17,6 +17,7 @@ use App\Services\NotificacionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 
 class PresupuestoController extends Controller
 {
@@ -280,23 +281,45 @@ class PresupuestoController extends Controller
         ]);
     }
 
-    public function presupuestoByDoctor(Request $request, $doctor_id)
-    {
-        $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        if (!$doctor_is_valid) {
-            return response()->json([
-                "message" => '403',
-            ]);
-        }
-        $presupuestos = Presupuesto::where('doctor_id', $doctor_id)->get();
-
-
+   public function presupuestoByDoctor(Request $request, $doctor_id)
+{
+    // 1. Validación rápida de existencia del doctor (Cambiado a exists para no traer todo el objeto a memoria)
+    $doctor_exists = User::where("id", $doctor_id)->exists();
+    if (!$doctor_exists) {
         return response()->json([
-            // "presupuestos"=> $presupuestos,
-            "presupuestos" => PresupuestoCollection::make($presupuestos)
-            // "total"=>$appointments->total(),
-        ]);
+            "message" => '403',
+        ], 403);
     }
+
+    // 2. Manejo de paginación dinámica (por defecto 10 elementos por página)
+    $page = $request->input('page', 1);
+    $perPage = $request->input('per_page', 10);
+
+    // Generamos una clave única en Redis combinando el ID del doctor y la página actual
+    $cacheKey = "presupuestos:doctor:{$doctor_id}:page:{$page}:limit:{$perPage}";
+
+    // Guardamos la consulta paginada en Redis por 3 minutos (180 segundos)
+    $data = Cache::remember($cacheKey, 180, function () use ($doctor_id, $perPage) {
+        
+        // CORRECCIÓN N+1: Añade en ->with() las relaciones que use tu PresupuestoCollection 
+        // (ejemplo: 'patient', 'items'). Esto reduce 100 queries a solo 2.
+        $presupuestos = Presupuesto::with(['patient']) 
+            ->where('doctor_id', $doctor_id)
+            ->orderBy('id', 'desc') // Siempre los más recientes primero
+            ->paginate($perPage);
+
+        return [
+            "presupuestos" => PresupuestoCollection::make($presupuestos)->resolve(),
+            "meta" => [
+                "current_page" => $presupuestos->currentPage(),
+                "last_page" => $presupuestos->lastPage(),
+                "total" => $presupuestos->total(),
+            ]
+        ];
+    });
+
+    return response()->json($data);
+}
 
     public function bypatient(Request $request, $n_doc)
     {

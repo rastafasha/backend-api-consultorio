@@ -46,29 +46,41 @@ class AppointmentController extends Controller
     }
 
     public function appointmentByDoctor(Request $request, $doctor_id)
-    {
-        $search_doctor = $request->search_doctor;
-        $search_patient = $request->search_patient;
-        $search = $request->search;
-        $date = $request->date;
+{
+    $search_doctor = $request->search_doctor;
+    $search_patient = $request->search_patient;
+    $search = $request->search;
+    $date = $request->date;
+    $page = $request->input('page', 1); // Capturamos la página actual para la caché
 
-        // Ejecutamos el filtro avanzado y añadimos el Eager Loading de la dirección del consultorio
+    // Generamos un hash único basado en los criterios de búsqueda y la página
+    // Esto evita que una búsqueda pise la caché de otra.
+    $filterHash = md5(json_encode([$search_doctor, $search_patient, $search, $date, $page]));
+    $cacheKey = "appointments:doctor:{$doctor_id}:filters:{$filterHash}";
+
+    // Guardamos el resultado en Redis por 3 minutos (180 segundos)
+    // Es un tiempo corto ideal para datos que cambian constantemente en recepción
+    $data = Cache::remember($cacheKey, 180, function () use ($doctor_id, $search_doctor, $search_patient, $date, $search) {
+        
         $appointments = Appointment::filterAdvanceDoc($search_doctor, $search_patient, $date, $search)
             ->where('doctor_id', $doctor_id)
             ->with([
                 'patient',
                 'speciality',
                 'doctor_schedule_join_hour.doctor_schedule_hour',
-                'doctor_schedule_join_hour.doctor_schedule_day.doctor_address' // <-- CARGA LA DIRECCIÓN AQUÍ
+                'doctor_schedule_join_hour.doctor_schedule_day.doctor_address'
             ])
             ->orderBy("id", "desc")
             ->paginate(10);
 
-        return response()->json([
+        return [
             "total" => $appointments->total(),
-            "appointments" => AppointmentCollection::make($appointments)
-        ]);
-    }
+            "appointments" => AppointmentCollection::make($appointments)->resolve()
+        ];
+    });
+
+    return response()->json($data);
+}
 
 
 
@@ -377,22 +389,22 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function appointmensByDoctor(Request $request, $doctor_id)
-    {
+    // public function appointmensByDoctor(Request $request, $doctor_id)
+    // {
 
-        $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        $appointments = Appointment::where('doctor_id', $doctor_id)
-            ->where('status', 1) // o el estado de pendiente
-            ->get();
+    //     $doctor_is_valid = User::where("id", $request->doctor_id)->first();
+    //     $appointments = Appointment::where('doctor_id', $doctor_id)
+    //         ->where('status', 1) // o el estado de pendiente
+    //         ->get();
 
-        return response()->json([
-            // "patients"=> $patients,
-            "appointmens" => $appointments,
-            "total" => $appointments->total(),
-            // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
-        ]);
+    //     return response()->json([
+    //         // "patients"=> $patients,
+    //         "appointmens" => $appointments,
+    //         "total" => $appointments->total(),
+    //         // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
+    //     ]);
 
-    }
+    // }
 
     /**
      * Store a newly created resource in storage.

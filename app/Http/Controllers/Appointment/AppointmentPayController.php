@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment\Appointment;
 use App\Models\Appointment\AppointmentPay;
 use App\Http\Resources\Appointment\Pay\AppointmentPayCollection;
+use Illuminate\Support\Facades\Cache;
 
 class AppointmentPayController extends Controller
 {
@@ -35,32 +36,42 @@ class AppointmentPayController extends Controller
 
     }
 
-    public function paymentsByDoctor(Request $request, $doctor_id)
-    {
+   public function paymentsByDoctor(Request $request, $doctor_id)
+{
+    $search_doctor = $request->search_doctor;
+    $search_patient = $request->search_patient;
+    $date_start = $request->date_start;
+    $date_end = $request->date_end;
+    $page = $request->input('page', 1); // Capturamos la página para la caché
 
-        
-        $search_doctor = $request->search_doctor;
-        $search_patient = $request->search_patient;
-        $date_start = $request->date_start;
-        $date_end = $request->date_end;
-        
-        $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        // $patients = Patient::Where('doctor_id', $doctor_id)
-
-        $appointmentpays = Appointment::filterAdvanceDoctorPay( $search_doctor, $search_patient,
-        $date_start,$date_end)
-        ->Where('doctor_id', $doctor_id)
-        ->orderBy("id", "desc")
-        ->paginate(10);
-
-        return response()->json([
-            "total"=>$appointmentpays->total(),
-            "appointmentpays"=> AppointmentPayCollection::make($appointmentpays)
-        ]);
-
-        
-
+    // 1. Validación rápida y corregida con la variable correcta ($doctor_id)
+    $doctor_exists = User::where("id", $doctor_id)->exists();
+    if (!$doctor_exists) {
+        return response()->json(["message" => "Doctor no encontrado"], 404);
     }
+
+    // 2. Hash dinámico para que los filtros de fechas y búsquedas no se pisen en Redis
+    $filterHash = md5(json_encode([$search_doctor, $search_patient, $date_start, $date_end, $page]));
+    $cacheKey = "payments:doctor:{$doctor_id}:filters:{$filterHash}";
+
+    // Guardamos en caché por 3 minutos (180 segundos)
+    $data = Cache::remember($cacheKey, 180, function () use ($doctor_id, $search_doctor, $search_patient, $date_start, $date_end) {
+        
+        // CORRECCIÓN N+1: Añadimos ->with() con las relaciones típicas de cobros (patient)
+        $appointmentpays = Appointment::filterAdvanceDoctorPay($search_doctor, $search_patient, $date_start, $date_end)
+            ->where('doctor_id', $doctor_id)
+            ->with(['patient']) // <-- Evita el colapso de consultas relacionales
+            ->orderBy("id", "desc")
+            ->paginate(10);
+
+        return [
+            "total" => $appointmentpays->total(),
+            "appointmentpays" => AppointmentPayCollection::make($appointmentpays)->resolve()
+        ];
+    });
+
+    return response()->json($data);
+}
 
     /**
      * Store a newly created resource in storage.

@@ -62,18 +62,28 @@ class AdminPaymentController extends Controller
     }
 
     public function paymentsByDoctor(Request $request, $doctor_id)
-    {
+{
+    $search_doctor = $request->search_doctor;
+    $search_patient = $request->search_patient;
+    $date_start = $request->date_start;
+    $date_end = $request->date_end;
+    $search_referencia = $request->search_referencia;
+    $page = $request->input('page', 1); // Capturamos la página para la caché
 
-        $search_doctor = $request->search_doctor;
-        $search_patient = $request->search_patient;
-        $date_start = $request->date_start;
-        $date_end = $request->date_end;
-        $search_referencia = $request->search_referencia;
+    // 1. Validación rápida y corregida con la variable de la ruta ($doctor_id)
+    $doctor_exists = User::where("id", $doctor_id)->exists();
+    if (!$doctor_exists) {
+        return response()->json(["message" => "Doctor no encontrado"], 404);
+    }
 
+    // 2. Hash dinámico para que las búsquedas por referencia o fechas no se pisen en Redis
+    $filterHash = md5(json_encode([$search_doctor, $search_patient, $date_start, $date_end, $search_referencia, $page]));
+    $cacheKey = "payments_records:doctor:{$doctor_id}:filters:{$filterHash}";
 
-        $doctor_is_valid = User::where("id", $request->doctor_id)->first();
-        // $patients = Patient::Where('doctor_id', $doctor_id)
-
+    // Guardamos en caché por 3 minutos (180 segundos)
+    $data = Cache::remember($cacheKey, 180, function () use ($doctor_id, $search_doctor, $search_patient, $date_start, $date_end, $search_referencia) {
+        
+        // CORRECCIÓN N+1: Cargamos previamente las relaciones de la cita y el paciente
         $payments = Payment::filterAdvancePaymentDoctor(
             $search_doctor,
             $search_patient,
@@ -81,16 +91,19 @@ class AdminPaymentController extends Controller
             $date_end,
             $search_referencia
         )
-            ->Where('doctor_id', $doctor_id)
-            ->orderBy("id", "desc")
-            ->paginate(10);
+        ->where('doctor_id', $doctor_id)
+        ->with(['patient', 'appointment']) // <-- Evita docenas de mini-queries a MySQL
+        ->orderBy("id", "desc")
+        ->paginate(10);
 
-        return response()->json([
+        return [
             "total" => $payments->total(),
-            "payments" => PaymentCollection::make($payments)
-        ]);
+            "payments" => PaymentCollection::make($payments)->resolve()
+        ];
+    });
 
-    }
+    return response()->json($data);
+}
 
 
     /**
