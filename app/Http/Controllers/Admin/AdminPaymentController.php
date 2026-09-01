@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class AdminPaymentController extends Controller
 {
@@ -99,72 +100,68 @@ class AdminPaymentController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function paymentStore(Request $request)
-    {
-        //reviso si viene el id del appointment
-        $appointment = Appointment::
-            where("id", $request->appointment_id)
-            ->first();
-        if (!$appointment) {
-            return response()->json(['message' => 'Appointment not found.'], 404);
-        }
+{
+    // Buscamos el appointment de forma segura
+    $appointment = Appointment::where("id", $request->appointment_id)->first();
+    if (!$appointment) {
+        return response()->json(['message' => 'Appointment not found.'], 404);
+    }
 
-        // if ($request->hasFile('image')) {
-        //     $path = Storage::putFile("payments", $request->file('image'));
-        //     $request->request->add(["image" => $path]);
-        // }
+    // Inicializamos la variable en null por seguridad si no viene imagen
+    $path = null;
 
-        // 3. Procesamos el Avatar con Cloudinary (Compatible con v3)
-        if ($request->hasFile('imagen')) {
-            // Sube la imagen utilizando el uploadApi nativo del SDK
-            $cloudinaryResponse = Cloudinary::uploadApi()->upload(
-                $request->file('imagen')->getRealPath(),
-                ['folder' => 'klyntic/payments']
-            );
-
-            // Obtenemos la URL de manera directa desde el arreglo de respuesta
-            $path = $cloudinaryResponse['secure_url'];
-
-            $request->request->add(["avatar" => $path]);
-        }
-
-
-        $payment = Payment::create([
-            "patient_id" => $request->patient_id,
-            "doctor_id" => $request->doctor_id,
-            "appointment_id" => $request->appointment_id,
-            "nombre" => $request->nombre,
-            "monto" => $request->monto,
-            "email" => $request->email,
-            "bank_name" => $request->bank_name,
-            "metodo" => $request->metodo,
-            "referencia" => $request->referencia,
-            "status" => $request->status,
-            "tasabcv" => $request->tasabcv,
-            "image" => $path,
-            // "status_pay" =>$request->amount != $request->amount_add ? 2 : 1,
-        ]);
-        //envio de correo al doctor
-        // Mail::to($appointment->doctor->email)->send(new NewPaymentRegisterMail($payment));
-
-        // =========================================================================
-        // 🧪 VENENO INYECTADO: ALERTA DE PAGO REPORTADO AL MÉDICO (KLYNTIC)
-        // =========================================================================
-        NotificacionService::enviar(
-            $payment->doctor_id,                                                  // Consultorio ID para mapeo interno
-            null,                                                                 // Teléfono null porque al médico no le enviamos WhatsApp por esto
-            "El paciente " . $payment->nombre . " ha reportado un pago de $" . $payment->monto . " (Ref: " . $payment->referencia . ") para su cita.",
-            $payment->doctor_id,                                                  // ID del médico para encender su campana en el CRM
-            'MEDICO',                                                             // Rol destinatario
-            '💰 Nuevo Pago por Verificar',                                        // Título del Toastr
-            'PAGO_RECIBIDO',                                                      // Enum tipo
-            $payment->id                                                          // ID del pago en MySQL como referencia
+    // Procesamos la imagen con Cloudinary
+    if ($request->hasFile('imagen')) {
+        $cloudinaryResponse = Cloudinary::uploadApi()->upload(
+            $request->file('imagen')->getRealPath(),
+            ['folder' => 'klyntic/payments']
         );
 
-        return response()->json([
-            "message" => 200,
-            "payment" => $payment,
-        ]);
+        $path = $cloudinaryResponse['secure_url'];
+        $request->request->add(["avatar" => $path]);
     }
+
+    $payment = Payment::create([
+        "patient_id" => $request->patient_id,
+        "doctor_id" => $request->doctor_id,
+        "appointment_id" => $request->appointment_id,
+        "nombre" => $request->nombre,
+        "monto" => $request->monto,
+        "email" => $request->email,
+        "bank_name" => $request->bank_name,
+        "metodo" => $request->metodo,
+        "referencia" => $request->referencia,
+        "status" => $request->status,
+        "tasabcv" => $request->tasabcv,
+        "image" => $path,
+    ]);
+
+    // =========================================================================
+    // ⚡ LIMPIEZA DE CACHÉ EN REDIS (Actualización Contable del Médico)
+    // =========================================================================
+    // Borramos los dashboards para que el nuevo balance en dólares y la lista 
+    // de pagos recientes se calculen al instante en la pantalla del doctor.
+    $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
+    Cache::forget("dashboard:doctor:{$payment->doctor_id}");
+    Cache::forget("dashboard:doctor:{$payment->doctor_id}:year:{$year_current}");
+
+    // Notificación en el CRM del médico
+    NotificacionService::enviar(
+        $payment->doctor_id,
+        null,
+        "El paciente " . $payment->nombre . " ha reportado un pago de $" . $payment->monto . " (Ref: " . $payment->referencia . ") para su cita.",
+        $payment->doctor_id,
+        'MEDICO',
+        '💰 Nuevo Pago por Verificar',
+        'PAGO_RECIBIDO',
+        $payment->id
+    );
+
+    return response()->json([
+        "message" => 200,
+        "payment" => $payment,
+    ]);
+}
 
     /**
      * Display the specified resource.

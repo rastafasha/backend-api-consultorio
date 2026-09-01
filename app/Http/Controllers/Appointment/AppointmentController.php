@@ -21,6 +21,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 
 class AppointmentController extends Controller
 {
@@ -400,101 +401,105 @@ class AppointmentController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
-    {
+{
+    $patient = Patient::where("n_doc", $request->n_doc)->first();
+    $doctor = User::findOrFail($request->doctor_id); // Cambiado a findOrFail por seguridad
 
-        $patient = null;
-        $patient = Patient::where("n_doc", $request->n_doc)->first();
-        $doctor = User::where("id", $request->doctor_id)->first();
-
-        if (!$patient) {
-            $patient = Patient::create([
-                "name" => $request->name,
-                "surname" => $request->surname,
-                "email" => $request->email,
-                "n_doc" => $request->n_doc,
-                "phone" => $request->phone,
-            ]);
-            PatientPerson::create([
-                'patient_id' => $patient->id,
-                'name_companion' => $request->name_companion,
-                'surname_companion' => $request->surname_companion,
-            ]);
-        } else {
+    if (!$patient) {
+        $patient = Patient::create([
+            "name" => $request->name,
+            "surname" => $request->surname,
+            "email" => $request->email,
+            "n_doc" => $request->n_doc,
+            "phone" => $request->phone,
+        ]);
+        PatientPerson::create([
+            'patient_id' => $patient->id,
+            'name_companion' => $request->name_companion,
+            'surname_companion' => $request->surname_companion,
+        ]);
+    } else {
+        // Asegúrate de que existe la relación para evitar errores
+        if ($patient->person) {
             $patient->person->update([
                 'name_companion' => $request->name_companion,
                 'surname_companion' => $request->surname_companion,
             ]);
         }
+    }
 
-        $appointment = Appointment::create([
-            "doctor_id" => $request->doctor_id,
-            'patient_id' => $patient->id,
-            "date_appointment" => Carbon::parse($request->date_appointment)->format("Y-m-d h:i:s"),
-            "speciality_id" => $request->speciality_id,
-            "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
-            // Si auth()->id() es null, podrías asignar el user_id del doctor o el del paciente
-            'user_id' => auth()->id() ?? $doctor->id,
-            "amount" => $request->amount,
-            "status_pay" => $request->status_pay,
-            "status" => $request->status,
-        ]);
-        if ($request->status_pay === 1) {
-            AppointmentPay::create([
-                "appointment_id" => $appointment->id,
-                "amount" => $request->amount_add,
-                "method_payment" => $request->method_payment,
-                "status_pay" => 1,
-            ]);
-        }
+    // CORRECCIÓN CRÍTICA: "H" mayúscula para formato de 24 horas
+    $date_formatted = Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s");
 
+    $appointment = Appointment::create([
+        "doctor_id" => $request->doctor_id,
+        'patient_id' => $patient->id,
+        "date_appointment" => $date_formatted,
+        "speciality_id" => $request->speciality_id,
+        "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
+        'user_id' => auth()->id() ?? $doctor->id,
+        "amount" => $request->amount,
+        "status_pay" => $request->status_pay,
+        "status" => $request->status,
+    ]);
 
-
-        // Mail::to($appointment->patient->email)->send(new RegisterAppointment($appointment));
-        // Mail::to($doctor->email)->send(new NewAppointmentRegisterMail($appointment));
-        // NewAppointmentRegisterJob::dispatch($appointment)->onQueue('emails');
-
-        // =========================================================================
-        // 🧪 VENENO INYECTADO: ÚNICAMENTE SE NOTIFICA AL MÉDICO (KLYNTIC)
-        // =========================================================================
-
-        // El paciente va a su listado por flujo de Angular. Solo avisamos al Médico.
-        NotificacionService::enviar(
-            $appointment->doctor_id,
-            null, // No WhatsApp
-            "Tienes un nuevo paciente agendado para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-            $appointment->doctor_id,
-            'MEDICO',
-            '📅 Nueva Cita Agendada',
-            'CONSULTA_NUEVA', // Tu enum corregido
-            $appointment->id
-        );
-
-
-
-        return response()->json([
-            "message" => 200,
-            "appointment" => $appointment,
-            "amount" => $request->amount,
-            "paymentmethod" => $request->method_payment,
-            "amountadd" => $request->amount_add,
-            "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-            "patient" => $appointment->patient_id ? [
-                "id" => $appointment->patient->id,
-                "email" => $appointment->patient->email,
-                "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
-            ] : NULL,
-            "speciality" => $appointment->speciality ? [ // Dejamos solo la versión formateada limpia
-                "id" => $appointment->speciality->id,
-                "name" => $appointment->speciality->name,
-            ] : NULL,
-            "doctor_id" => $appointment->doctor_id,
-            "doctor" => $appointment->doctor_id ? [
-                "id" => $doctor->id,
-                "email" => $doctor->email,
-                "full_name" => $doctor->name . ' ' . $doctor->surname,
-            ] : NULL,
+    if ($request->status_pay === 1) {
+        AppointmentPay::create([
+            "appointment_id" => $appointment->id,
+            "amount" => $request->amount_add,
+            "method_payment" => $request->method_payment,
+            "status_pay" => 1,
         ]);
     }
+
+    // Carga previa de relaciones para evitar queries extra en la respuesta json
+    $appointment->load(['patient', 'speciality']);
+
+    // =========================================================================
+    // ⚡ LIMPIEZA DE CACHÉ EN REDIS (El truco de Klyntic)
+    // =========================================================================
+    // Al eliminar estas llaves, obligamos a los dashboards del médico a recargarse
+    // con la data real en su próximo clic, garantizando tiempo real exacto.
+    $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}");
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}:year:{$year_current}");
+
+    // Notificación en segundo plano al Médico
+    NotificacionService::enviar(
+        $appointment->doctor_id,
+        null,
+        "Tienes un nuevo paciente agendado para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
+        $appointment->doctor_id,
+        'MEDICO',
+        '📅 Nueva Cita Agendada',
+        'CONSULTA_NUEVA',
+        $appointment->id
+    );
+
+    return response()->json([
+        "message" => 200,
+        "appointment" => $appointment,
+        "amount" => $request->amount,
+        "paymentmethod" => $request->method_payment,
+        "amountadd" => $request->amount_add,
+        "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
+        "patient" => [
+            "id" => $appointment->patient->id,
+            "email" => $appointment->patient->email,
+            "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+        ],
+        "speciality" => $appointment->speciality ? [
+            "id" => $appointment->speciality->id,
+            "name" => $appointment->speciality->name,
+        ] : NULL,
+        "doctor_id" => $appointment->doctor_id,
+        "doctor" => [
+            "id" => $doctor->id,
+            "email" => $doctor->email,
+            "full_name" => $doctor->name . ' ' . $doctor->surname,
+        ],
+    ]);
+}
 
 
 
@@ -530,31 +535,42 @@ class AppointmentController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
-    {
+   public function update(Request $request, $id)
+{
+    $appointment = Appointment::findOrFail($id);
 
-        $appointment = Appointment::findOrFail($id);
-
-        if ($appointment->payments->sum("amount") > $request->amount) {
-            return response()->json([
-                "message" => 403,
-                "message_text" => "Los Pagos ingresados superan al nuevo monto que quiere guardar"
-            ]);
-        }
-
-        $appointment->update([
-            "doctor_id" => $request->doctor_id,
-            "date_appointment" => Carbon::parse($request->date_appointment)->format("Y-m-d h:i:s"),
-            "speciality_id" => $request->speciality_id,
-            "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
-            "amount" => $request->amount,
-            "status_pay" => $appointment->payments->sum("amount") != $request->amount ? 2 : 1,
-        ]);
-
+    // Validación de montos utilizando la suma relacional
+    if ($appointment->payments->sum("amount") > $request->amount) {
         return response()->json([
-            "message" => 200,
+            "message" => 403,
+            "message_text" => "Los Pagos ingresados superan al nuevo monto que quiere guardar"
         ]);
     }
+
+    // CORRECCIÓN: Usamos "H" mayúscula para el formato seguro de 24 horas
+    $date_formatted = Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s");
+
+    $appointment->update([
+        "doctor_id" => $request->doctor_id,
+        "date_appointment" => $date_formatted,
+        "speciality_id" => $request->speciality_id,
+        "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
+        "amount" => $request->amount,
+        "status_pay" => $appointment->payments->sum("amount") != $request->amount ? 2 : 1,
+    ]);
+
+    // =========================================================================
+    // ⚡ LIMPIEZA DE CACHÉ EN REDIS (Actualización de Dashboard)
+    // =========================================================================
+    // Eliminamos las estadísticas mensuales y anuales viejas del doctor
+    $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}");
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}:year:{$year_current}");
+
+    return response()->json([
+        "message" => 200,
+    ]);
+}
 
     /**
      * Remove the specified resource from storage.
