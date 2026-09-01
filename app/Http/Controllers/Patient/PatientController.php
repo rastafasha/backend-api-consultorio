@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class PatientController extends Controller
 {
@@ -254,51 +255,56 @@ class PatientController extends Controller
         return response()->json([
             "message" => 403,
             "message_text" => 'el paciente ya existe'
-        ], 403); // Es buena práctica pasar el código de estado HTTP real
+        ], 403);
     }
 
     // 2. Procesar el Avatar con Cloudinary
+    $path = null;
     if ($request->hasFile('imagen')) {
         $cloudinaryResponse = Cloudinary::uploadApi()->upload(
             $request->file('imagen')->getRealPath(), 
             ['folder' => 'klyntic/patients']
         );
         $path = $cloudinaryResponse['secure_url'];
-        $request->merge(["avatar" => $path]); // Usa merge() en lugar de request->add()
+        // CORRECCIÓN: Guardamos tanto 'avatar' como 'image' para dar compatibilidad a ambas tablas
+        $request->merge(["avatar" => $path, "image" => $path]); 
     }
 
-    // 3. Formatear fecha de nacimiento
+    // 3. Formatear fecha de nacimiento de forma segura
     if ($request->birth_date) {
         $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
         $request->merge(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
     }
 
-    // 4. Guardar la ficha del paciente
+    // 4. Guardar la ficha del paciente de forma explícita o segura
+    // Pasamos el $request->all() pero ahora va con el campo 'image' inyectado
     $patient = Patient::create($request->all());
 
-    // 5. Vincular al doctor logueado (Causa del error)
-    // Opción A: Si usas autenticación estándar de Laravel
+    // 5. Vincular al doctor logueado en la relación de muchos a muchos
     $doctorId = auth()->id() ?? $request->doctor_id; 
 
     if ($doctorId) {
         $patient->doctors()->attach($doctorId);
+        
+        // =========================================================================
+        // ⚡ LIMPIEZA DE CACHÉ EN REDIS (KLYNTIC)
+        // =========================================================================
+        // Como el médico ahora tiene un nuevo paciente asociado, borramos la caché 
+        // de su dashboard para que la lista de pacientes recientes se actualice al tiro.
+        Cache::forget("dashboard:doctor:{$doctorId}");
     } else {
-        // Log o manejo de error por si se intenta registrar sin doctor asignado
-        Log::warning("Paciente creado sin doctor asociado. Request data: " . json_serialize($request->all()));
+        // CORRECCIÓN: Cambiado a json_encode para evitar que tumbe el servidor
+        Log::warning("Paciente creado sin doctor asociado. Request data: " . json_encode($request->all()));
     }
 
-    // 6. Guardar datos complementarios
-    $request->merge(["patient_id" => $patient->id]);
-    PatientPerson::create($request->all());
-
-    // 7. Enviar correo electrónico
-    // if ($patient->email && !str_contains($patient->email, '@klyntic.local')) {
-    //     Mail::to($patient->email)->send(new NewPatientRegisterMail($patient));
-    // }
-
-    // 8. Llamada interna al Auth Controller
-    // $authController = app(AuthController::class);
-    // $authController->registerPaciente($request);
+    // 6. Guardar datos complementarios en PatientPerson
+    // Para evitar que explote por columnas sobrantes, extraemos solo lo que le pertenece
+    PatientPerson::create([
+        'patient_id'        => $patient->id,
+        'name_companion'    => $request->name_companion,
+        'surname_companion' => $request->surname_companion,
+        // Agrega aquí cualquier otro campo específico de la tabla personas si te hace falta
+    ]);
 
     return response()->json([
         "message" => 200,
@@ -332,76 +338,78 @@ class PatientController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
-    {
-        $patient_is_valid = Patient::where("id", "!=", (int) $id)
-            ->where("n_doc", $request->n_doc)
-            ->first();
+   public function update(Request $request, $id)
+{
+    // 1. Validar que la cédula/documento no la tenga otro paciente
+    $patient_is_valid = Patient::where("id", "!=", (int) $id)
+        ->where("n_doc", $request->n_doc)
+        ->first();
 
-        if ($patient_is_valid) {
-            return response()->json([
-                "message" => 403,
-                "message_text" => 'el paciente ya existe'
-                // "message_text" => "Error: El documento {$request->n_doc} ya lo tiene el paciente con ID: {$patient_is_valid->id}"
-            ]);
-        }
-
-        $patient = Patient::findOrFail($id);
-        // 1. Actualizamos los datos propios del paciente (quitando doctor_id del chorro de datos)
-        $patient->update($request->except('doctor_id'));
-
-        // 2. Sincronizamos la relación en la tabla intermedia 'doctor_patient'
-        if ($request->has('doctor_id')) {
-            // sync() añade el nuevo, mantiene los que ya estaban o borra los que no vengan
-            // Si solo es un doctor, puedes pasarle el ID solo o en array [ $request->doctor_id ]
-            $patient->doctors()->sync($request->doctor_id);
-        }
-
-        // if ($request->hasFile('imagen')) {
-        //     if ($patient->avatar) {
-        //         Storage::delete($patient->avatar);
-        //     }
-        //     $path = Storage::putFile("patients", $request->file('imagen'));
-        //     $request->request->add(["avatar" => $path]);
-        // }
-
-        //upload a cloudinary
-        if ($request->hasFile('imagen')) {
-            // 1. Si el usuario ya tiene un avatar en Cloudinary, lo borramos de la nube
-            if ($patient->avatar) {
-                // Extraemos el public_id de la URL completa (ej: staffs/nombre_archivo)
-                $publicId = 'klyntic/patients/' . pathinfo($patient->avatar, PATHINFO_FILENAME);
-
-                // Eliminamos la imagen vieja de Cloudinary
-                Cloudinary::uploadApi()->destroy($publicId);
-            }
-
-            // 2. Subimos la nueva imagen utilizando el método compatible con tu versión
-            $uploadedFile = $request->file('imagen')->storeOnCloudinary('klyntic/staffs');
-            $path = $uploadedFile->getSecurePath();
-
-            $request->request->add(["avatar" => $path]);
-        }
-
-        if ($request->birth_date) {
-            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
-            $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
-        }
-        //uso de redis
-        // $cachedRecord = Redis::get('profile_patient_#'.$id);
-        // if(isset($cachedRecord)) {
-        //     Redis::del('profile_patient_#'.$id);
-        // }
-        $patient->update($request->all());
-
-        if ($patient->person) {
-            $patient->person->update($request->all());
-        }
+    if ($patient_is_valid) {
         return response()->json([
-            "message" => 200,
-            "patient" => $patient
+            "message" => 403,
+            "message_text" => 'el paciente ya existe'
+        ], 403);
+    }
+
+    $patient = Patient::findOrFail($id);
+
+    // 2. Procesar nueva imagen en Cloudinary (Si viene en el request)
+    $path = $patient->image; // Conservamos la imagen actual por defecto
+    if ($request->hasFile('imagen')) {
+        // Si ya tenía foto anterior, la borramos para no acumular basura en Cloudinary
+        if ($patient->image) {
+            $publicId = 'klyntic/patients/' . pathinfo($patient->image, PATHINFO_FILENAME);
+            Cloudinary::uploadApi()->destroy($publicId);
+        }
+
+        // Subimos el archivo nuevo a la carpeta correcta
+        $cloudinaryResponse = Cloudinary::uploadApi()->upload(
+            $request->file('imagen')->getRealPath(), 
+            ['folder' => 'klyntic/patients']
+        );
+        $path = $cloudinaryResponse['secure_url'];
+    }
+
+    // Inyectamos de forma segura las variables procesadas al request
+    $request->merge(["avatar" => $path, "image" => $path]);
+
+    // 3. Formatear fecha de nacimiento de forma segura (Formato 24 Horas "H")
+    if ($request->birth_date) {
+        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
+        $request->merge(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
+    }
+
+    // 4. UN SOLO UPDATE LIMPIO: Seteamos los datos de la tabla pacientes (excluyendo doctor_id)
+    $patient->update($request->except('doctor_id'));
+
+    // 5. Sincronizamos la relación en la tabla intermedia muchos a muchos
+    if ($request->has('doctor_id')) {
+        $patient->doctors()->sync($request->doctor_id);
+        
+        // =========================================================================
+        // ⚡ LIMPIEZA DE CACHÉ EN REDIS (KLYNTIC)
+        // =========================================================================
+        // Al actualizar el paciente o sus médicos asociados, borramos la caché del 
+        // dashboard del doctor para garantizar tiempo real exacto en el CRM.
+        $doctorId = auth()->id() ?? $request->doctor_id;
+        Cache::forget("dashboard:doctor:{$doctorId}");
+    }
+
+    // 6. Actualizar de forma segura la tabla complementaria Person
+    if ($patient->person) {
+        $patient->person->update([
+            'name_companion'    => $request->name_companion,
+            'surname_companion' => $request->surname_companion,
+            // Agrega aquí cualquier otro campo específico de la tabla PatientPerson si hace falta
         ]);
     }
+
+    return response()->json([
+        "message" => 200,
+        "patient" => $patient
+    ]);
+}
 
     /**
      * Remove the specified resource from storage.

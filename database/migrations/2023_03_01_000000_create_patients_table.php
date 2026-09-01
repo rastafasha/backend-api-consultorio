@@ -39,10 +39,11 @@ class CreatePatientsTable extends Migration
             $table->string('temperature', 25)->nullable();
             $table->string('peso', 250)->nullable();
             $table->string('talla', 250)->nullable();
-            $table->string('historia_enfermedad', 250)->nullable();
-            $table->string('enfermedad_actual', 250)->nullable();
-            $table->string('tratamiento', 250)->nullable();
-            $table->string('examen_fisico', 250)->nullable();
+            $table->text('historia_enfermedad', )->nullable();
+            $table->text('enfermedad_actual', )->nullable();
+            $table->text('diganostico', )->nullable();
+            $table->text('tratamiento', )->nullable();
+            $table->text('examen_fisico', )->nullable();
             $table->string('reporte_laboratorio', 250)->nullable();
             $table->json('evolucion')->nullable();
             $table->json('vacunas')->nullable();

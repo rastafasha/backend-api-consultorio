@@ -55,6 +55,7 @@ class Patient extends Authenticatable implements JWTSubject
         'examen_fisico',
         'reporte_laboratorio',
         'evolucion',
+        'diganostico',
         //solo pediatria
         'vacunas',
         'peso_al_nacer',
