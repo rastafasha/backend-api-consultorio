@@ -128,7 +128,7 @@ class DoctorController extends Controller
     $appointments = (clone $baseAppointmentQuery)
         ->with(['patient', 'doctor', 'attention']) 
         ->orderBy('date_appointment', 'desc')
-        ->limit(100) 
+        ->limit(5) 
         ->get();
 
     $data_doctor = [
