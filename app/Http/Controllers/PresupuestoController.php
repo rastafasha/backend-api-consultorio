@@ -116,15 +116,15 @@ class PresupuestoController extends Controller
         // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE NUEVO PRESUPUESTO AL PACIENTE
         // =========================================================================
         NotificacionService::enviar(
-            $presupuesto->doctor_id,                                              // Consultorio ID para WhatsApp
-            $patient->phone,                                                      // Teléfono del paciente
-            "Hola " . $patient->name . ", el especialista ha generado un nuevo presupuesto médico para tu tratamiento por un monto de $" . $presupuesto->amount . ". Ya puedes revisarlo detalladamente e iniciar tu gestión de pago ingresando a tu aplicación.",
-            $patient->id,                                                         // ID del paciente para encender su campana
-            'PACIENTE',                                                           // Rol
-            '📋 Nuevo Presupuesto Disponible',                                    // Título del Toastr
-            'PRESUPUESTO_NUEVO',                                                  // Enum tipo
-            $presupuesto->id                                                      // Referencia del presupuesto en MySQL
-        );
+    $patient->id,                                                         // 1. $usuarioId (A quién encender la campana)
+    'PACIENTE',                                                           // 2. $rol (Rol destinatario)
+    $presupuesto->doctor_id,                                              // 3. $consultorioId (Filtro de consultorio para el backend)
+    $patient->phone,                                                      // 4. $telefonoPaciente (Para el envío de WhatsApp en Node)
+    "Hola " . $patient->name . ", el especialista ha generado un nuevo presupuesto médico para tu tratamiento por un monto de $" . $presupuesto->amount . ". Ya puedes revisarlo detalladamente e iniciar tu gestión de pago ingresando a tu aplicación.", // 5. $mensajeTexto
+    '📋 Nuevo Presupuesto Disponible',                                    // 6. $tituloToastr
+    'PRESUPUESTO_NUEVO',                                                  // 7. $tipoEnum
+    $presupuesto->id                                                      // 8. $refId
+);
 
         return response()->json([
             "message" => 200,
