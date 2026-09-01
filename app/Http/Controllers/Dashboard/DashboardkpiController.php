@@ -332,6 +332,7 @@ class DashboardkpiController extends Controller
                         "n_doc" => $patient->n_doc,
                         "phone" => $patient->phone,
                         "email" => $patient->email,
+                        "created_at" => $patient->created_at ? $patient->created_at->toIso8601String() : null,
                     ];
                 })->toArray(),
                 "paymentsbydoc" => PaymentCollection::make($paymentsbydoc)->resolve(),
