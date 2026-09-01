@@ -323,7 +323,17 @@ class DashboardkpiController extends Controller
                 "num_appointments_total_pending_before" => $num_appointments_total_pending_before,
                 "porcentaje_dtpn" => round($porcentajeDTPN, 2),
 
-                "patientsbydoc" => PatientCollection::make($patientsbydoc)->resolve(),
+                "patientsbydoc" => $patientsbydoc->map(function ($patient) {
+                    return [
+                        "id" => $patient->id,
+                        "name" => $patient->name,
+                        "surname" => $patient->surname,
+                        "full_name" => $patient->name . ' ' . $patient->surname,
+                        "n_doc" => $patient->n_doc,
+                        "phone" => $patient->phone,
+                        "email" => $patient->email,
+                    ];
+                })->toArray(),
                 "paymentsbydoc" => PaymentCollection::make($paymentsbydoc)->resolve(),
                 "appointmentpaysbydoc" => AppointmentPayCollection::make($appointmentpaysbydoc)->resolve()
             ];
@@ -333,135 +343,135 @@ class DashboardkpiController extends Controller
         return response()->json($data);
     }
 
-   public function dashboard_doctor_year(Request $request)
-{
-    $year = $request->input('year');
-    $doctor_id = $request->input('doctor_id');
+    public function dashboard_doctor_year(Request $request)
+    {
+        $year = $request->input('year');
+        $doctor_id = $request->input('doctor_id');
 
-    if (!$doctor_id || !$year) {
-        return response()->json(["ok" => false, "message" => "Faltan parámetros obligatorios."], 400);
-    }
-
-    // Generamos una clave única que distinga al médico y el año consultado
-    $cacheKey = "dashboard:doctor:{$doctor_id}:year:{$year}";
-
-    // Guardamos este reporte en caché por 30 minutos (1800 segundos)
-    $data = Cache::remember($cacheKey, 1800, function () use ($doctor_id, $year) {
-        
-        // =========================================================================
-        // 🍕 1. PACIENTES POR GÉNERO
-        // =========================================================================
-        $query_patients_by_gender = DB::table("appointments")
-            ->join("patients", "appointments.patient_id", "=", "patients.id")
-            ->whereNull("appointments.deleted_at")
-            ->where("appointments.doctor_id", $doctor_id)
-            ->select(
-                DB::raw("COUNT(DISTINCT CASE WHEN patients.gender = 1 THEN patients.id END) as hombre"),
-                DB::raw("COUNT(DISTINCT CASE WHEN patients.gender = 2 THEN patients.id END) as mujer")
-            )->first();
-
-        $gender_report = [
-            "year" => (int) $year,
-            "hombre" => $query_patients_by_gender ? (int) ($query_patients_by_gender->hombre ?? 0) : 0,
-            "mujer" => $query_patients_by_gender ? (int) ($query_patients_by_gender->mujer ?? 0) : 0
-        ];
-
-        // =========================================================================
-        // 📈 2. INGRESOS MENSUALES
-        // =========================================================================
-        $query_income_year = DB::table("appointments")
-            ->whereNull("appointments.deleted_at")
-            ->whereRaw("EXTRACT(YEAR FROM appointments.date_appointment) = ?", [$year])
-            ->where("appointments.doctor_id", $doctor_id)
-            ->where("appointments.status_pay", 1)
-            ->select(
-                DB::raw("EXTRACT(MONTH FROM appointments.date_appointment) as month"),
-                DB::raw("SUM(appointments.amount) as income")
-            )->groupBy("month")->get()->keyBy('month');
-
-        // =========================================================================
-        // 📊 3. CITAS DEL AÑO ACTUAL
-        // =========================================================================
-        $query_n_appointment_year = DB::table("appointments")
-            ->whereNull("appointments.deleted_at")
-            ->whereRaw("EXTRACT(YEAR FROM appointments.date_appointment) = ?", [$year])
-            ->where("appointments.doctor_id", $doctor_id)
-            ->select(
-                DB::raw("EXTRACT(MONTH FROM appointments.date_appointment) as month"),
-                DB::raw("COUNT(*) as count_appointments")
-            )->groupBy("month")->get()->keyBy('month');
-
-        // =========================================================================
-        // 📊 4. CITAS DEL AÑO ANTERIOR
-        // =========================================================================
-        $query_n_appointment_year_before = DB::table("appointments")
-            ->whereNull("appointments.deleted_at")
-            ->whereRaw("EXTRACT(YEAR FROM appointments.date_appointment) = ?", [$year - 1])
-            ->where("appointments.doctor_id", $doctor_id)
-            ->select(
-                DB::raw("EXTRACT(MONTH FROM appointments.date_appointment) as month"),
-                DB::raw("COUNT(*) as count_appointments")
-            )->groupBy("month")->get()->keyBy('month');
-
-        // 5. ESTRUCTURA DE CONTENEDORES PARA 12 MESES
-        $months_name = array("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre");
-
-        $join_n_appointments_years = collect([]);
-        $formatted_actual_year = [];
-        $formatted_before_year = [];
-        $formatted_income = [];
-
-        for ($m = 1; $m <= 12; $m++) {
-            $actual_data = $query_n_appointment_year->get($m);
-            $before_data = $query_n_appointment_year_before->get($m);
-            $income_data = $query_income_year->get($m);
-
-            $count_actual = $actual_data ? (int) $actual_data->count_appointments : 0;
-            $count_before = $before_data ? (int) $before_data->count_appointments : 0;
-            $income_val = $income_data ? (float) $income_data->income : 0.0;
-
-            $formatted_actual_year[] = [
-                "year" => (int) $year,
-                "month" => $m,
-                "count_appointments" => $count_actual
-            ];
-
-            $formatted_before_year[] = [
-                "year" => $year - 1,
-                "month" => $m,
-                "count_appointments" => $count_before
-            ];
-
-            $formatted_income[] = [
-                "year" => (int) $year,
-                "month" => $m,
-                "income" => $income_val
-            ];
-
-            $details = collect([
-                ["year" => (int) $year, "month" => $m, "count_appointments" => $count_actual],
-                ["year" => $year - 1, "month" => $m, "count_appointments" => $count_before]
-            ]);
-
-            $join_n_appointments_years->push([
-                "month" => $m,
-                "months_name" => $months_name[$m - 1],
-                "details" => $details
-            ]);
+        if (!$doctor_id || !$year) {
+            return response()->json(["ok" => false, "message" => "Faltan parámetros obligatorios."], 400);
         }
 
-        return [
-            "months_name" => $months_name,
-            "join_n_appointments_years" => $join_n_appointments_years,
-            "query_n_appointment_year" => $formatted_actual_year,
-            "query_n_appointment_year_before" => $formatted_before_year,
-            "query_income_year" => $formatted_income,
-            "query_patients_by_gender" => [$gender_report],
-        ];
-    });
+        // Generamos una clave única que distinga al médico y el año consultado
+        $cacheKey = "dashboard:doctor:{$doctor_id}:year:{$year}";
 
-    return response()->json($data);
-}
+        // Guardamos este reporte en caché por 30 minutos (1800 segundos)
+        $data = Cache::remember($cacheKey, 1800, function () use ($doctor_id, $year) {
+
+            // =========================================================================
+            // 🍕 1. PACIENTES POR GÉNERO
+            // =========================================================================
+            $query_patients_by_gender = DB::table("appointments")
+                ->join("patients", "appointments.patient_id", "=", "patients.id")
+                ->whereNull("appointments.deleted_at")
+                ->where("appointments.doctor_id", $doctor_id)
+                ->select(
+                    DB::raw("COUNT(DISTINCT CASE WHEN patients.gender = 1 THEN patients.id END) as hombre"),
+                    DB::raw("COUNT(DISTINCT CASE WHEN patients.gender = 2 THEN patients.id END) as mujer")
+                )->first();
+
+            $gender_report = [
+                "year" => (int) $year,
+                "hombre" => $query_patients_by_gender ? (int) ($query_patients_by_gender->hombre ?? 0) : 0,
+                "mujer" => $query_patients_by_gender ? (int) ($query_patients_by_gender->mujer ?? 0) : 0
+            ];
+
+            // =========================================================================
+            // 📈 2. INGRESOS MENSUALES
+            // =========================================================================
+            $query_income_year = DB::table("appointments")
+                ->whereNull("appointments.deleted_at")
+                ->whereRaw("EXTRACT(YEAR FROM appointments.date_appointment) = ?", [$year])
+                ->where("appointments.doctor_id", $doctor_id)
+                ->where("appointments.status_pay", 1)
+                ->select(
+                    DB::raw("EXTRACT(MONTH FROM appointments.date_appointment) as month"),
+                    DB::raw("SUM(appointments.amount) as income")
+                )->groupBy("month")->get()->keyBy('month');
+
+            // =========================================================================
+            // 📊 3. CITAS DEL AÑO ACTUAL
+            // =========================================================================
+            $query_n_appointment_year = DB::table("appointments")
+                ->whereNull("appointments.deleted_at")
+                ->whereRaw("EXTRACT(YEAR FROM appointments.date_appointment) = ?", [$year])
+                ->where("appointments.doctor_id", $doctor_id)
+                ->select(
+                    DB::raw("EXTRACT(MONTH FROM appointments.date_appointment) as month"),
+                    DB::raw("COUNT(*) as count_appointments")
+                )->groupBy("month")->get()->keyBy('month');
+
+            // =========================================================================
+            // 📊 4. CITAS DEL AÑO ANTERIOR
+            // =========================================================================
+            $query_n_appointment_year_before = DB::table("appointments")
+                ->whereNull("appointments.deleted_at")
+                ->whereRaw("EXTRACT(YEAR FROM appointments.date_appointment) = ?", [$year - 1])
+                ->where("appointments.doctor_id", $doctor_id)
+                ->select(
+                    DB::raw("EXTRACT(MONTH FROM appointments.date_appointment) as month"),
+                    DB::raw("COUNT(*) as count_appointments")
+                )->groupBy("month")->get()->keyBy('month');
+
+            // 5. ESTRUCTURA DE CONTENEDORES PARA 12 MESES
+            $months_name = array("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre");
+
+            $join_n_appointments_years = collect([]);
+            $formatted_actual_year = [];
+            $formatted_before_year = [];
+            $formatted_income = [];
+
+            for ($m = 1; $m <= 12; $m++) {
+                $actual_data = $query_n_appointment_year->get($m);
+                $before_data = $query_n_appointment_year_before->get($m);
+                $income_data = $query_income_year->get($m);
+
+                $count_actual = $actual_data ? (int) $actual_data->count_appointments : 0;
+                $count_before = $before_data ? (int) $before_data->count_appointments : 0;
+                $income_val = $income_data ? (float) $income_data->income : 0.0;
+
+                $formatted_actual_year[] = [
+                    "year" => (int) $year,
+                    "month" => $m,
+                    "count_appointments" => $count_actual
+                ];
+
+                $formatted_before_year[] = [
+                    "year" => $year - 1,
+                    "month" => $m,
+                    "count_appointments" => $count_before
+                ];
+
+                $formatted_income[] = [
+                    "year" => (int) $year,
+                    "month" => $m,
+                    "income" => $income_val
+                ];
+
+                $details = collect([
+                    ["year" => (int) $year, "month" => $m, "count_appointments" => $count_actual],
+                    ["year" => $year - 1, "month" => $m, "count_appointments" => $count_before]
+                ]);
+
+                $join_n_appointments_years->push([
+                    "month" => $m,
+                    "months_name" => $months_name[$m - 1],
+                    "details" => $details
+                ]);
+            }
+
+            return [
+                "months_name" => $months_name,
+                "join_n_appointments_years" => $join_n_appointments_years,
+                "query_n_appointment_year" => $formatted_actual_year,
+                "query_n_appointment_year_before" => $formatted_before_year,
+                "query_income_year" => $formatted_income,
+                "query_patients_by_gender" => [$gender_report],
+            ];
+        });
+
+        return response()->json($data);
+    }
 
 
 
