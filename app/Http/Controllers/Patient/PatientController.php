@@ -402,9 +402,11 @@ class PatientController extends Controller
             'name_companion'    => $request->name_companion,
             'surname_companion' => $request->surname_companion,
             'mobile_companion' => $request->mobile_companion,
+            'relationship_companion' => $request->relationship_companion,
             'mobile_responsable' => $request->mobile_responsable,
             'name_responsable' => $request->name_responsable,
             'surname_responsable' => $request->surname_responsable,
+            'relationship_responsable' => $request->relationship_responsable,
         ]);
     }
 
