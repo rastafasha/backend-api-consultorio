@@ -14,7 +14,7 @@ class NotificacionService
     {
         // Apuntamos a la URL de tu backend de Node.js desde el .env o directa
         // El framework busca la variable en el .env, si no existe usa el puerto 3000 por defecto
-        $urlNode = env('KLYNTIC_NODE_URL', 'http://localhost:3000') . '/webhook-recordatorio';
+        $urlNode = env('KLYNTIC_NODE_URL', 'http://localhost:3000') . '/api/klyntic/notificaciones/webhook-recordatorio';
 
 
         try {
