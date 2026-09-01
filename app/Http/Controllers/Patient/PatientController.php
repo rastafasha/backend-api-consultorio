@@ -401,7 +401,10 @@ class PatientController extends Controller
         $patient->person->update([
             'name_companion'    => $request->name_companion,
             'surname_companion' => $request->surname_companion,
-            // Agrega aquí cualquier otro campo específico de la tabla PatientPerson si hace falta
+            'mobile_companion' => $request->mobile_companion,
+            'mobile_responsable' => $request->mobile_responsable,
+            'name_responsable' => $request->name_responsable,
+            'surname_responsable' => $request->surname_responsable,
         ]);
     }
 
