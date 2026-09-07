@@ -45,6 +45,7 @@ class AppointmentResource extends JsonResource
                 // Agregamos comprobación para evitar error si no hay acompañante
                 "name_companion" => $this->resource->patient->person ? $this->resource->patient->person->name_companion : null,
                 "surname_companion" => $this->resource->patient->person ? $this->resource->patient->person->surname_companion : null,
+                "mobile_companion" => $this->resource->patient->person ? $this->resource->patient->person->mobile_companion : null,
             ] : null,
 
             "date_appointment" => $this->resource->date_appointment,

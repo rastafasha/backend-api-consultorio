@@ -84,6 +84,9 @@ Route::group(['middleware' => 'api'], function ($router) {
     // presupuesto
     require __DIR__ . '/api_routes/presupuesto.php';
 
+    // odontograma
+    require __DIR__ . '/api_routes/odontograma.php';
+
     // pais
     require __DIR__ . '/api_routes/pais.php';
 
