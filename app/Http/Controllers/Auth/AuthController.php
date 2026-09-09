@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Mail\NewUserRegisterMail;
 use App\Models\Patient\Patient;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -72,43 +74,57 @@ class AuthController extends Controller
      * Register a User
      * @return \Illuminate\Http\JsonResponse
      */
-    public function register(Request $request)
-    {
-        // 1. Validaciones mínimas
-        $validator = Validator::make($request->all(), [
-            'n_doc' => 'required|exists:patients,n_doc|unique:users,n_doc',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
-        ], [
-            'n_doc.exists' => 'No estás registrado en el consultorio.',
-            'n_doc.unique' => 'Este documento ya tiene una cuenta activa.',
-        ]);
+public function registrar(Request $request)
+{
+    // 1. VALIDACIÓN: Forzamos los 7 campos exactos de tu formulario de la landing
+    $validator = Validator::make($request->all(), [
+        'name'           => 'required|string|max:255',
+        'surname'         => 'required|string|max:255',
+        'email'            => 'required|string|email|max:255|unique:users,email',
+        'mobile'         => 'required|string|max:50',
+    ], [
+        'email.unique'     => 'Este correo electrónico ya tiene una cuenta activa en Klyntic.',
+        'name.required'  => 'El nombre del especialista es obligatorio.',
+    ]);
 
-        if ($validator->fails())
-            return response()->json($validator->errors(), 422);
-
-        // 2. Buscamos al paciente del consultorio (ID 21)
-        $paciente = Patient::where('n_doc', $request->n_doc)->first();
-
-        // 3. Creamos el Usuario (ID 12) usando los datos que ya tenemos en la ficha médica
-        $user = User::create([
-            'name' => $paciente->name,    // Heredamos del consultorio
-            'surname' => $paciente->surname, // Heredamos del consultorio
-            'email' => $request->email,
-            'n_doc' => $request->n_doc,
-            'password' => Hash::make($request->password),
-        ]);
-
-        // 4. Vinculamos la ficha médica con el nuevo usuario
-        $paciente->update(['user_id' => $user->id]);
-
-        $user->assignRole(User::GUEST);
-
-        return response()->json([
-            'message' => 'Cuenta activada correctamente',
-            'access_token' => JWTAuth::fromUser($user),
-        ], 201);
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
     }
+
+    // 🔑 CONTRASEÑA AUTOMÁTICA SEGURA: 
+    // Usamos su mismo número de teléfono como contraseña inicial limpia 
+    // para podérsela mandar por correo de forma segura antes de encriptarla en la BD.
+    $passwordInicial = $request->telefono;
+
+    // 2. CREACIÓN: Insertamos al médico directo en la tabla 'users'
+    $user = User::create([
+        'name'             => $request->nombre,
+        'surname'          => $request->apellido,
+        'email'            => $request->email,
+        'mobile'            => $request->telefono,
+        'password'         => Hash::make($passwordInicial), // Guardada de forma segura con Bcrypt
+        
+        // Banderas operativas del CRM y Mailjet unificadas
+        'correo_enviado'     => false,
+        'estado_seguimiento' => 'PENDIENTE'
+    ]);
+
+    // 3. ROL: Le asignamos los accesos del ecosistema clínico
+    $user->assignRole('doctor'); 
+
+    // 4. DISPARO DE CREDENCIALES: Aquí llamarías a tu servicio de Mailjet enviándole 
+    Mail::to($user->email)->send(new NewUserRegisterMail($user));
+    // el $request->email y la $passwordInicial (en texto plano) para que le llegue su tarjeta de bienvenida.
+
+    return response()->json([
+        'ok'           => true,
+        'message'      => 'Médico registrado exitosamente en el ecosistema Klyntic',
+        'access_token' => JWTAuth::fromUser($user),
+        'user'         => $user
+    ], 201);
+}
+
+
 
     public function loginPaciente(Request $request): \Illuminate\Http\JsonResponse { 
     // 1. Limpiamos espacios
@@ -144,13 +160,6 @@ class AuthController extends Controller
     // 4. Despachamos la respuesta exitosa
     return $this->respondWithTokenPaciente($token, $user);
 }
-
-
-
-
-
-
-
 
     // el nombre del paciente es el usuario para registro y el n_doc seria la contraseña
     public function registerPaciente(Request $request)
