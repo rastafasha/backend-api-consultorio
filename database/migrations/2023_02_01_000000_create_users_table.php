@@ -24,6 +24,7 @@ class CreateUsersTable extends Migration
             $table->tinyInteger('gender')->nullable();
             $table->tinyInteger('status')->default(1);
             $table->string('precio_cita')->nullable();
+            $table->string('moneda')->nullable();
             $table->text('address')->nullable();
             $table->string('avatar')->nullable();
             $table->string('n_doc', 50)->unique()->nullable();

@@ -27,6 +27,7 @@ class PaymentResource extends JsonResource
             "status" =>$this->resource->status,
             "fecha" =>$this->resource->fecha,
             "tasabcv" =>$this->resource->tasabcv,
+            "moneda" =>$this->resource->moneda,
             "motivo_rechazo" =>$this->resource->motivo_rechazo,
             "patient_id" =>$this->resource->patient_id,
             "doctor_id" =>$this->resource->doctor_id,

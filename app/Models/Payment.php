@@ -36,6 +36,7 @@ class Payment extends Model
         'fecha',
         'status',
         'tasabcv',
+        'moneda',
         'motivo_rechazo',
 
     ];

@@ -20,6 +20,7 @@ class CreatePaymentsTable extends Migration
             $table->string('bank_name', 250);
             $table->double('monto', 250);
             $table->double('tasabcv', 250);
+            $table->string('moneda', 50);
             $table->string('nombre', 250);
             $table->string('email', 250);
             $table->string('image', 250)->nullable();

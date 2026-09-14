@@ -67,6 +67,7 @@ class UserResource extends JsonResource
             // "location_id"=>$this->resource->location_id,
             "pais_id" => $this->resource->pais_id,
             "precio_cita" => $this->resource->precio_cita,
+            "moneda" => $this->resource->moneda,
             "designation" => $this->resource->designation,
             "address" => $this->resource->address,
             "avatar" => $this->resource->avatar  ? (str_starts_with($this->resource->avatar, 'http') ? $this->resource->avatar : env("APP_URL") . $this->resource->avatar) : null,

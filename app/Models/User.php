@@ -47,6 +47,7 @@ class User extends Authenticatable implements JWTSubject
         'speciality_id',
         'pais_id',
         'precio_cita',
+        'moneda',
         'status',
 
     ];
