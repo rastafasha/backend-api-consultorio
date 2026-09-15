@@ -362,6 +362,18 @@ class DoctorController extends Controller
         ]);
     }
 
+    public function getMoneda($id)
+{
+    // Buscamos solo el usuario y cargamos ÚNICAMENTE la relación de la moneda
+    // Cambia 'perfil' o 'tipoMoneda' por el nombre exacto de tu relación en el modelo User
+    $user = User::findOrFail($id);
+
+    return response()->json([
+        // Devolvemos solo el objeto de la moneda, directo y sin rodeos
+        "moneda" => $user->moneda 
+    ]);
+}
+
 
     /**
      * Update the specified resource in storage.
