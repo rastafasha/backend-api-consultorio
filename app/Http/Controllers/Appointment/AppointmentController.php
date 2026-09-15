@@ -160,6 +160,7 @@ class AppointmentController extends Controller
                     "id" => $doctor->id,
                     "full_name" => trim($doctor->name . ' ' . $doctor->surname),
                     "precio_cita" => $doctor->precio_cita,
+                    "moneda" => $doctor->moneda,
                     "speciality" => [
                         "id" => $doctor->speciality->id ?? null,
                         "name" => $doctor->speciality->name ?? null,
@@ -269,6 +270,7 @@ class AppointmentController extends Controller
                 "id" => $doctor->id,
                 "full_name" => trim($doctor->name . ' ' . $doctor->surname),
                 "precio_cita" => $doctor->precio_cita,
+                "moneda" => $doctor->moneda,
                 "speciality" => [
                     "id" => $doctor->speciality->id ?? null,
                     "name" => $doctor->speciality->name ?? null,

@@ -83,163 +83,192 @@ class PatientController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function profile($id)
+    public function profileRedis($id)
     {
         //uso de redis
-        // $cachedRecord = Redis::get('profile_patient_#'.$id);
-        // $data_patient = [];
-        // if(isset($cachedRecord)) {
-        //     $data_patient = json_decode($cachedRecord, FALSE);
-        // }else{
+        $cachedRecord = Redis::get('profile_patient_#'.$id);
+        $data_patient = [];
+        if(isset($cachedRecord)) {
+            $data_patient = json_decode($cachedRecord, FALSE);
+        }else{
 
-        //     $patient = Patient::findOrFail($id);
+            $patient = Patient::findOrFail($id);
 
-        //     $num_appointment = Appointment::where("patient_id",$id)->count();
-        //     $money_of_appointments = Appointment::where("patient_id",$id)->sum("amount");
-        //     $num_appointment_pendings = Appointment::where("patient_id",$id)->where("status",1)->count();
-        //     $appointment_pendings = Appointment::where("patient_id",$id)->where("status",1)->get();
-        //     $appointments = Appointment::where("patient_id",$id)->get();
+            $num_appointment = Appointment::where("patient_id",$id)->count();
+            $money_of_appointments = Appointment::where("patient_id",$id)->sum("amount");
+            $num_appointment_pendings = Appointment::where("patient_id",$id)->where("status",1)->count();
+            $appointment_pendings = Appointment::where("patient_id",$id)->where("status",1)->get();
+            $appointments = Appointment::where("patient_id",$id)->get();
 
-        //     $data_patient = [
-        //         "num_appointment"=>$num_appointment,
-        //         "money_of_appointments"=> $money_of_appointments,
-        //         "num_appointment_pendings"=>$num_appointment_pendings,
-        //         "patient" => PatientResource::make($patient),
-        //         "appointment_pendings"=> AppointmentCollection::make($appointment_pendings),
-        //         "appointments"=>$appointments->map(function($appointment){
-        //             return [
-        //                 "id"=> $appointment->id,
-        //                 "patient"=> [
-        //                     "id"=> $appointment->patient->id,
-        //                     "full_name"=> $appointment->patient->name.' '.$appointment->patient->surname,
-        //                     "avatar"=> $appointment->patient->avatar ? env("APP_URL")."storage/".$appointment->patient->avatar : null,
-        //                 ],
-        //                 "doctor"=> [
-        //                     "id"=> $appointment->doctor->id,
-        //                     "full_name"=> $appointment->doctor->name.' '.$appointment->doctor->surname,
-        //                     "avatar"=> $appointment->doctor->avatar ? env("APP_URL")."storage/".$appointment->doctor->avatar : null,
-        //                 ],
-        //                 "date_appointment" =>$appointment->date_appointment,
-        //                 "date_appointment_format" =>Carbon::parse($appointment->date_appointment)->format("d M Y"),
-        //                 "format_hour_start" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A") ,
-        //                 "format_hour_end" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
-        //                 "appointment_attention"=> $appointment->attention ?[
-        //                     "id"=>$appointment->attention->id,
-        //                     "description"=>$appointment->attention->description,
-        //                     "receta_medica"=>$appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
-        //                     "created_at" => $appointment->attention->created_at->format("Y-m-d h:i A"),
-        //                 ]: NULL,
-        //                 "amount" =>$appointment->amount,
-        //                 "status_pay" =>$appointment->status_pay,
-        //                 "status" =>$appointment->status,
-        //             ];
-        //         }),
-        //     ];
+            $data_patient = [
+                "num_appointment"=>$num_appointment,
+                "money_of_appointments"=> $money_of_appointments,
+                "num_appointment_pendings"=>$num_appointment_pendings,
+                "patient" => PatientResource::make($patient),
+                "appointment_pendings"=> AppointmentCollection::make($appointment_pendings),
+                "appointments"=>$appointments->map(function($appointment){
+                    return [
+                        "id"=> $appointment->id,
+                        "patient"=> [
+                            "id"=> $appointment->patient->id,
+                            "full_name"=> $appointment->patient->name.' '.$appointment->patient->surname,
+                            "avatar"=> $appointment->patient->avatar ? env("APP_URL")."storage/".$appointment->patient->avatar : null,
+                        ],
+                        "doctor"=> [
+                            "id"=> $appointment->doctor->id,
+                            "full_name"=> $appointment->doctor->name.' '.$appointment->doctor->surname,
+                            "avatar"=> $appointment->doctor->avatar ? env("APP_URL")."storage/".$appointment->doctor->avatar : null,
+                        ],
+                        "date_appointment" =>$appointment->date_appointment,
+                        "date_appointment_format" =>Carbon::parse($appointment->date_appointment)->format("d M Y"),
+                        "format_hour_start" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A") ,
+                        "format_hour_end" => Carbon::parse(date("Y-m-d").' '.$appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
+                        "appointment_attention"=> $appointment->attention ?[
+                            "id"=>$appointment->attention->id,
+                            "description"=>$appointment->attention->description,
+                            "receta_medica"=>$appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
+                            "created_at" => $appointment->attention->created_at->format("Y-m-d h:i A"),
+                        ]: NULL,
+                        "amount" =>$appointment->amount,
+                        "status_pay" =>$appointment->status_pay,
+                        "status" =>$appointment->status,
+                    ];
+                }),
+            ];
 
-        //     Redis::set('profile_patient_#'.$id, json_encode($data_patient),'EX', 3600);
-        // }
+            Redis::set('profile_patient_#'.$id, json_encode($data_patient),'EX', 3600);
+        }
         //uso de redis
 
         //sin redis
-        $data_patient = [];
-        $patient = Patient::findOrFail($id);
-
-        // 1. CORRECCIÓN: Agregamos la carga en cadena para llegar hasta doctor_address de forma eficiente
-        $all_appointments = Appointment::with([
-            'doctor_schedule_join_hour.doctor_schedule_hour',
-            'doctor_schedule_join_hour.doctor_schedule_day.doctor_address', // <-- Relación añadida aquí
-            'patient',
-            'doctor.speciality',
-            'speciality',
-            'attention'
-        ])
-            ->where('patient_id', $id)
-            ->orderBy("id", "desc")
-            ->get();
-
-        // Filtramos sobre la colección en memoria
-        $appointment_checkeds = $all_appointments->where('status', 2);
-        $appointment_pendings = $all_appointments->where('status', 1);
-
-        $data_patient = [
-            "num_appointment" => $all_appointments->count(),
-            "num_appointment_checkeds" => $appointment_checkeds->count(),
-            "num_appointment_pendings" => $appointment_pendings->count(),
-            "money_of_appointments" => $all_appointments->sum("amount"),
-
-            "appointment_checkeds" => AppointmentCollection::make($appointment_checkeds),
-            "appointment_pendings" => AppointmentCollection::make($appointment_pendings),
-            "patient" => PatientResource::make($patient),
-            "appointments" => $all_appointments->map(function ($appointment) {
-
-                return [
-                    "id" => $appointment->id,
-                    "doctor_schedule_join_hour_id" => $appointment->doctor_schedule_join_hour_id,
-                    "segment_hour" => $appointment->doctor_schedule_join_hour ? [
-                        "id" => $appointment->doctor_schedule_join_hour->id,
-                        "format_segment" => $appointment->doctor_schedule_join_hour->doctor_schedule_hour ? [
-                            "hour_start" => $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start,
-                            "format_hour_start" => Carbon::parse($appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A"),
-                            "hour_end" => $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end,
-                            "format_hour_end" => Carbon::parse($appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
-                        ] : null,
-                    ] : null,
-
-                    // 2. MAPEO: Extraemos la dirección navegando por las relaciones de forma segura con operadores opcionales u objetos válidos
-                    "consultorio" => ($appointment->doctor_schedule_join_hour &&
-                        $appointment->doctor_schedule_join_hour->doctor_schedule_day &&
-                        $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address)
-                        ? [
-                            "id" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->id,
-                            "name_consultorio" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->name_consultorio,
-                            "address" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->address,
-                            "is_active" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->is_active,
-                        ]
-                        : null,
-
-                    "patient" => [
-                        "id" => $appointment->patient->id,
-                        "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
-                        "avatar" => $appointment->patient->avatar ? env("APP_URL") . $appointment->patient->avatar : null,
-                    ],
-                    "doctor" => [
-                        "id" => $appointment->doctor->id,
-                        "full_name" => $appointment->doctor->name . ' ' . $appointment->doctor->surname,
-                        "avatar" => $appointment->doctor->avatar ? env("APP_URL") . $appointment->doctor->avatar : null,
-                        "mobile" => $appointment->doctor->mobile,
-                        "speciality_id" => $appointment->doctor->speciality_id,
-                        "speciality" => $appointment->doctor->speciality ? [
-                            "id" => $appointment->doctor->speciality->id,
-                            "name" => $appointment->doctor->speciality->name,
-                            "price" => $appointment->doctor->speciality->price,
-                        ] : NULL,
-                    ],
-                    "date_appointment" => $appointment->date_appointment,
-                    "date_appointment_format" => Carbon::parse($appointment->date_appointment)->format("d M Y"),
-
-                    "format_hour_start" => $appointment->doctor_schedule_join_hour?->doctor_schedule_hour
-                        ? Carbon::parse(date("Y-m-d") . ' ' . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A")
-                        : null,
-                    "format_hour_end" => $appointment->doctor_schedule_join_hour?->doctor_schedule_hour
-                        ? Carbon::parse(date("Y-m-d") . ' ' . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A")
-                        : null,
-                    "appointment_attention" => $appointment->attention ? [
-                        "id" => $appointment->attention->id,
-                        "description" => $appointment->attention->description,
-                        "receta_medica" => $appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
-                        "created_at" => $appointment->attention->created_at->format("Y-m-d h:i A"),
-                    ] : NULL,
-                    "amount" => $appointment->amount,
-                    "status_pay" => $appointment->status_pay,
-                    "status" => $appointment->status,
-                ];
-            }),
-        ];
+        
 
         //sin redis
 
         return response()->json($data_patient);
     }
+
+    public function profile($id)
+{
+    $data_patient = [];
+    $patient = Patient::findOrFail($id);
+
+    // 1. OPTIMIZACIÓN: Añadimos 'withSum' para traer el total pagado de cada cita de un solo golpe
+    $all_appointments = Appointment::with([
+        'doctor_schedule_join_hour.doctor_schedule_hour',
+        'doctor_schedule_join_hour.doctor_schedule_day.doctor_address',
+        'patient',
+        'doctor.speciality',
+        'speciality',
+        'attention'
+    ])
+    // Buscamos en la relación 'payments' (ajusta el nombre si en tu modelo Appointment la relación se llama distinto)
+    // y sumamos la columna 'amount'. Esto creará un atributo automático llamado 'payments_sum_amount'
+    ->withSum('payments', 'amount') 
+    ->where('patient_id', $id)
+    ->orderBy("id", "desc")
+    ->get();
+
+    // 🔹 EL TRUCO: Modificamos la colección agregando el atributo 'deuda' dinámicamente antes de enviarla al Resource
+    $all_appointments->transform(function ($appointment) {
+        $total_pagado = $appointment->payments_sum_amount ?? 0;
+        
+        // Seteamos la propiedad en el objeto del modelo para que el Resource pueda leerla
+        $appointment->deuda = $appointment->amount - $total_pagado; 
+        
+        return $appointment;
+    });
+
+    // Ahora que todos los objetos tienen su propiedad ->deuda calculada, filtramos
+    $appointment_checkeds = $all_appointments->where('status', 2);
+    $appointment_pendings = $all_appointments->where('status', 1);
+
+    $data_patient = [
+        "num_appointment" => $all_appointments->count(),
+        "num_appointment_checkeds" => $appointment_checkeds->count(),
+        "num_appointment_pendings" => $appointment_pendings->count(),
+        "money_of_appointments" => $all_appointments->sum("amount"),
+
+        // Al pasar por el Collection, el AppointmentResource ya leerá la deuda real en lugar de null 🎉
+        "appointment_checkeds" => AppointmentCollection::make($appointment_checkeds),
+        "appointment_pendings" => AppointmentCollection::make($appointment_pendings),
+        
+        "patient" => PatientResource::make($patient),
+        "appointments" => $all_appointments->map(function ($appointment) {
+
+            // 2. CÁLCULO DE LA DEUDA: Restamos lo pagado del costo total de la cita
+            $total_pagado = $appointment->payments_sum_amount ?? 0;
+            $deuda = $appointment->amount - $total_pagado;
+
+            return [
+                "id" => $appointment->id,
+                "doctor_schedule_join_hour_id" => $appointment->doctor_schedule_join_hour_id,
+                "segment_hour" => $appointment->doctor_schedule_join_hour ? [
+                    "id" => $appointment->doctor_schedule_join_hour->id,
+                    "format_segment" => $appointment->doctor_schedule_join_hour->doctor_schedule_hour ? [
+                        "hour_start" => $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start,
+                        "format_hour_start" => Carbon::parse($appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A"),
+                        "hour_end" => $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end,
+                        "format_hour_end" => Carbon::parse($appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A"),
+                    ] : null,
+                ] : null,
+
+                "consultorio" => ($appointment->doctor_schedule_join_hour &&
+                    $appointment->doctor_schedule_join_hour->doctor_schedule_day &&
+                    $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address)
+                    ? [
+                        "id" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->id,
+                        "name_consultorio" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->name_consultorio,
+                        "address" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->address,
+                        "is_active" => $appointment->doctor_schedule_join_hour->doctor_schedule_day->doctor_address->is_active,
+                    ]
+                    : null,
+
+                "patient" => [
+                    "id" => $appointment->patient->id,
+                    "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+                    "avatar" => $appointment->patient->avatar ? env("APP_URL") . $appointment->patient->avatar : null,
+                ],
+                "doctor" => [
+                    "id" => $appointment->doctor->id,
+                    "full_name" => $appointment->doctor->name . ' ' . $appointment->doctor->surname,
+                    "avatar" => $appointment->doctor->avatar ? env("APP_URL") . $appointment->doctor->avatar : null,
+                    "mobile" => $appointment->doctor->mobile,
+                    "moneda" => $appointment->doctor->moneda,
+                    "speciality_id" => $appointment->doctor->speciality_id,
+                    "speciality" => $appointment->doctor->speciality ? [
+                        "id" => $appointment->doctor->speciality->id,
+                        "name" => $appointment->doctor->speciality->name,
+                        "price" => $appointment->doctor->speciality->price,
+                    ] : NULL,
+                ],
+                "date_appointment" => $appointment->date_appointment,
+                "date_appointment_format" => Carbon::parse($appointment->date_appointment)->format("d M Y"),
+
+                "format_hour_start" => $appointment->doctor_schedule_join_hour?->doctor_schedule_hour
+                    ? Carbon::parse(date("Y-m-d") . ' ' . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_start)->format("h:i A")
+                    : null,
+                "format_hour_end" => $appointment->doctor_schedule_join_hour?->doctor_schedule_hour
+                    ? Carbon::parse(date("Y-m-d") . ' ' . $appointment->doctor_schedule_join_hour->doctor_schedule_hour->hour_end)->format("h:i A")
+                    : null,
+                "appointment_attention" => $appointment->attention ? [
+                    "id" => $appointment->attention->id,
+                    "description" => $appointment->attention->description,
+                    "receta_medica" => $appointment->attention->receta_medica ? json_decode($appointment->attention->receta_medica) : [],
+                    "created_at" => $appointment->attention->created_at->format("Y-m-d h:i A"),
+                ] : NULL,
+                
+                "amount" => $appointment->amount,
+                "deuda" => $deuda, // <--- NUEVO CAMPO ENVIADO AL FRONTEND 🎉
+                "status_pay" => $appointment->status_pay,
+                "status" => $appointment->status,
+            ];
+        }),
+    ];
+
+    return response()->json($data_patient);
+}
+
 
     /**
      * Store a newly created resource in storage.
@@ -460,199 +489,9 @@ class PatientController extends Controller
         return response()->json([
 
             "patients" => $patients,
-            "patients" => PatientCollection::make($patients),
-            // "patients"=>$patients->map(function($patient){
-            //     return[
-            //         // "cpt_code"=> $noteBcba->cpt_code,
-            //         // 'tecnico'=>$noteBcba-> tecnico,
-            //         // 'tecnico'=>[
-            //         //     'name'=> $noteBcba->tecnico->name,
-            //         //     'surname'=> $noteBcba->tecnico->surname,
-            //         //     'npi'=> $noteBcba->tecnico->npi,
-            //         // ],
-            //         "id"=>$patient->id,
-            //         "patient_id"=>$patient->patient_id,    
-            //         "first_name"=>$patient->first_name,
-            //         "last_name"=>$patient->last_name,
-            //         "full_name"=> $patient->first_name.' '.$patient->last_name,
-            //         "email"=>$patient->email,
-            //         "phone"=>$patient->phone,
-            //         "avatar"=> $patient->avatar ? env("APP_URL")."storage/".$patient->avatar : null,
-            //         // "avatar"=> $patient->avatar ? env("APP_URL").$patient->avatar : null,
-            //         "birth_date"=>$patient->birth_date ? Carbon::parse($patient->birth_date)->format("Y/m/d") : NULL,
-            //         "gender"=>$patient->gender,
-            //         "address"=>$patient->address,
-            //         "language"=>$patient->language,
-            //         "home_phone"=>$patient->home_phone,
-            //         "work_phone"=>$patient->work_phone,
-            //         "zip"=>$patient->zip,
-            //         "city"=>$patient->city,
-            //         "relationship"=>$patient->relationship,
-            //         "profession"=>$patient->profession,
-            //         "education"=>$patient->education,
-            //         "state"=>$patient->state,
-            //         "school_name"=>$patient->school_name,
-            //         "school_number"=>$patient->school_number,
-            //         "age"=>$patient->age,
-            //         "parent_guardian_name"=>$patient->parent_guardian_name,
-            //         "schedule"=>$patient->schedule,
-            //         "summer_schedule"=>$patient->summer_schedule,
-            //         "diagnosis_code"=>$patient->diagnosis_code,
-            //         "special_note"=>$patient->special_note,
-            //         "patient_control"=>$patient->patient_control,
-
-            //         //benefits
-            //         "insurer_id"=>$patient->insurer_id,
-
-
-            //         'insurances'=>$patient-> insurances,
-            //             'insurances'=>[
-            //                 // 'id'=> $patient->insurances->insurer_id,
-            //                 'insurer_name'=> $patient->insurances->insurer_name,
-            //                 'notes'=> json_decode($patient->insurances-> notes)? : null,
-            //                 'services'=> json_decode($patient->insurances-> services)? : null,
-            //             ],
-
-
-            //         "status"=>$patient->status,
-            //         "insuranceId"=>$patient->insuranceId,
-            //         // "insurer_secundary"=>$patient->insurer_secundary,          
-            //         // "insuranceId_secundary"=>$patient->insuranceId_secundary,          
-            //         "elegibility_date"=>$patient->elegibility_date ? Carbon::parse($patient->elegibility_date)->format("Y/m/d") : NULL,
-            //         // "pos_covered"=>$patient->pos_covered ,
-            //         "pos_covered"=> json_decode($patient->pos_covered)? : null,
-            //         "deductible_individual_I_F"=>$patient->deductible_individual_I_F,
-            //         "balance"=>$patient->balance,
-            //         "coinsurance"=>$patient->coinsurance,
-            //         "copayments"=>$patient->copayments,
-            //         "oop"=>$patient->oop,
-
-            //         //intake
-            //         "welcome"=>$patient->welcome,
-            //         "consent"=>$patient->consent,
-            //         "insurance_card"=>$patient->insurance_card,
-            //         "eligibility"=>$patient->eligibility,
-            //         "mnl"=>$patient->mnl,
-            //         "referral"=>$patient->referral,
-            //         "ados"=>$patient->ados,
-            //         "iep"=>$patient->iep,
-            //         "asd_diagnosis"=>$patient->asd_diagnosis,
-            //         "cde"=>$patient->cde,
-            //         "submitted"=>$patient->submitted,
-            //         "interview"=>$patient->interview,
-            //         "eqhlid"=>$patient->eqhlid,
-            //         "telehealth"=>$patient->telehealth,
-            //         "pay"=>$patient->pay,
-
-            //         //pas
-            //         'pa_assessments'=> json_decode($patient->pa_assessments) ? : null,
-            //         // "pa_assessments"=>$patient->pa_assessments ? json_decode($patient->pa_assessments) : [],
-
-            //         // "location" =>implode($patient->location_id),
-            //         "location_id" =>$patient->location_id,
-            //         "manager" =>$patient->manager,
-
-            //         "rbt_home_id" =>$patient->rbt_home_id,
-            //         'rbt_home'=>$patient-> rbt_home,
-            //             'rbt_home'=>[
-            //                 // 'id'=> $patient->rbt_home->rbt_home_id,
-            //                 'name'=> $patient->rbt_home->name,
-            //                 'surname'=> $patient->rbt_home->surname,
-            //                 'npi'=> $patient->rbt_home->npi,
-            //             ],
-
-            //         "rbt2_school_id"=>$patient->rbt2_school_id,
-            //         'rbt2_school'=>$patient-> rbt2_school,
-            //             'rbt2_school'=>[
-            //                 // 'id'=> $patient->rbt2_school->rbt2_school_id,
-            //                 'name'=> $patient->rbt2_school->name,
-            //                 'surname'=> $patient->rbt2_school->surname,
-            //                 'npi'=> $patient->rbt2_school->npi,
-            //             ],
-            //         "bcba_home_id"=>$patient->bcba_home_id,
-            //         'bcba_home'=>$patient-> bcba_home,
-            //             'bcba_home'=>[
-            //                 // 'id'=> $patient->bcba_home->bcba_home_id,
-            //                 'name'=> $patient->bcba_home->name,
-            //                 'surname'=> $patient->bcba_home->surname,
-            //                 'npi'=> $patient->bcba_home->npi,
-            //             ],
-            //         "bcba2_school_id"=>$patient->bcba2_school_id,
-            //         'bcba2_school'=>$patient-> bcba2_school,
-            //             'bcba2_school'=>[
-            //                 // 'id'=> $patient->bcba2_school->bcba2_school_id,
-            //                 'name'=> $patient->bcba2_school->name,
-            //                 'surname'=> $patient->bcba2_school->surname,
-            //                 'npi'=> $patient->bcba2_school->npi,
-            //             ],
-            //         "clin_director_id"=>$patient->clin_director_id,
-            //         'clin_director'=>$patient-> clin_director,
-            //             'clin_director'=>[
-            //                 // 'id'=> $patient->clin_director->clin_director_id,
-            //                 'name'=> $patient->clin_director->name,
-            //                 'surname'=> $patient->clin_director->surname,
-            //                 'npi'=> $patient->clin_director->npi,
-            //             ],
-
-
-            //     "created_at"=>$patient->created_at ? Carbon::parse($patient->created_at)->format("Y-m-d h:i A") : NULL,
-            //     ];
-            // }),
+            // "patients" => PatientCollection::make($patients),
 
             "doctors" => $doctors,
-            // "doctors" => UserCollection::make($doctors),
-            // "doctors"=>$doctors->map(function($doctor){
-            //     return[
-            //         // "cpt_code"=> $noteBcba->cpt_code,
-
-            //         "rbt_home_id" =>$doctor->rbt_home_id,
-            //         'rbt_home'=>$doctor-> rbt_home,
-            //             'rbt_home'=>[
-            //                 // 'id'=> $doctor->rbt_home->rbt_home_id,
-            //                 'name'=> $doctor->rbt_home->name,
-            //                 'surname'=> $doctor->rbt_home->surname,
-            //                 'npi'=> $doctor->rbt_home->npi,
-            //                 'location_id'=> $doctor->clin_director->location_id,
-            //             ],
-
-            //         "rbt2_school_id"=>$doctor->rbt2_school_id,
-            //         'rbt2_school'=>$doctor-> rbt2_school,
-            //             'rbt2_school'=>[
-            //                 // 'id'=> $doctor->rbt2_school->rbt2_school_id,
-            //                 'name'=> $doctor->rbt2_school->name,
-            //                 'surname'=> $doctor->rbt2_school->surname,
-            //                 'npi'=> $doctor->rbt2_school->npi,
-            //                 'location_id'=> $doctor->clin_director->location_id,
-            //             ],
-            //         "bcba_home_id"=>$doctor->bcba_home_id,
-            //         'bcba_home'=>$doctor-> bcba_home,
-            //             'bcba_home'=>[
-            //                 // 'id'=> $doctor->bcba_home->bcba_home_id,
-            //                 'name'=> $doctor->bcba_home->name,
-            //                 'surname'=> $doctor->bcba_home->surname,
-            //                 'npi'=> $doctor->bcba_home->npi,
-            //                 'location_id'=> $doctor->clin_director->location_id,
-            //             ],
-            //         "bcba2_school_id"=>$doctor->bcba2_school_id,
-            //         'bcba2_school'=>$doctor-> bcba2_school,
-            //             'bcba2_school'=>[
-            //                 // 'id'=> $doctor->bcba2_school->bcba2_school_id,
-            //                 'name'=> $doctor->bcba2_school->name,
-            //                 'surname'=> $doctor->bcba2_school->surname,
-            //                 'npi'=> $doctor->bcba2_school->npi,
-            //                 'location_id'=> $doctor->clin_director->location_id,
-            //             ],
-            //         "clin_director_id"=>$doctor->clin_director_id,
-            //         'clin_director'=>$doctor-> clin_director,
-            //             'clin_director'=>[
-            //                 // 'id'=> $doctor->clin_director->clin_director_id,
-            //                 'name'=> $doctor->clin_director->name,
-            //                 'surname'=> $doctor->clin_director->surname,
-            //                 'npi'=> $doctor->clin_director->npi,
-            //                 'location_id'=> $doctor->clin_director->location_id,
-            //             ],
-            //    ];
-            // }),
 
 
         ]);

@@ -7,15 +7,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class AppointmentResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
-     */
     public function toArray($request)
     {
-
         return [
             "id" => $this->resource->id,
             "doctor_id" => $this->resource->doctor_id,
@@ -27,6 +20,10 @@ class AppointmentResource extends JsonResource
                 "precio_cita" => $this->resource->doctor->precio_cita,
                 "full_name" => $this->resource->doctor->name . ' ' . $this->resource->doctor->surname,
                 "avatar" => $this->resource->doctor->avatar ? env("APP_URL") . $this->resource->doctor->avatar : null,
+                
+                // 🔹 NUEVO: Inyectamos la moneda dentro del doctor para saber bajo qué divisa está la deuda
+                "moneda" => $this->resource->doctor->moneda, 
+
                 "speciality" => $this->resource->doctor->speciality ? [
                     "id" => $this->resource->doctor->speciality->id,
                     "name" => $this->resource->doctor->speciality->name,
@@ -42,7 +39,6 @@ class AppointmentResource extends JsonResource
                 "phone" => $this->resource->patient->phone,
                 "n_doc" => $this->resource->patient->n_doc,
                 "antecedent_alerg" => $this->resource->patient->antecedent_alerg,
-                // Agregamos comprobación para evitar error si no hay acompañante
                 "name_companion" => $this->resource->patient->person ? $this->resource->patient->person->name_companion : null,
                 "surname_companion" => $this->resource->patient->person ? $this->resource->patient->person->surname_companion : null,
                 "mobile_companion" => $this->resource->patient->person ? $this->resource->patient->person->mobile_companion : null,
@@ -66,7 +62,6 @@ class AppointmentResource extends JsonResource
                 ] : NULL,
             ] : NULL,
 
-            // CORRECCIÓN EN USER: Tenías $this->resource->doctor->id, debe ser el usuario logueado
             "user_id" => $this->resource->user_id,
             "user" => $this->resource->user ? [
                 "id" => $this->resource->user->id,
@@ -74,7 +69,6 @@ class AppointmentResource extends JsonResource
                 "email" => $this->resource->user->email,
             ] : null,
 
-            // INYECTAMOS EL CONSULTORIO DEL DÍA DE LA CITA
             "consultorio" => ($this->doctor_schedule_join_hour && 
                               $this->doctor_schedule_join_hour->doctor_schedule_day && 
                               $this->doctor_schedule_join_hour->doctor_schedule_day->doctor_address) 
@@ -88,16 +82,16 @@ class AppointmentResource extends JsonResource
 
             "amount" => $this->resource->amount,
             "status_pay" => $this->resource->status_pay,
-            // "deuda" =>$this->resource->deuda,
+            
+            // Atributos de deuda y moneda raíz para leer fácil desde Angular
+            "deuda" => $this->resource->deuda,
+            "moneda" => $this->resource->doctor ? $this->resource->doctor->moneda : 'USD', 
+
             "status" => $this->resource->status,
             "laboratory" => $this->resource->laboratory,
             "date_attention" => $this->resource->date_attention,
             "confimation" => $this->resource->confimation,
-
-
             "created_at" => $this->resource->created_at ? Carbon::parse($this->resource->created_at)->format("Y-m-d h:i A") : null,
         ];
-
-
     }
 }
