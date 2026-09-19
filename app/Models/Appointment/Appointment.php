@@ -25,10 +25,10 @@ class Appointment extends Model
     protected $fillable = [
         "doctor_id",
         "patient_id",
+        "user_id",
         'doctor_schedule_join_hour_id',
         "date_appointment",
         "speciality_id",
-        "user_id",
         "precio_cita",
         "status_pay",
         "deuda",
@@ -61,7 +61,7 @@ protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
     public function user()
     {
         // Esto conectará la cita con el ID 12 de users
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'doctor_id');
     }
 
     public function doctor_schedule_join_hour() // <--- Asegúrate que se llame así
