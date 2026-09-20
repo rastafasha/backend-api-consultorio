@@ -184,102 +184,107 @@ class AppointmentController extends Controller
 
 
     public function filterByDoctor(Request $request, $doctor_id)
-    {
-        // Establecer la zona horaria antes de cualquier procesamiento de Carbon
-        date_default_timezone_set('America/Caracas');
-        Carbon::setLocale('es');
+{
+    // Establecer la zona horaria antes de cualquier procesamiento de Carbon
+    date_default_timezone_set('America/Caracas');
+    Carbon::setLocale('es');
 
-        // 1. Normalizar la fecha ISO del Frontend a la zona horaria local de Caracas
-        // Esto evita que "2026-07-02T04:00:00.000Z" se interprete erróneamente como otro día
-        $date_appointment = Carbon::parse($request->date_appointment)
-            ->setTimezone('America/Caracas')
-            ->format('Y-m-d'); // Resultado: "2026-07-02"
+    // 1. Normalizar la fecha ISO del Frontend a la zona horaria local de Caracas
+    $date_appointment = Carbon::parse($request->date_appointment)
+        ->setTimezone('America/Caracas')
+        ->format('Y-m-d'); 
 
-        // 2. Normalizar la hora (Asegurar que si viene "09", busque "09:00:00" o coincida con tu BD)
-        $hour = $request->hour;
-        $speciality_id = $request->speciality_id;
+    $hour = $request->hour;
+    $speciality_id = $request->speciality_id;
 
-        // 3. Validar que el doctor exista junto con su especialidad
-        $doctor = User::with('speciality')->find($doctor_id);
+    // 3. 🚀 SOLUCIÓN: Cargamos la relación de direcciones directamente con el doctor ('addresses')
+    $doctor = User::with(['speciality', 'addresses'])->find($doctor_id);
 
-        if (!$doctor) {
-            return response()->json([
-                "message" => "Doctor no encontrado",
-                "doctor" => null
-            ], 404);
-        }
-
-        // 4. Obtener el nombre del día basado en la fecha normalizada (Ej: para "2026-07-02" será "jueves")
-        $name_day = Carbon::parse($date_appointment)->dayName;
-
-        // 5. Ejecutar la consulta unificada con Eager Loading
-        $segments = DoctorScheduleJoinHour::whereHas("doctor_schedule_day", function ($q) use ($doctor_id, $name_day) {
-            $q->where("day", "ilike", "%" . $name_day . "%")
-                ->where("user_id", $doctor_id)
-                ->whereNull("deleted_at");
-        })
-            ->whereHas("doctor_schedule_hour", function ($q) use ($hour) {
-                // Si en tu BD el campo 'hour' guarda solo el número (ej: 9 o 09), esto funcionará.
-                // Si guarda la hora completa (ej: "09:00:00"), usa: $q->where("hour", "like", $hour . "%");
-                $q->where("hour", "ilike", "%" . $hour . "%");
-            })
-            ->with([
-                'doctor_schedule_hour',
-                'doctor_schedule_day.doctor_address',
-                'appointments' => function ($q) use ($date_appointment) {
-                    $q->whereDate("date_appointment", $date_appointment);
-                }
-            ])
-            ->get();
-
-        $addresses = collect();
-
-        // 6. Mapear los segmentos para la respuesta
-        $segmentsData = $segments->map(function ($segment) use (&$addresses) {
-            $is_appointment = $segment->appointments->isNotEmpty();
-            $addressRelation = $segment->doctor_schedule_day->doctor_address ?? null;
-
-            if ($addressRelation) {
-                $addresses->put($addressRelation->id, [
-                    "id" => $addressRelation->id,
-                    "name_consultorio" => $addressRelation->name_consultorio,
-                    "address" => $addressRelation->address,
-                    "is_active" => $addressRelation->is_active,
-                ]);
-            }
-
-            return [
-                "id" => $segment->id,
-                "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
-                "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
-                "is_appointment" => $is_appointment,
-                "doctor_address_id" => $addressRelation->id ?? null,
-                "format_segment" => [
-                    "id" => $segment->doctor_schedule_hour->id,
-                    "hour_start" => $segment->doctor_schedule_hour->hour_start,
-                    "hour_end" => $segment->doctor_schedule_hour->hour_end,
-                    "format_hour_start" => Carbon::parse($segment->doctor_schedule_hour->hour_start)->format("h:i A"),
-                    "format_hour_end" => Carbon::parse($segment->doctor_schedule_hour->hour_end)->format("h:i A"),
-                    "hour" => $segment->doctor_schedule_hour->hour,
-                ],
-            ];
-        });
-
+    if (!$doctor) {
         return response()->json([
-            "doctor" => [
-                "id" => $doctor->id,
-                "full_name" => trim($doctor->name . ' ' . $doctor->surname),
-                "precio_cita" => $doctor->precio_cita,
-                "moneda" => $doctor->moneda,
-                "speciality" => [
-                    "id" => $doctor->speciality->id ?? null,
-                    "name" => $doctor->speciality->name ?? null,
-                ],
-                "addresses" => $addresses->values()->all(),
-            ],
-            "segments" => $segmentsData
-        ]);
+            "message" => "Doctor no encontrado",
+            "doctor" => null
+        ], 404);
     }
+
+    // 4. Obtener el nombre del día basado en la fecha normalizada
+    $name_day = Carbon::parse($date_appointment)->dayName;
+
+    // 5. Ejecutar la consulta unificada con Eager Loading
+    $segments = DoctorScheduleJoinHour::whereHas("doctor_schedule_day", function ($q) use ($doctor_id, $name_day) {
+        $q->where("day", "ilike", "%" . $name_day . "%")
+            ->where("user_id", $doctor_id)
+            ->whereNull("deleted_at");
+    })
+    ->whereHas("doctor_schedule_hour", function ($q) use ($hour) {
+        $q->where("hour", "ilike", "%" . $hour . "%");
+    })
+    ->with([
+        'doctor_schedule_hour',
+        'doctor_schedule_day.doctor_address',
+        'appointments' => function ($q) use ($date_appointment) {
+            $q->whereDate("date_appointment", $date_appointment);
+        }
+    ])
+    ->get();
+
+    // 6. Mapear los segmentos para la respuesta
+    $segmentsData = $segments->map(function ($segment) {
+        $is_appointment = $segment->appointments->isNotEmpty();
+        $addressRelation = $segment->doctor_schedule_day->doctor_address ?? null;
+
+        return [
+            "id" => $segment->id,
+            "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
+            "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
+            "is_appointment" => $is_appointment,
+            // 💡 Incluimos el ID de la dirección asignada a este bloque horario
+            "doctor_address_id" => $addressRelation->id ?? null, 
+            
+            // 🚀 NUEVO: Retornamos también el objeto completo del consultorio en el segmento
+            // para que Angular pueda pintarlo dinámicamente según la hora seleccionada.
+            "consultorio" => $addressRelation ? [
+                "id" => $addressRelation->id,
+                "name_consultorio" => $addressRelation->name_consultorio,
+                "address" => $addressRelation->address,
+                "is_active" => $addressRelation->is_active,
+            ] : null,
+
+            "format_segment" => [
+                "id" => $segment->doctor_schedule_hour->id,
+                "hour_start" => $segment->doctor_schedule_hour->hour_start,
+                "hour_end" => $segment->doctor_schedule_hour->hour_end,
+                "format_hour_start" => Carbon::parse($segment->doctor_schedule_hour->hour_start)->format("h:i A"),
+                "format_hour_end" => Carbon::parse($segment->doctor_schedule_hour->hour_end)->format("h:i A"),
+                "hour" => $segment->doctor_schedule_hour->hour,
+            ],
+        ];
+    });
+
+    return response()->json([
+        "doctor" => [
+            "id" => $doctor->id,
+            "full_name" => trim($doctor->name . ' ' . $doctor->surname),
+            "precio_cita" => $doctor->precio_cita,
+            "moneda" => $doctor->moneda,
+            "speciality" => [
+                "id" => $doctor->speciality->id ?? null,
+                "name" => $doctor->speciality->name ?? null,
+            ],
+            // 🚀 Mapeo limpio e infalible desde la relación directa del Doctor
+            "addresses" => $doctor->addresses->map(function ($address) {
+                return [
+                    "id" => $address->id,
+                    "name_consultorio" => $address->name_consultorio,
+                    "address" => $address->address,
+                    "is_active" => $address->is_active,
+                ];
+            }),
+        ],
+        "segments" => $segmentsData
+    ]);
+}
+
 
 
 

@@ -105,7 +105,7 @@ class DoctorController extends Controller
     public function profile($id)
 {
     // 1. Buscamos al usuario (médico) con sus horarios cargados de forma eficiente
-    $user = User::with(['schedule_days.schedule_hours.doctor_schedule_hour'])->findOrFail($id);
+    $user = User::with(['schedule_days.schedule_hours.doctor_schedule_hour', 'addresses'])->findOrFail($id);
 
     // 2. Filtros base seguros: Excluimos citas eliminadas lógicamente
     $baseAppointmentQuery = Appointment::where("doctor_id", $id)->whereNull("deleted_at");
@@ -143,6 +143,11 @@ class DoctorController extends Controller
             return $day->schedule_hours->map(function ($pivot) use ($day) {
                 return [
                     "day_name" => $day->day,
+                    "doctor_address" => $day->doctor_address ? [
+                        "id" => $day->doctor_address->id,
+                        "name_consultorio" => $day->doctor_address->name_consultorio,
+                        "address" => $day->doctor_address->address,
+                    ] : null,
                     "item" => [
                         "id" => $pivot->doctor_schedule_hour_id,
                         "hour_start" => optional($pivot->doctor_schedule_hour)->hour_start,
