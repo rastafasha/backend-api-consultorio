@@ -31,7 +31,7 @@ class AppointmentResource extends JsonResource
             ] : null,
 
             "patient_id" => $this->resource->patient_id,
-            "patient" => $this->resource->patient ? [
+           "patient" => $this->resource->patient ? [
                 "id" => $this->resource->patient->id,
                 "name" => $this->resource->patient->name,
                 "surname" => $this->resource->patient->surname,
@@ -39,10 +39,13 @@ class AppointmentResource extends JsonResource
                 "phone" => $this->resource->patient->phone,
                 "n_doc" => $this->resource->patient->n_doc,
                 "antecedent_alerg" => $this->resource->patient->antecedent_alerg,
-                "name_companion" => $this->resource->patient->person ? $this->resource->patient->person->name_companion : null,
-                "surname_companion" => $this->resource->patient->person ? $this->resource->patient->person->surname_companion : null,
-                "mobile_companion" => $this->resource->patient->person ? $this->resource->patient->person->mobile_companion : null,
+                
+                // 🚀 Validación tradicional por pasos
+                "name_companion" => ($this->resource->patient->person) ? $this->resource->patient->person->name_companion : null,
+                "surname_companion" => ($this->resource->patient->person) ? $this->resource->patient->person->surname_companion : null,
+                "mobile_companion" => ($this->resource->patient->person) ? $this->resource->patient->person->mobile_companion : null,
             ] : null,
+
 
             "date_appointment" => $this->resource->date_appointment,
             "date_appointment_format" => $this->resource->date_appointment ? Carbon::parse($this->resource->date_appointment)->format("Y-m-d") : null,

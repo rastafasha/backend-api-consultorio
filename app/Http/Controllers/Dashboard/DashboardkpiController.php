@@ -199,150 +199,163 @@ class DashboardkpiController extends Controller
     }
 
     public function dashboard_doctor(Request $request)
-    {
-        date_default_timezone_set('America/Caracas');
-        $doctor_id = $request->doctor_id;
+{
+    date_default_timezone_set('America/Caracas');
+    $doctor_id = $request->doctor_id;
 
-        // Generamos una clave única en Redis para este médico específico
-        $cacheKey = "dashboard:doctor:{$doctor_id}";
+    $cacheKey = "dashboard:doctor:{$doctor_id}";
 
-        // Cache::remember busca la clave. Si existe en Redis, devuelve la data de inmediato.
-        // Si no existe, ejecuta el código interno, guarda el resultado por 300 segundos (5 min) y lo retorna.
-        $data = Cache::remember($cacheKey, 300, function () use ($doctor_id) {
+    $data = Cache::remember($cacheKey, 300, function () use ($doctor_id) {
 
-            $now = now();
-            $before = now()->subMonth();
+        $now = now();
+        $before = now()->subMonth();
 
-            // 1. mes actual y anterior - appointments
-            $num_appointments_current = DB::table("appointments")->where("deleted_at", NULL)
-                ->where("doctor_id", $doctor_id)
-                ->whereYear("date_appointment", $now->format("Y"))
-                ->whereMonth("date_appointment", $now->format("m"))
-                ->count();
+        // 1. Citas del mes actual y anterior
+        $num_appointments_current = DB::table("appointments")->where("deleted_at", NULL)
+            ->where("doctor_id", $doctor_id)
+            ->whereYear("date_appointment", $now->format("Y"))
+            ->whereMonth("date_appointment", $now->format("m"))
+            ->count();
 
-            $num_appointments_before = DB::table("appointments")->where("deleted_at", NULL)
-                ->where("doctor_id", $doctor_id)
-                ->whereYear("date_appointment", $before->format("Y"))
-                ->whereMonth("date_appointment", $before->format("m"))
-                ->count();
+        $num_appointments_before = DB::table("appointments")->where("deleted_at", NULL)
+            ->where("doctor_id", $doctor_id)
+            ->whereYear("date_appointment", $before->format("Y"))
+            ->whereMonth("date_appointment", $before->format("m"))
+            ->count();
 
-            $porcentajeD = $num_appointments_before > 0
-                ? (($num_appointments_current - $num_appointments_before) / $num_appointments_before) * 100
-                : 0;
+        $porcentajeD = $num_appointments_before > 0
+            ? (($num_appointments_current - $num_appointments_before) / $num_appointments_before) * 100
+            : 0;
 
-            // 2. mes actual y anterior - appointments-attentions
-            $num_appointments_attention_current = DB::table("appointments")->where("deleted_at", NULL)
-                ->where("doctor_id", $doctor_id)
-                ->whereYear("date_attention", $now->format("Y"))
-                ->whereMonth("date_attention", $now->format("m"))
-                ->count();
+        // 2. Atenciones del mes actual y anterior
+        $num_appointments_attention_current = DB::table("appointments")->where("deleted_at", NULL)
+            ->where("doctor_id", $doctor_id)
+            ->whereYear("date_attention", $now->format("Y"))
+            ->whereMonth("date_attention", $now->format("m"))
+            ->count();
 
-            $num_appointments_attention_before = DB::table("appointments")->where("deleted_at", NULL)
-                ->where("doctor_id", $doctor_id)
-                ->whereYear("date_attention", $before->format("Y"))
-                ->whereMonth("date_attention", $before->format("m"))
-                ->count();
+        $num_appointments_attention_before = DB::table("appointments")->where("deleted_at", NULL)
+            ->where("doctor_id", $doctor_id)
+            ->whereYear("date_attention", $before->format("Y"))
+            ->whereMonth("date_attention", $before->format("m"))
+            ->count();
 
-            $porcentajeDA = $num_appointments_attention_before > 0
-                ? (($num_appointments_attention_current - $num_appointments_attention_before) / $num_appointments_attention_before) * 100
-                : 0;
+        $porcentajeDA = $num_appointments_attention_before > 0
+            ? (($num_appointments_attention_current - $num_appointments_attention_before) / $num_appointments_attention_before) * 100
+            : 0;
 
-            // 3. mes actual y anterior - ganancias cobradas
-            $num_appointments_total_pay_current = DB::table("appointments")->where("deleted_at", NULL)
-                ->where("doctor_id", $doctor_id)
-                ->whereYear("date_appointment", $now->format("Y"))
-                ->whereMonth("date_appointment", $now->format("m"))
-                ->where("status_pay", 1)
-                ->sum("amount");
+        // 3. Ganancias cobradas
+        $num_appointments_total_pay_current = DB::table("appointments")->where("deleted_at", NULL)
+            ->where("doctor_id", $doctor_id)
+            ->whereYear("date_appointment", $now->format("Y"))
+            ->whereMonth("date_appointment", $now->format("m"))
+            ->where("status_pay", 1)
+            ->sum("amount");
 
-            $num_appointments_total_pay_before = DB::table("appointments")->where("deleted_at", NULL)
-                ->where("doctor_id", $doctor_id)
-                ->whereYear("date_appointment", $before->format("Y"))
-                ->whereMonth("date_appointment", $before->format("m"))
-                ->where("status_pay", 1)
-                ->sum("amount");
+        $num_appointments_total_pay_before = DB::table("appointments")->where("deleted_at", NULL)
+            ->where("doctor_id", $doctor_id)
+            ->whereYear("date_appointment", $before->format("Y"))
+            ->whereMonth("date_appointment", $before->format("m"))
+            ->where("status_pay", 1)
+            ->sum("amount");
 
-            $porcentajeDTP = $num_appointments_total_pay_before > 0
-                ? (($num_appointments_total_pay_current - $num_appointments_total_pay_before) / $num_appointments_total_pay_before) * 100
-                : 0;
+        $porcentajeDTP = $num_appointments_total_pay_before > 0
+            ? (($num_appointments_total_pay_current - $num_appointments_total_pay_before) / $num_appointments_total_pay_before) * 100
+            : 0;
 
-            // 4. mes actual y anterior - ganancias pendientes
-            $num_appointments_total_pending_current = DB::table("appointments")->where("deleted_at", NULL)
-                ->where("doctor_id", $doctor_id)
-                ->whereYear("date_appointment", $now->format("Y"))
-                ->whereMonth("date_appointment", $now->format("m"))
-                ->where("status_pay", 2)
-                ->sum("amount");
+        // 4. Ganancias pendientes
+        $num_appointments_total_pending_current = DB::table("appointments")->where("deleted_at", NULL)
+            ->where("doctor_id", $doctor_id)
+            ->whereYear("date_appointment", $now->format("Y"))
+            ->whereMonth("date_appointment", $now->format("m"))
+            ->where("status_pay", 2)
+            ->sum("amount");
 
-            $num_appointments_total_pending_before = DB::table("appointments")->where("deleted_at", NULL)
-                ->where("doctor_id", $doctor_id)
-                ->whereYear("date_appointment", $before->format("Y"))
-                ->whereMonth("date_appointment", $before->format("m"))
-                ->where("status_pay", 2)
-                ->sum("amount");
+        $num_appointments_total_pending_before = DB::table("appointments")->where("deleted_at", NULL)
+            ->where("doctor_id", $doctor_id)
+            ->whereYear("date_appointment", $before->format("Y"))
+            ->whereMonth("date_appointment", $before->format("m"))
+            ->where("status_pay", 2)
+            ->sum("amount");
 
-            $porcentajeDTPN = $num_appointments_total_pending_before > 0
-                ? (($num_appointments_total_pending_current - $num_appointments_total_pending_before) / $num_appointments_total_pending_before) * 100
-                : 0;
+        $porcentajeDTPN = $num_appointments_total_pending_before > 0
+            ? (($num_appointments_total_pending_current - $num_appointments_total_pending_before) / $num_appointments_total_pending_before) * 100
+            : 0;
 
-            // 5. Querys de colecciones (Los top 5 recientes)
-            $appointments = Appointment::whereYear("date_appointment", $now->format("Y"))
-                ->where("doctor_id", $doctor_id)
-                ->whereMonth("date_appointment", $now->format("m"))
-                ->where("status", 1)
-                ->take(5)
-                ->orderBy("id", "desc")
-                ->get();
+        // 5. Querys de colecciones optimizadas con Eager Loading para evitar el problema N+1
+        $appointments = Appointment::with(['patient'])->whereYear("date_appointment", $now->format("Y"))
+            ->where("doctor_id", $doctor_id)
+            ->whereMonth("date_appointment", $now->format("m"))
+            ->where("status", 1)
+            ->take(5)
+            ->orderBy("id", "desc")
+            ->get();
 
-            $patientsbydoc = Patient::whereHas('doctors', function ($query) use ($doctor_id) {
-                $query->where('users.id', $doctor_id);
-            })->orderBy("id", "desc")->take(5)->get();
+        $patientsbydoc = Patient::whereHas('doctors', function ($query) use ($doctor_id) {
+            $query->where('users.id', $doctor_id);
+        })->orderBy("id", "desc")->take(5)->get();
 
-            $paymentsbydoc = Payment::where('doctor_id', $doctor_id)
-                ->orderBy("id", "desc")->take(5)->get();
+        $paymentsbydoc = Payment::where('doctor_id', $doctor_id)
+            ->orderBy("id", "desc")->take(5)->get();
 
-            $appointmentpaysbydoc = Appointment::where('doctor_id', $doctor_id)
-                ->orderBy("id", "desc")->where("status_pay", 2)->take(5)->get();
+        $appointmentpaysbydoc = Appointment::with(['patient'])->where('doctor_id', $doctor_id)
+            ->orderBy("id", "desc")->where("status_pay", 2)->take(5)->get();
 
-            // Estructuramos el array crudo que se guardará en la caché de Redis
-            return [
-                "appointments" => AppointmentCollection::make($appointments)->resolve(),
-                "num_appointments_current" => $num_appointments_current,
-                "num_appointments_before" => $num_appointments_before,
-                "porcentaje_d" => round($porcentajeD, 2),
+        return [
+            "appointments" => AppointmentCollection::make($appointments)->resolve(),
+            "num_appointments_current" => $num_appointments_current,
+            "num_appointments_before" => $num_appointments_before,
+            "porcentaje_d" => round($porcentajeD, 2),
 
-                "num_appointments_attention_current" => $num_appointments_attention_current,
-                "num_appointments_attention_before" => $num_appointments_attention_before,
-                "porcentaje_da" => round($porcentajeDA, 2),
+            "num_appointments_attention_current" => $num_appointments_attention_current,
+            "num_appointments_attention_before" => $num_appointments_attention_before,
+            "porcentaje_da" => round($porcentajeDA, 2),
 
-                "num_appointments_total_pay_current" => $num_appointments_total_pay_current,
-                "num_appointments_total_pay_before" => $num_appointments_total_pay_before,
-                "porcentaje_dtp" => round($porcentajeDTP, 2),
+            "num_appointments_total_pay_current" => $num_appointments_total_pay_current,
+            "num_appointments_total_pay_before" => $num_appointments_total_pay_before,
+            "porcentaje_dtp" => round($porcentajeDTP, 2),
 
-                "num_appointments_total_pending_current" => $num_appointments_total_pending_current,
-                "num_appointments_total_pending_before" => $num_appointments_total_pending_before,
-                "porcentaje_dtpn" => round($porcentajeDTPN, 2),
+            "num_appointments_total_pending_current" => $num_appointments_total_pending_current,
+            "num_appointments_total_pending_before" => $num_appointments_total_pending_before,
+            "porcentaje_dtpn" => round($porcentajeDTPN, 2),
 
-                "patientsbydoc" => $patientsbydoc->map(function ($patient) {
-                    return [
-                        "id" => $patient->id,
-                        "name" => $patient->name,
-                        "surname" => $patient->surname,
-                        "full_name" => $patient->name . ' ' . $patient->surname,
-                        "n_doc" => $patient->n_doc,
-                        "phone" => $patient->phone,
-                        "email" => $patient->email,
-                        "created_at" => $patient->created_at ? $patient->created_at->toIso8601String() : null,
-                    ];
-                })->toArray(),
-                "paymentsbydoc" => PaymentCollection::make($paymentsbydoc)->resolve(),
-                "appointmentpaysbydoc" => AppointmentPayCollection::make($appointmentpaysbydoc)->resolve()
-            ];
-        });
+            "patientsbydoc" => $patientsbydoc->map(function ($patient) {
+                return [
+                    "id" => $patient->id,
+                    "name" => $patient->name,
+                    "surname" => $patient->surname,
+                    "full_name" => $patient->name . ' ' . $patient->surname,
+                    "n_doc" => $patient->n_doc,
+                    "phone" => $patient->phone,
+                    "email" => $patient->email,
+                    "created_at" => $patient->created_at ? $patient->created_at->toIso8601String() : null,
+                ];
+            })->toArray(),
 
-        // Retornamos la respuesta JSON directa desde la memoria RAM de Redis
-        return response()->json($data);
-    }
+            "paymentsbydoc" => PaymentCollection::make($paymentsbydoc)->resolve(),
+
+            // 🚀 SOLUCIÓN DEFINITIVA: Mapeo manual ultra ligero exclusivo para el Dashboard
+            // Eliminamos el Resource problemático y extraemos solo lo necesario para la tabla
+            "appointmentpaysbydoc" => $appointmentpaysbydoc->map(function ($appointment) {
+                return [
+                    "id" => $appointment->id,
+                    "amount" => $appointment->amount,
+                    "status_pay" => $appointment->status_pay,
+                    "date_appointment" => $appointment->date_appointment,
+                    "patient" => $appointment->patient ? [
+                        "id" => $appointment->patient->id,
+                        "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+                        "n_doc" => $appointment->patient->n_doc,
+                        "phone" => $appointment->patient->phone,
+                    ] : null
+                ];
+            })->toArray()
+        ];
+    });
+
+    return response()->json($data);
+}
+
 
     public function dashboard_doctor_year(Request $request)
     {
