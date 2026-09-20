@@ -12,12 +12,13 @@ use App\Models\Appointment\AppointmentPay;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\NotificacionService;
+use Carbon\Carbon;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Cache;
 
 class AdminPaymentController extends Controller
 {
@@ -85,16 +86,16 @@ class AdminPaymentController extends Controller
         
         // CORRECCIÓN N+1: Cargamos previamente las relaciones de la cita y el paciente
         $payments = Payment::filterAdvancePaymentDoctor(
-            $search_doctor,
-            $search_patient,
-            $date_start,
-            $date_end,
-            $search_referencia
-        )
-        ->where('doctor_id', $doctor_id)
-        ->with(['patient', 'appointment']) // <-- Evita docenas de mini-queries a MySQL
-        ->orderBy("id", "desc")
-        ->paginate(10);
+    $search_doctor,
+    $search_patient,
+    $date_start,
+    $date_end,
+    $search_referencia
+)
+->where('doctor_id', $doctor_id)
+->with(['appointment.patient']) // <-- Carga la cita y el paciente de esa cita en una sola consulta masiva
+->orderBy("id", "desc")
+->paginate(10);
 
         return [
             "total" => $payments->total(),
