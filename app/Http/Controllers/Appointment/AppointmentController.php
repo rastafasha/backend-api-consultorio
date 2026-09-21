@@ -334,7 +334,14 @@ class AppointmentController extends Controller
             ],
         ];
 
-        $specialities = Specialitie::where('state', 2)->has('activeDoctors')->with('activeDoctors')->get();
+        $specialities = Specialitie::where('state', 1)
+            ->whereHas('activeDoctors', function($query) {
+                $query->where('status', 2); // 👈 Filtra los doctores que tienen estatus 2
+            })
+            ->with(['activeDoctors' => function($query) {
+                $query->where('status', 2); // 👈 Carga solo los doctores con estatus 2 en el JSON
+            }])
+            ->get();
 
         return response()->json([
             "specialities" => $specialities,
