@@ -156,6 +156,7 @@ class AdminPaymentController extends Controller
         "referencia" => $request->referencia,
         "status" => $request->status,
         "tasabcv" => $request->tasabcv,
+        "moneda" => $request->moneda,
         "image" => $path,
         "fecha" => $fecha_formateada, // 👈 NUEVO CAMPO ENVIADO A LA BASE DE DATOS 🎉
     ]);
