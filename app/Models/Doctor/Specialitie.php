@@ -50,8 +50,10 @@ class Specialitie extends Model
     {
         return $this->hasMany(User::class, 'speciality_id')
             ->whereHas('roles', function ($query) {
-                $query->where('name', 'doctor');
+                $query->where('name', 'DOCTOR');
             })
             ->where('status', 2); // assuming status=1 means active
     }
+
+    
 }
