@@ -151,7 +151,14 @@ class PatientController extends Controller
     public function profile($id)
 {
     $data_patient = [];
-    $patient = Patient::findOrFail($id);
+    $patient = Patient::find($id);
+
+    if (!$patient) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'El paciente con el ID especificado no existe o fue eliminado.'
+        ], 404);
+    }
 
     // 1. OPTIMIZACIÓN: Añadimos 'withSum' para traer el total pagado de cada cita de un solo golpe
     $all_appointments = Appointment::with([
