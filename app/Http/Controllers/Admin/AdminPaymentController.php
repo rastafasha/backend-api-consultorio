@@ -125,7 +125,7 @@ class AdminPaymentController extends Controller
     $path = null;
 
     // Procesamos la imagen con Cloudinary
-    if ($request->hasFile('imagen')) {
+    if ($request->hasFile('image')) {
         $cloudinaryResponse = Cloudinary::uploadApi()->upload(
             $request->file('imagen')->getRealPath(),
             ['folder' => 'klyntic/payments']
