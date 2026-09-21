@@ -63,48 +63,48 @@ class AdminPaymentController extends Controller
     }
 
     public function paymentsByDoctor(Request $request, $doctor_id)
-{
-    $search_doctor = $request->search_doctor;
-    $search_patient = $request->search_patient;
-    $date_start = $request->date_start;
-    $date_end = $request->date_end;
-    $search_referencia = $request->search_referencia;
-    $page = $request->input('page', 1); // Capturamos la página para la caché
+    {
+        $search_doctor = $request->search_doctor;
+        $search_patient = $request->search_patient;
+        $date_start = $request->date_start;
+        $date_end = $request->date_end;
+        $search_referencia = $request->search_referencia;
+        $page = $request->input('page', 1); // Capturamos la página para la caché
 
-    // 1. Validación rápida y corregida con la variable de la ruta ($doctor_id)
-    $doctor_exists = User::where("id", $doctor_id)->exists();
-    if (!$doctor_exists) {
-        return response()->json(["message" => "Doctor no encontrado"], 404);
+        // 1. Validación rápida y corregida con la variable de la ruta ($doctor_id)
+        $doctor_exists = User::where("id", $doctor_id)->exists();
+        if (!$doctor_exists) {
+            return response()->json(["message" => "Doctor no encontrado"], 404);
+        }
+
+        // 2. Hash dinámico para que las búsquedas por referencia o fechas no se pisen en Redis
+        $filterHash = md5(json_encode([$search_doctor, $search_patient, $date_start, $date_end, $search_referencia, $page]));
+        $cacheKey = "payments_records:doctor:{$doctor_id}:filters:{$filterHash}";
+
+        // Guardamos en caché por 3 minutos (180 segundos)
+        $data = Cache::remember($cacheKey, 180, function () use ($doctor_id, $search_doctor, $search_patient, $date_start, $date_end, $search_referencia) {
+
+            // CORRECCIÓN N+1: Cargamos previamente las relaciones de la cita y el paciente
+            $payments = Payment::filterAdvancePaymentDoctor(
+                $search_doctor,
+                $search_patient,
+                $date_start,
+                $date_end,
+                $search_referencia
+            )
+                ->where('doctor_id', $doctor_id)
+                ->with(['appointment.patient']) // <-- Carga la cita y el paciente de esa cita en una sola consulta masiva
+                ->orderBy("id", "desc")
+                ->paginate(10);
+
+            return [
+                "total" => $payments->total(),
+                "payments" => PaymentCollection::make($payments)->resolve()
+            ];
+        });
+
+        return response()->json($data);
     }
-
-    // 2. Hash dinámico para que las búsquedas por referencia o fechas no se pisen en Redis
-    $filterHash = md5(json_encode([$search_doctor, $search_patient, $date_start, $date_end, $search_referencia, $page]));
-    $cacheKey = "payments_records:doctor:{$doctor_id}:filters:{$filterHash}";
-
-    // Guardamos en caché por 3 minutos (180 segundos)
-    $data = Cache::remember($cacheKey, 180, function () use ($doctor_id, $search_doctor, $search_patient, $date_start, $date_end, $search_referencia) {
-        
-        // CORRECCIÓN N+1: Cargamos previamente las relaciones de la cita y el paciente
-        $payments = Payment::filterAdvancePaymentDoctor(
-    $search_doctor,
-    $search_patient,
-    $date_start,
-    $date_end,
-    $search_referencia
-)
-->where('doctor_id', $doctor_id)
-->with(['appointment.patient']) // <-- Carga la cita y el paciente de esa cita en una sola consulta masiva
-->orderBy("id", "desc")
-->paginate(10);
-
-        return [
-            "total" => $payments->total(),
-            "payments" => PaymentCollection::make($payments)->resolve()
-        ];
-    });
-
-    return response()->json($data);
-}
 
 
     /**
@@ -113,80 +113,80 @@ class AdminPaymentController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-   public function paymentStore(Request $request)
-{
-    // Buscamos el appointment de forma segura
-    $appointment = Appointment::where("id", $request->appointment_id)->first();
-    if (!$appointment) {
-        return response()->json(['message' => 'Appointment not found.'], 404);
-    }
+    public function paymentStore(Request $request)
+    {
+        // Buscamos el appointment de forma segura
+        $appointment = Appointment::where("id", $request->appointment_id)->first();
+        if (!$appointment) {
+            return response()->json(['message' => 'Appointment not found.'], 404);
+        }
 
-    // Inicializamos la variable en null por seguridad si no viene imagen
-    $path = null;
+        // Inicializamos la variable en null por seguridad si no viene imagen
+        $path = null;
 
-    // Procesamos la imagen con Cloudinary
-    if ($request->hasFile('image')) {
-        $cloudinaryResponse = Cloudinary::uploadApi()->upload(
-            $request->file('image')->getRealPath(),
-            ['folder' => 'klyntic/payments']
+        // Procesamos la imagen con Cloudinary
+        if ($request->hasFile('image')) {
+            $cloudinaryResponse = Cloudinary::uploadApi()->upload(
+                $request->file('image')->getRealPath(),
+                ['folder' => 'klyntic/payments']
+            );
+
+            $path = $cloudinaryResponse['secure_url'];
+            $request->request->add(["avatar" => $path]);
+        }
+
+        // ⚡ CONVERSIÓN DE LA FECHA (Timestamp JS a Formato SQL YYYY-MM-DD)
+        $fecha_formateada = null;
+        if ($request->fecha) {
+            $fecha_formateada = Carbon::createFromTimestampMs($request->fecha)->format('Y-m-d');
+        } else {
+            // En caso de que por alguna razón no viaje la fecha, usamos la fecha de hoy por defecto
+            $fecha_formateada = Carbon::now()->format('Y-m-d');
+        }
+
+        $payment = Payment::create([
+            "patient_id" => $request->patient_id,
+            "doctor_id" => $request->doctor_id,
+            "appointment_id" => $request->appointment_id,
+            "nombre" => $request->nombre,
+            "monto" => $request->monto,
+            "email" => $request->email,
+            "bank_name" => $request->bank_name,
+            "metodo" => $request->metodo,
+            "referencia" => $request->referencia,
+            "status" => $request->status,
+            "tasabcv" => $request->tasabcv,
+            "moneda" => $request->moneda,
+            "image" => $path,
+            "fecha" => $fecha_formateada, // 👈 NUEVO CAMPO ENVIADO A LA BASE DE DATOS 🎉
+        ]);
+
+        // =========================================================================
+        // ⚡ LIMPIEZA DE CACHÉ EN REDIS (Actualización Contable del Médico)
+        // =========================================================================
+        // Borramos los dashboards para que el nuevo balance en dólares y la lista 
+        // de pagos recientes se calculen al instante en la pantalla del doctor.
+        $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
+        Cache::forget("dashboard:doctor:{$payment->doctor_id}");
+        Cache::forget("dashboard:doctor:{$payment->doctor_id}:year:{$year_current}");
+
+        // Notificación en el CRM del médico
+        NotificacionService::enviar(
+            $payment->doctor_id,
+            null,
+            "El paciente " . $payment->nombre . " ha reportado un pago de $" . $payment->monto . " (Ref: " . $payment->referencia . ") para su cita.",
+            $payment->doctor_id,
+            'MEDICO',
+            '💰 Nuevo Pago por Verificar',
+            'PAGO_RECIBIDO',
+            $payment->id
         );
 
-        $path = $cloudinaryResponse['secure_url'];
-        $request->request->add(["avatar" => $path]);
+        return response()->json([
+            "message" => 200,
+            "payment" => $payment,
+        ]);
     }
-
-    // ⚡ CONVERSIÓN DE LA FECHA (Timestamp JS a Formato SQL YYYY-MM-DD)
-    $fecha_formateada = null;
-    if ($request->fecha) {
-        $fecha_formateada = Carbon::createFromTimestampMs($request->fecha)->format('Y-m-d');
-    } else {
-        // En caso de que por alguna razón no viaje la fecha, usamos la fecha de hoy por defecto
-        $fecha_formateada = Carbon::now()->format('Y-m-d');
-    }
-
-    $payment = Payment::create([
-        "patient_id" => $request->patient_id,
-        "doctor_id" => $request->doctor_id,
-        "appointment_id" => $request->appointment_id,
-        "nombre" => $request->nombre,
-        "monto" => $request->monto,
-        "email" => $request->email,
-        "bank_name" => $request->bank_name,
-        "metodo" => $request->metodo,
-        "referencia" => $request->referencia,
-        "status" => $request->status,
-        "tasabcv" => $request->tasabcv,
-        "moneda" => $request->moneda,
-        "image" => $path,
-        "fecha" => $fecha_formateada, // 👈 NUEVO CAMPO ENVIADO A LA BASE DE DATOS 🎉
-    ]);
-
-    // =========================================================================
-    // ⚡ LIMPIEZA DE CACHÉ EN REDIS (Actualización Contable del Médico)
-    // =========================================================================
-    // Borramos los dashboards para que el nuevo balance en dólares y la lista 
-    // de pagos recientes se calculen al instante en la pantalla del doctor.
-    $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
-    Cache::forget("dashboard:doctor:{$payment->doctor_id}");
-    Cache::forget("dashboard:doctor:{$payment->doctor_id}:year:{$year_current}");
-
-    // Notificación en el CRM del médico
-    NotificacionService::enviar(
-        $payment->doctor_id,
-        null,
-        "El paciente " . $payment->nombre . " ha reportado un pago de $" . $payment->monto . " (Ref: " . $payment->referencia . ") para su cita.",
-        $payment->doctor_id,
-        'MEDICO',
-        '💰 Nuevo Pago por Verificar',
-        'PAGO_RECIBIDO',
-        $payment->id
-    );
-
-    return response()->json([
-        "message" => 200,
-        "payment" => $payment,
-    ]);
-}
 
 
     /**
