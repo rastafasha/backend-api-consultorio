@@ -113,7 +113,7 @@ class AdminPaymentController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function paymentStore(Request $request)
+   public function paymentStore(Request $request)
 {
     // Buscamos el appointment de forma segura
     $appointment = Appointment::where("id", $request->appointment_id)->first();
@@ -135,6 +135,15 @@ class AdminPaymentController extends Controller
         $request->request->add(["avatar" => $path]);
     }
 
+    // ⚡ CONVERSIÓN DE LA FECHA (Timestamp JS a Formato SQL YYYY-MM-DD)
+    $fecha_formateada = null;
+    if ($request->fecha) {
+        $fecha_formateada = Carbon::createFromTimestampMs($request->fecha)->format('Y-m-d');
+    } else {
+        // En caso de que por alguna razón no viaje la fecha, usamos la fecha de hoy por defecto
+        $fecha_formateada = Carbon::now()->format('Y-m-d');
+    }
+
     $payment = Payment::create([
         "patient_id" => $request->patient_id,
         "doctor_id" => $request->doctor_id,
@@ -148,6 +157,7 @@ class AdminPaymentController extends Controller
         "status" => $request->status,
         "tasabcv" => $request->tasabcv,
         "image" => $path,
+        "fecha" => $fecha_formateada, // 👈 NUEVO CAMPO ENVIADO A LA BASE DE DATOS 🎉
     ]);
 
     // =========================================================================
@@ -176,6 +186,7 @@ class AdminPaymentController extends Controller
         "payment" => $payment,
     ]);
 }
+
 
     /**
      * Display the specified resource.
