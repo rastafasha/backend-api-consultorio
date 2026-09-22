@@ -12,33 +12,37 @@ class NotificacionService
      */
     public static function enviar($usuarioId, $rol, $consultorioId, $telefonoPaciente, $mensajeTexto, $tituloToastr, $tipoEnum, $refId = null)
     {
-        // Apuntamos a la URL de tu backend de Node.js desde el .env o directa
-        // El framework busca la variable en el .env, si no existe usa el puerto 3000 por defecto
-        $urlNode = env('KLYNTIC_NODE_URL', 'http://localhost:3000') . '/api/klyntic/notificaciones/webhook-recordatorio';
-
+        // 1. Limpiamos la URL para evitar el bug de la doble barra '//' en producción
+        $baseNodeUrl = rtrim(env('KLYNTIC_NODE_URL', 'http://localhost:5000'), '/');
+        
+        // 2. Apuntamos a la ruta real de tu módulo de recursos/notificaciones de Node.js
+        $urlNode = $baseNodeUrl . '/api/recursos/webhook-recordatorio';
 
         try {
+            // Enviamos el token secreto interno que definimos en tu .env para comunicación segura
             $response = Http::withHeaders([
-                'x-token' => 'TU_SECRETO_INTERNO_OPCIONAL' // Por seguridad entre servidores si quieres
+                'Authorization' => env('CRM_INTERNAL_TOKEN', 'KlynticCRMSecretToken_2026_vM0MmcxxA4Ih')
             ])->post($urlNode, [
-                        'consultorio_id' => $consultorioId,
-                        'telefono' => $telefonoPaciente, // Opcional: Si va vacío, el controlador no envía WhatsApp
-                        'mensaje' => $mensajeTexto,
-                        'usuario' => (string) $usuarioId, // ID de MySQL para la campana de Angular
-                        'rolDestinatario' => $rol,               // 'MEDICO' o 'PACIENTE'
-                        'titulo' => $tituloToastr,      // Título bonito para el front
-                        'tipo' => $tipoEnum,          // 'PAGO_RECIBIDO', 'CITA_AGENDADA', etc.
-                        'referenciaId' => $refId ? (string) $refId : null
-                    ]);
+                'consultorio_id' => $consultorioId,
+                'telefono'       => $telefonoPaciente, 
+                'mensaje'        => $mensajeTexto,
+                'usuario'        => (string) $usuarioId, 
+                'rolDestinatario'=> $rol,               // 'MEDICO' o 'PACIENTE'
+                'titulo'         => $tituloToastr,      
+                'tipo'           => $tipoEnum,          // 'PAGO_RECIBIDO', 'CITA_AGENDADA', etc.
+                'referenciaId'   => $refId ? (string) $refId : null
+            ]);
 
             if (!$response->successful()) {
-                Log::error("Error Node HTTP: " . $response->body());
+                Log::error("❌ Error HTTP en Node.js (Estatus " . $response->status() . "): " . $response->body());
+            } else {
+                Log::info("🔔 Notificación enviada con éxito a Node.js para el usuario: " . $usuarioId);
             }
 
             return $response->successful();
 
         } catch (\Exception $e) {
-            Log::error("Fallo conexión con Node.js: " . $e->getMessage());
+            Log::error("💥 Fallo crítico de conexión con Node.js en Render: " . $e->getMessage());
             return false;
         }
     }

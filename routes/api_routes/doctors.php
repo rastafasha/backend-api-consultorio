@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('doctors', [DoctorController::class, 'index'])->name('doctor.index');
 Route::get('doctors/config', [DoctorController::class, 'config'])->name('doctor.config');
 Route::post('doctors/store', [DoctorController::class, 'store'])->name('doctor.store');
+
+
 Route::get('doctors/moneda/{id}', [DoctorController::class, 'getMoneda'])->name('doctor.getMoneda');
 Route::get('doctors/show/{id}', [DoctorController::class, 'show'])->name('doctor.show');
 Route::post('doctors/update/{id}', [DoctorController::class, 'update'])->name('doctor.update');

@@ -90,6 +90,9 @@ Route::group(['middleware' => 'api'], function ($router) {
     // pais
     require __DIR__ . '/api_routes/pais.php';
 
+    // crm
+    require __DIR__ . '/api_routes/crm.php';
+
 
 
 
