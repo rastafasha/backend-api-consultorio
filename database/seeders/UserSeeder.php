@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class UserSeeder extends Seeder
 {
@@ -14,6 +16,7 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        // 📋 Base de datos semilla unificada
         $users = [
             [
                 "name" => "super",
@@ -24,9 +27,8 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369874',
                 "password" => bcrypt("superadmin"),
-                'roles' => [["id" => 1, "name" => "SUPERADMIN"]], // Procesado automático por ID
+                'roles' => [["id" => 1, "name" => "SUPERADMIN"]],
                 "email_verified_at" => now(),
-                "created_at" => now(),
             ],
             [
                 "name" => "admin",
@@ -37,9 +39,8 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369871',
                 "password" => bcrypt("password"),
-                'roles' => [["id" => 2, "name" => "ADMIN"]], // Nota: ID 2 para Administrador regular
+                'roles' => [["id" => 2, "name" => "ADMIN"]],
                 "email_verified_at" => now(),
-                "created_at" => now(),
             ],
             // --- 🏥 SECCIÓN: DOCTORES ---
             [
@@ -66,7 +67,7 @@ class UserSeeder extends Seeder
                 "password" => bcrypt("password"),
                 'roles' => [["id" => 3, "name" => "DOCTOR"]]
             ],
-            // --- 👔 SECCIÓN: PERSONAL DE APOYO (Filtrados automáticamente de Mongo) ---
+            // --- 👔 SECCIÓN: PERSONAL DE APOYO ---
             [
                 "name" => "laboratorio",
                 'surname' => 'Johnson',
@@ -131,57 +132,63 @@ class UserSeeder extends Seeder
                 'mobile' => '1234567893',
                 'n_doc' => '5421369870',
                 "password" => bcrypt("password"),
-                // Estructura simplificada que procesa tu bucle foreach
                 'roles' => [["id" => 9, "name" => "GUEST"]],
                 "email_verified_at" => now(),
-                "created_at" => now(),
             ]
-
         ];
 
-        // LIMITAR A LOS PRIMEROS 5 USUARIOS (Ajusta el número según lo que necesites)
-        $usersLimitados = array_slice($users, 0, 10);
+        // Procesamos el lote masivo completo
+        foreach ($users as $userData) {
+            
+            // 1. Extraemos los roles de forma limpia
+            $roles = $userData['roles'] ?? null;
+            unset($userData['roles']);
 
-        foreach ($usersLimitados as $user) {
-            // 1. Extraemos los roles antes de crear el usuario para no ensuciar el create
-            $roles = $user['roles'] ?? null;
-            unset($user['roles']);
+            // 2. Extraemos campos bloqueados por el $fillable para inyectarlos directo por modelo
+            $emailVerifiedAt = $userData['email_verified_at'] ?? null;
+            unset($userData['email_verified_at']);
 
-            // 2. CORREGIDO: Creamos primero el usuario en MySQL
-            $createdUser = User::create($user);
+            // 3. Creamos el usuario en PostgreSQL de forma higiénica
+            $createdUser = User::create($userData);
 
-            // 3. Asignamos los roles de forma segura y en el orden correcto
+            // 4. 🔥 CORRECCIÓN FORZADA: Inyectamos campos protegidos saltándonos el mass assignment
+            if ($emailVerifiedAt) {
+                $createdUser->email_verified_at = $emailVerifiedAt;
+                $createdUser->save();
+            }
+
+            // 5. 🔥 CORRECCIÓN DE SPATIE: Asignación de roles nativa y segura
             if ($roles) {
-                // Si el JSON traía roles, extraemos los IDs y usamos el método nativo de Spatie
-                $roleIds = array_column($roles, 'id');
-                $createdUser->roles()->sync($roleIds); // Mantiene tu sincronización por IDs
+                // Sincronizamos usando el método oficial de Spatie 'syncRoles' pasándole los nombres de texto planos
+                $roleNames = array_column($roles, 'name');
+                $createdUser->syncRoles($roleNames); 
             } else {
-                // Si no tenía roles asignados en el JSON, ahora sí le asignamos el rol de invitado de forma segura
                 $createdUser->assignRole(User::GUEST);
             }
 
-            // --- 🚀 SINCRONIZACIÓN AUTOMÁTICA KLYNTIC (Node.js/Render) ---
+            // --- 🚀 SINCRONIZACIÓN AUTOMÁTICA CON EL ENTORNO DE ENVIOS ---
             if ($createdUser->hasRole('DOCTOR')) {
                 try {
-                    $nodeUrl = env('KLYNTIC_NODE_URL', 'https://back-klyntic-envios.onrender.com');
+                    // Limpiamos la URL base para evitar el error de doble barra 'api/api' en Render
+                    $nodeUrlBase = rtrim(env('KLYNTIC_NODE_URL', 'https://back-klyntic-envios.onrender.com'), '/');
+                    
+                    // Si tu URL del .env no incluye el prefijo, lo colocamos dinámicamente de forma higiénica
+                    $endpointFinal = str_contains($nodeUrlBase, '/api') ? $nodeUrlBase : $nodeUrlBase . '/api';
+                    $urlSync = $endpointFinal . '/klyntic/consultorios/sync';
 
-                    // SOLUCIÓN: Agregamos timeout() para que Laravel no espere infinitamente
-                    \Illuminate\Support\Facades\Http::timeout(5) // Máximo 5 segundos de espera
-                        ->post($nodeUrl . '/api/klyntic/consultorios/sync', [
-                            'doctor_id' => (string) $createdUser->id
-                        ]);
+                    // Disparo HTTP asíncrono blindado con cortafuegos de 4 segundos
+                    Http::timeout(4)->post($urlSync, [
+                        'doctor_id' => (string) $createdUser->id
+                    ]);
 
                 } catch (\Exception $e) {
-                    // Si Render está dormido o da timeout, se registra en el log y el seeder CONTINÚA
-                    \Illuminate\Support\Facades\Log::error('Seeder Klyntic: Falló el enlace a Render para el doctor ID ' . $createdUser->id . ': ' . $e->getMessage());
-
-                    // Opcional: Imprime una alerta en tu consola de Railway para que sepas qué pasó
-                    $this->command->warn("Aviso: Render tardó en responder para el Doctor ID " . $createdUser->id . ", saltando sincronización externa para continuar seeder.");
+                    Log::error('❌ [Seeder Klyntic] Saltando sincronización externa por inactividad en Render: ' . $e->getMessage());
+                    $this->command->warn("Aviso: Microservicio en Render en reposo. Doctor ID #" . $createdUser->id . " sembrado con éxito en Supabase.");
                 }
             }
             // --------------------------------------------------------------
-
         }
-
+        
+        $this->command->info('🎯 ¡UserSeeder completado al 100% con roles indexados con éxito!');
     }
 }

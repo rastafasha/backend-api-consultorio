@@ -22,12 +22,19 @@ return [
     // Especificas tus dominios de Angular de forma limpia
     'allowed_origins' => [
         'http://localhost:4300', 
+        'http://localhost:4200',
+        'http://localhost:4203',
+        'https://backend-crmklyntic-mean.onrender.com', 
         'https://consultorio.klyntic.com', 
         'https://pconsultorio.klyntic.com'
     ],
+    // 🔥 PATRONES DINÁMICOS MULTI-TENANT (Para Producción en Vercel)
+    // Permite que cualquier subdominio de Klyntic o enlaces de pruebas de Vercel consulten la API libremente
+    'allowed_origins_patterns' => [
+        '#^https://.*\.klyntic\.com$#',
+        '#^https://.*\.vercel\.app$#',
+    ],
 
-    // --- DEJA ESTO COMPLETAMENTE VACÍO PARA EVITAR EL CONFLICTO ---
-    'allowed_origins_patterns' => [], 
 
     'allowed_headers' => ['*'],
 
@@ -35,6 +42,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 
 ];

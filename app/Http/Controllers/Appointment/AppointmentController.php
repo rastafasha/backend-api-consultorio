@@ -19,9 +19,10 @@ use App\Services\NotificacionService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class AppointmentController extends Controller
 {
@@ -788,5 +789,133 @@ class AppointmentController extends Controller
             AppointmentCollection::make($appointments)
         );
     }
+
+    /**
+ * ⚡ SOLICITUD DE CITA EXPRESS (PACIENTES ANÓNIMOS DE LA WEB)
+ * Registra o recupera al paciente por su cédula, inserta la cita en Supabase y limpia caché.
+ */
+public function storeExpress(Request $request): JsonResponse
+{
+    // 1. Validamos estrictamente los datos capturados por el formulario reactivo Apple de Angular
+    $request->validate([
+        'doctor_id'                    => 'required|integer',
+        'date_appointment'             => 'required|date',
+        'speciality_id'                => 'required|integer',
+        'doctor_schedule_join_hour_id' => 'required|integer',
+        'amount'                       => 'required|numeric',
+        'name'                         => 'required|string|max:250',
+        'surname'                      => 'required|string|max:250',
+        'n_doc'                        => 'required|string|max:50',
+        'phone'                        => 'required|string|max:50',
+        'email'                        => 'required|email'
+    ]);
+
+    // 2. 🛡️ CONTROL DE DUPLICADOS EN PACIENTES (Tu brillante deducción)
+    // Buscamos si la cédula ya existe en la base de datos de Supabase/PostgreSQL
+    $patient = Patient::where("n_doc", $request->n_doc)->first();
+    $doctor = User::findOrFail($request->doctor_id);
+
+    if (!$patient) {
+        // Si es un paciente completamente nuevo, lo damos de alta de forma automática
+        $patient = Patient::create([
+            "name"    => $request->name,
+            "surname" => $request->surname,
+            "email"   => strtolower(trim($request->email)),
+            "n_doc"   => $request->n_doc,
+            "phone"   => $request->phone,
+        ]);
+        Log::info("✨ [Express] Nuevo paciente registrado silenciosamente. ID: #" . $patient->id);
+    } else {
+        // 🔄 Si el paciente ya existía, actualizamos su teléfono o correo por si cambiaron, sin duplicar
+        $patient->update([
+            "phone" => $request->phone,
+            "email" => strtolower(trim($request->email))
+        ]);
+        Log::info("🔄 [Express] Paciente existente identificado. Vinculando cita al ID: #" . $patient->id);
+    }
+
+    // 3. Formateamos la fecha correctamente utilizando la "H" mayúscula de 24 horas (Mantiene tu corrección)
+    $date_formatted = Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s");
+
+    // 4. 🔒 BLINDAJE CONTRA SOBRE-RESERVAS: Verificamos si este bloque de hora exacto no se ocupó en el último segundo
+    $bloqueOcupado = Appointment::where('doctor_id', $request->doctor_id)
+                                ->where('date_appointment', $date_formatted)
+                                ->where('doctor_schedule_join_hour_id', $request->doctor_schedule_join_hour_id)
+                                ->whereNull('deleted_at')
+                                ->exists();
+
+    if ($bloqueOcupado) {
+        return response()->json([
+            "message" => 403,
+            "message_text" => "Lo sentimos, este horario acaba de ser reservado por otro paciente. Por favor, seleccione otra hora."
+        ], 200); // Retorna un estatus 200 con mensaje de aviso amigable para Ngx-Toastr
+    }
+
+    // 5. Inserción de la Cita Médica Express
+    $appointment = Appointment::create([
+        "doctor_id"                    => $request->doctor_id,
+        'patient_id'                   => $patient->id,
+        "date_appointment"             => $date_formatted,
+        "speciality_id"                => $request->speciality_id,
+        "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
+        
+        // 🔥 SOLUCIÓN AL LOGOUT: Al ser anónimo, forzamos que el 'user_id' creador sea el ID del propio Doctor
+        'user_id'                      => $doctor->id, 
+        
+        "amount"                       => $request->amount,
+        "status_pay"                   => $request->status_pay ?? 1, // 1 = Pendiente por confirmar / pagar
+        "status"                       => $request->status ?? 1,     // 1 = Solicitada / Pendiente
+    ]);
+
+    // 6. Carga relacional en caché intermedia para el retorno del JSON
+    $appointment->load(['patient', 'speciality']);
+
+    // =========================================================================
+    // ⚡ SECCIÓN: LIMPIEZA DE CACHÉ EN REDIS (El truco de Klyntic - Intacto)
+    // =========================================================================
+    $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}");
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}:year:{$year_current}");
+
+    // 🔔 DISPARO DE NOTIFICACIÓN INTERNA AL DASHBOARD DEL MÉDICO
+    try {
+        if (class_exists('NotificacionService')) {
+            NotificacionService::enviar(
+                $appointment->doctor_id,
+                null,
+                "📅 Cita Express: El paciente {$patient->name} solicita consulta para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
+                $appointment->doctor_id,
+                'MEDICO',
+                '📅 Nueva Cita Express Solicitada',
+                'CONSULTA_NUEVA',
+                $appointment->id
+            );
+        }
+    } catch (\Exception $e) {
+        Log::error("Aviso: Notificación interna al dashboard en espera: " . $e->getMessage());
+    }
+
+    // 7. RESPUESTA LIMPIA IDEAL PARA EL CONSUMO DE TU APPOINTMENTSERVICE DE ANGULAR
+    return response()->json([
+        "message"          => 200,
+        "appointment"      => $appointment,
+        "amount"           => $appointment->amount,
+        "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
+        "patient"          => [
+            "id"        => $appointment->patient->id,
+            "email"     => $appointment->patient->email,
+            "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+        ],
+        "speciality"       => $appointment->speciality ? [
+            "id"   => $appointment->speciality->id,
+            "name" => $appointment->speciality->name,
+        ] : NULL,
+        "doctor_id"        => $appointment->doctor_id,
+        "doctor"           => [
+            "id"        => $doctor->id,
+            "full_name" => $doctor->name . ' ' . $doctor->surname,
+        ],
+    ], 200);
+}
 
 }
