@@ -16,11 +16,15 @@ class DoctorAddressController extends Controller
         ->where('user_id', $user_id)
         ->get();
 
+    // 🌐 RESPUESTA CON HEADERS DE CORS FORZADOS
     return response()->json([
         'status' => 'success',
         'addresses' => $addresses
-    ]);
-    }
+    ])
+    ->header('Access-Control-Allow-Origin', '*')
+    ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, x-token');
+}
 
     // Almacenar una dirección de forma independiente
     public function store(Request $request) 

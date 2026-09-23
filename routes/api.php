@@ -101,7 +101,7 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::get('appointments/config', [AppointmentController::class, 'config']);
     Route::get('specialities/show/{id}', [SpecialityController::class, 'show']);
     Route::get('doctors/profile/{id}', [DoctorController::class, 'profile']); // El de tu función unificada
-    Route::get('doctor-addresses/doctor/{user_id}', [DoctorAddressController::class, 'getByDoctor']); // El de tu función unificada
+   Route::get('doctor-addresses/doctor/{user_id}', [DoctorAddressController::class, 'getByDoctor']); // El de tu función unificada
     // Endpoint express que guarda al paciente y la cita en un solo paso
     Route::post('appointments/store-express', [AppointmentController::class, 'storeExpress']); 
 
