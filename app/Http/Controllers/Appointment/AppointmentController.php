@@ -863,7 +863,7 @@ public function storeExpress(Request $request): JsonResponse
         'user_id'                      => $doctor->id, 
         
         "amount"                       => $request->amount,
-        "status_pay"                   => $request->status_pay ?? 1, // 1 = Pendiente por confirmar / pagar
+        "status_pay"                   => $request->status_pay ?? 2, // 2 = Pendiente por confirmar / pagar
         "status"                       => $request->status ?? 1,     // 1 = Solicitada / Pendiente
     ]);
 
