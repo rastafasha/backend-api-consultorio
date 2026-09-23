@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\Doctor\SpecialityController;
 use App\Http\Controllers\Appointment\AppointmentController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\Doctor\DoctorAddressController;
 
 /*
 |--------------------------------------------------------------------------
@@ -100,7 +101,7 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::get('appointments/config', [AppointmentController::class, 'config']);
     Route::get('specialities/show/{id}', [SpecialityController::class, 'show']);
     Route::get('doctors/profile/{id}', [DoctorController::class, 'profile']); // El de tu función unificada
-
+    Route::get('doctor-addresses/doctor/{user_id}', [DoctorAddressController::class, 'getByDoctor'])->name('doctor.address.by_doctor');
     // Endpoint express que guarda al paciente y la cita en un solo paso
     Route::post('appointments/store-express', [AppointmentController::class, 'storeExpress']); 
 
