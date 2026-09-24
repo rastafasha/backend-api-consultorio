@@ -106,7 +106,7 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::get('paymentmethods/bydoctor/{doctor_id}', [tiposdepagoController::class, 'byDoctor']);
     
     // Endpoint express que guarda al paciente y la cita en un solo paso
-    Route::post('appointments/filterbydoctor/{doctor_id}/', [AppointmentController::class, 'filterByDoctor']);
+    Route::post('appointments/filterbydoctor/{doctor_id}', [AppointmentController::class, 'filterByDoctor']);
     Route::post('appointments/store-express', [AppointmentController::class, 'storeExpress']); 
 
 

@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class AppointmentController extends Controller
 {
@@ -184,21 +185,21 @@ class AppointmentController extends Controller
 
 
 
-    public function filterByDoctor(Request $request, $doctor_id)
+  public function filterByDoctor(Request $request, $doctor_id)
 {
     // Establecer la zona horaria antes de cualquier procesamiento de Carbon
     date_default_timezone_set('America/Caracas');
     Carbon::setLocale('es');
 
-    // 1. Normalizar la fecha ISO del Frontend a la zona horaria local de Caracas
-    $date_appointment = Carbon::parse($request->date_appointment)
-        ->setTimezone('America/Caracas')
-        ->format('Y-m-d'); 
+    // 1. 🛡️ FIX: Procesar la fecha de forma plana para evitar desfases de días entre servidores
+    // Tomamos solo los primeros 10 caracteres "YYYY-MM-DD" ignorando el formato ISO/UTC del frontend
+    $pure_date = substr($request->date_appointment, 0, 10);
+    $date_appointment = Carbon::parse($pure_date)->format('Y-m-d'); 
 
     $hour = $request->hour;
     $speciality_id = $request->speciality_id;
 
-    // 3. 🚀 SOLUCIÓN: Cargamos la relación de direcciones directamente con el doctor ('addresses')
+    // 3. Cargamos la relación de direcciones directamente con el doctor ('addresses')
     $doctor = User::with(['speciality', 'addresses'])->find($doctor_id);
 
     if (!$doctor) {
@@ -208,11 +209,14 @@ class AppointmentController extends Controller
         ], 404);
     }
 
-    // 4. Obtener el nombre del día basado en la fecha normalizada
-    $name_day = Carbon::parse($date_appointment)->dayName;
+    // 4. 🛡️ FIX ACENTOS: Obtener el nombre del día y limpiarlo de acentos para PostgreSQL
+    // Convertimos "miércoles" en "miercoles" o "sábado" en "sabado"
+    $raw_day = Carbon::parse($date_appointment)->dayName; // ej: "miércoles"
+    $name_day = Str::slug($raw_day); // ej: "miercoles"
 
     // 5. Ejecutar la consulta unificada con Eager Loading
     $segments = DoctorScheduleJoinHour::whereHas("doctor_schedule_day", function ($q) use ($doctor_id, $name_day) {
+        // Usamos un doble comodín limpiando potenciales acentos en la BD remota
         $q->where("day", "ilike", "%" . $name_day . "%")
             ->where("user_id", $doctor_id)
             ->whereNull("deleted_at");
@@ -239,11 +243,8 @@ class AppointmentController extends Controller
             "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
             "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
             "is_appointment" => $is_appointment,
-            // 💡 Incluimos el ID de la dirección asignada a este bloque horario
             "doctor_address_id" => $addressRelation->id ?? null, 
             
-            // 🚀 NUEVO: Retornamos también el objeto completo del consultorio en el segmento
-            // para que Angular pueda pintarlo dinámicamente según la hora seleccionada.
             "consultorio" => $addressRelation ? [
                 "id" => $addressRelation->id,
                 "name_consultorio" => $addressRelation->name_consultorio,
@@ -272,7 +273,6 @@ class AppointmentController extends Controller
                 "id" => $doctor->speciality->id ?? null,
                 "name" => $doctor->speciality->name ?? null,
             ],
-            // 🚀 Mapeo limpio e infalible desde la relación directa del Doctor
             "addresses" => $doctor->addresses->map(function ($address) {
                 return [
                     "id" => $address->id,
