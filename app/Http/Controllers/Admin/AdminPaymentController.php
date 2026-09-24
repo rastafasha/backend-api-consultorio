@@ -324,20 +324,20 @@ class AdminPaymentController extends Controller
         $payment->save();
 
         // 2. Si es RECHAZADO, terminamos aquí para evitar errores de null
+        // 🧪 CASO RECHAZADO: Notificación al Paciente
         if ($request->status === 'REJECTED') {
-
-            // =========================================================================
-            // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE PAGO RECHAZADO AL PACIENTE
-            // =========================================================================
             NotificacionService::enviar(
-                $payment->doctor_id,                                              // Consultorio ID para WhatsApp
-                $payment->patient->phone,                                         // Teléfono del paciente
-                "Hola " . $payment->nombre . ", tu pago reportado por $" . $payment->monto . " (Ref: " . $payment->referencia . ") no pudo ser verificado. Motivo: " . $payment->motivo_rechazo . ". Por favor, verifica los datos e intenta de nuevo.",
-                $payment->patient_id,                                             // ID del paciente para la campana de Angular
-                'PACIENTE',                                                       // Rol
-                '❌ Pago Rechazado',                                               // Título Toastr
-                'PAGO_RECHAZADO',                                                 // Enum tipo
-                $payment->id                                                      // Referencia del pago en MySQL
+                $payment->doctor_id, // ID del consultorio [15]
+                $payment->patient->phone, // WhatsApp del paciente [15]
+                "Hola " . $payment->nombre . ", tu pago reportado por $" . $payment->monto . " no pudo ser verificado...",
+                
+                // 🚀 CORRECCIÓN: Forzamos string para el canal de la campana del paciente
+                (string)$payment->patient_id, 
+                
+                'PACIENTE',
+                '❌ Pago Rechazado',
+                'PAGO_RECHAZADO',
+                $payment->id // Referencia MySQL [15]
             );
 
             return response()->json([
@@ -380,15 +380,19 @@ class AdminPaymentController extends Controller
             // =========================================================================
             // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE PAGO APROBADO AL PACIENTE
             // =========================================================================
+            // 🧪 CASO APROBADO: Notificación al Paciente
             NotificacionService::enviar(
-                $payment->doctor_id,                                              // Consultorio ID para WhatsApp
-                $payment->patient->phone,                                         // Teléfono del paciente
-                "Hola " . $payment->nombre . ", te confirmamos que tu pago de $" . $payment->monto . " (Ref: " . $payment->referencia . ") ha sido VERIFICADO y aprobado con éxito. ¡Gracias!",
-                $payment->patient_id,                                             // ID del paciente para la campana de Angular
-                'PACIENTE',                                                       // Rol
-                '✅ Tu Pago ha sido Verificado',                                  // Título Toastr
-                'PAGO_RECIBIDO',                                                  // Enum tipo
-                $payment->id                                                      // Referencia del pago en MySQL
+                $payment->doctor_id,
+                $payment->patient->phone,
+                "Hola " . $payment->nombre . ", te confirmamos que tu pago de $" . $payment->monto . " ha sido VERIFICADO...",
+                
+                // 🚀 CORRECCIÓN: Forzamos string para la campana del paciente en Angular
+                (string)$payment->patient_id, 
+                
+                'PACIENTE',
+                '✅ Tu Pago ha sido Verificado',
+                'PAGO_RECIBIDO',
+                $payment->id // Referencia MySQL [15]
             );
         }
         // Ejemplo para el futuro: Solo envía el correo si el campo no está vacío

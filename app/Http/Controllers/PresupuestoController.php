@@ -16,8 +16,9 @@ use App\Models\User;
 use App\Services\NotificacionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class PresupuestoController extends Controller
 {
@@ -113,19 +114,27 @@ class PresupuestoController extends Controller
         // Mail::to($doctor->email)->send(new NewpresupuestoRegisterMail($presupuesto));
 
         // =========================================================================
-        // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE NUEVO PRESUPUESTO AL PACIENTE
-        // =========================================================================
-        NotificacionService::enviar(
-    $patient->id,                                                         // 1. $usuarioId (A quién encender la campana)
-    'PACIENTE',                                                           // 2. $rol (Rol destinatario)
-    $presupuesto->doctor_id,                                              // 3. $consultorioId (Filtro de consultorio para el backend)
-    $patient->phone,                                                      // 4. $telefonoPaciente (Para el envío de WhatsApp en Node)
-    "Hola " . $patient->name . ", el especialista ha generado un nuevo presupuesto médico para tu tratamiento por un monto de $" . $presupuesto->amount . ". Ya puedes revisarlo detalladamente e iniciar tu gestión de pago ingresando a tu aplicación.", // 5. $mensajeTexto
-    '📋 Nuevo Presupuesto Disponible',                                    // 6. $tituloToastr
-    'PRESUPUESTO_NUEVO',                                                  // 7. $tipoEnum
-    $presupuesto->id                                                      // 8. $refId
-);
-
+        // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE NUEVO PRESUPUESTO AL PACIENTE (CORREGIDO)
+       // =========================================================================
+        try {
+            if (class_exists('NotificacionService')) {
+                NotificacionService::enviar(
+                    $presupuesto->doctor_id,                                              // 1. $consultorioId (Filtro de consultorio para WhatsApp)
+                    $patient->phone,                                                      // 2. $telefonoPaciente (Para el envío de WhatsApp en Node)
+                    "Hola " . $patient->name . ", el especialista ha generado un nuevo presupuesto médico para tu tratamiento por un monto de $" . $presupuesto->amount . ". Ya puedes revisarlo detalladamente ingresando a tu portal.", // 3. $mensajeTexto
+                    
+                    // 🚀 CORRECCIÓN: Forzamos el ID del destinatario en formato String para MongoDB/WebSockets (Campana del Paciente)
+                    (string)$presupuesto->patient_id,                                     
+                    
+                    'PACIENTE',                                                           // 5. $rol (Rol destinatario para segmentar rápido)
+                    '📋 Nuevo Presupuesto Disponible',                                    // 6. $tituloToastr
+                    'PRESUPUESTO_NUEVO',                                                  // 7. $tipoEnum de Mongo
+                    $presupuesto->id                                                      // 8. $refId de MySQL
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error("Aviso: Notificación interna de presupuesto en espera: " . $e->getMessage());
+        }
         return response()->json([
             "message" => 200,
             "presupuesto" => $presupuesto,
@@ -238,19 +247,28 @@ class PresupuestoController extends Controller
         // }
 
         // =========================================================================
-        // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE PRESUPUESTO APROBADO AL MÉDICO (KLYNTIC)
+        // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE PRESUPUESTO APROBADO AL MÉDICO (CORREGIDO)
         // =========================================================================
         if ($request->confimation == 2) {
-            NotificacionService::enviar(
-                $presupuesto->doctor_id,                                              // Consultorio ID para mapeo interno
-                null,                                                                 // Teléfono null porque al médico no le enviamos WhatsApp por esto
-                "El paciente " . $presupuesto->patient->name . " " . $presupuesto->patient->surname . " ha APROBADO el presupuesto por un monto de $" . $presupuesto->amount . ".",
-                $presupuesto->doctor_id,                                              // ID del médico para encender su campana en el CRM
-                'MEDICO',                                                             // Rol destinatario
-                '🎉 ¡Presupuesto Aprobado por Paciente!',                             // Título del Toastr
-                'PRESUPUESTO_APROBADO',                                               // Enum tipo
-                $presupuesto->id                                                      // ID del presupuesto en MySQL como referencia
-            );
+            try {
+                if (class_exists('NotificacionService')) {
+                    NotificacionService::enviar(
+                        $presupuesto->doctor_id,                                              // 1. $consultorioId para mapeo interno
+                        null,                                                                 // 2. Teléfono null (al médico no le enviamos WhatsApp por esto)
+                        "El paciente " . $presupuesto->patient->name . " " . $presupuesto->patient->surname . " ha APROBADO el presupuesto por un monto de $" . $presupuesto->amount . ".", // 3. Mensaje
+                        
+                        // 🚀 CORRECCIÓN: Forzamos el ID del destinatario en formato String (Campana del Médico en el CRM)
+                        (string)$presupuesto->doctor_id,                                      
+                        
+                        'MEDICO',                                                             // 5. Rol destinatario
+                        '🎉 ¡Presupuesto Aprobado por Paciente!',                             // 6. Título del Toastr
+                        'PRESUPUESTO_APROBADO',                                               // 7. Enum tipo para MongoDB
+                        $presupuesto->id                                                      // 8. ID del presupuesto en MySQL como referencia
+                    );
+                }
+            } catch (\Exception $e) {
+                Log::error("Aviso: Notificación de aprobación en espera: " . $e->getMessage());
+            }
         }
 
         return response()->json([

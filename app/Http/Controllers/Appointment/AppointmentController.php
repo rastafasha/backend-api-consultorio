@@ -490,17 +490,28 @@ class AppointmentController extends Controller
         Cache::forget("dashboard:doctor:{$appointment->doctor_id}");
         Cache::forget("dashboard:doctor:{$appointment->doctor_id}:year:{$year_current}");
 
-        // Notificación en segundo plano al Médico
-        NotificacionService::enviar(
-            $appointment->doctor_id,
-            null,
-            "Tienes un nuevo paciente agendado para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-            $appointment->doctor_id,
-            'MEDICO',
-            '📅 Nueva Cita Agendada',
-            'CONSULTA_NUEVA',
-            $appointment->id
-        );
+        // =========================================================================
+        // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE NUEVA CITA AL MÉDICO (CORREGIDO)
+        // =========================================================================
+        try {
+            if (class_exists('NotificacionService')) {
+                NotificacionService::enviar(
+                    $appointment->doctor_id, // 1. ID del consultorio para canalizar WhatsApp si aplica
+                    null,                    // 2. Teléfono (null porque al médico no le enviamos WhatsApp por esto)
+                    "Tienes un nuevo paciente agendado para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'), // 3. Mensaje
+                    
+                    // 🚀 CORRECCIÓN: Forzamos el ID del destinatario en formato String para MongoDB/WebSockets (Campana del Médico)
+                    (string)$appointment->doctor_id, 
+                    
+                    'MEDICO',                // 5. Rol destinatario
+                    '📅 Nueva Cita Agendada', // 6. Título del Toastr
+                    'CONSULTA_NUEVA',        // 7. Enum tipo para MongoDB
+                    $appointment->id         // 8. ID relacional de MySQL como referencia
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error("Aviso: Notificación interna de cita estándar en espera: " . $e->getMessage());
+        }
 
         return response()->json([
             "message" => 200,
@@ -877,18 +888,23 @@ public function storeExpress(Request $request): JsonResponse
     Cache::forget("dashboard:doctor:{$appointment->doctor_id}");
     Cache::forget("dashboard:doctor:{$appointment->doctor_id}:year:{$year_current}");
 
-    // 🔔 DISPARO DE NOTIFICACIÓN INTERNA AL DASHBOARD DEL MÉDICO
+    // =========================================================================
+    // 🔔 DISPARO DE NOTIFICACIÓN INTERNA AL DASHBOARD DEL MÉDICO 
+    // =========================================================================
     try {
         if (class_exists('NotificacionService')) {
             NotificacionService::enviar(
-                $appointment->doctor_id,
+                $appointment->doctor_id,  // ID numérico para el canal de WhatsApp [14]
                 null,
                 "📅 Cita Express: El paciente {$patient->name} solicita consulta para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-                $appointment->doctor_id,
-                'MEDICO',
+                
+                // 🚀 CORRECCIÓN: Forzamos el envío del ID en formato string limpio y validado
+                (string)$appointment->doctor_id, 
+                
+                'MEDICO', // Rol que recibirá la alerta [14]
                 '📅 Nueva Cita Express Solicitada',
-                'CONSULTA_NUEVA',
-                $appointment->id
+                'CONSULTA_NUEVA', // Enum de MongoDB [14]
+                $appointment->id  // ID relacional de MySQL [14]
             );
         }
     } catch (\Exception $e) {
