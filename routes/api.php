@@ -2,6 +2,7 @@
 use App\Http\Controllers\Admin\Doctor\DoctorAddressController;
 use App\Http\Controllers\Admin\Doctor\DoctorController;
 use App\Http\Controllers\Admin\Doctor\SpecialityController;
+use App\Http\Controllers\Api\TenantContextController;
 use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\tiposdepagoController;
 use Illuminate\Support\Facades\Artisan;
@@ -108,6 +109,10 @@ Route::group(['middleware' => 'api'], function ($router) {
     // Endpoint express que guarda al paciente y la cita en un solo paso
     Route::post('appointments/filterbydoctor/{doctor_id}', [AppointmentController::class, 'filterByDoctor']);
     Route::post('appointments/store-express', [AppointmentController::class, 'storeExpress']); 
+
+
+    // Endpoint para el control dinámico de subdominios
+    Route::get('/v1/contexto-express', [TenantContextController::class, 'obtenerContextoExpress']);
 
 
 

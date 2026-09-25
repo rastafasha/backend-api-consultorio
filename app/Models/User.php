@@ -49,6 +49,7 @@ class User extends Authenticatable implements JWTSubject
         'precio_cita',
         'moneda',
         'status',
+        'clinica_id',
 
     ];
 
@@ -174,8 +175,27 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(Patient::class, 'user_id');
     }
 
-    public function addresses() {
-    return $this->hasMany(DoctorAddress::class, 'user_id');
-}
+    public function addresses()
+    {
+        return $this->hasMany(DoctorAddress::class, 'user_id');
+    }
+
+    /**
+     * Relación para Secretarias/Administración: Pertenecen a una clínica fija
+     */
+    public function clinica()
+    {
+        return $this->belongsTo(Clinica::class, 'clinica_id');
+    }
+
+    /**
+     * Relación para los Médicos: Pueden pertenecer a múltiples clínicas (Muchos a Muchos)
+     */
+    public function clinicasAsociadas()
+    {
+        return $this->belongsToMany(Clinica::class, 'clinica_medico', 'medico_id', 'clinica_id')
+            ->withTimestamps();
+    }
+
 
 }
