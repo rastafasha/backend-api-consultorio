@@ -14,9 +14,9 @@ class DoctorScheduleDaySeeder extends Seeder
      */
     public function run(): void
     {
-        // Get or create a doctor user
+        // 🟢 CORRECCIÓN QUIRÚRGICA: Cambiado 'ilike' por 'like' para compatibilidad MySQL/MAMP
         $doctor = User::whereHas('roles', function($q) {
-            $q->where('name', 'ilike', '%DOCTOR%');
+            $q->where('name', 'like', '%DOCTOR%');
         })->first();
 
         if (!$doctor) {

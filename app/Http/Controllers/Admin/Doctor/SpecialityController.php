@@ -13,10 +13,13 @@ class SpecialityController extends Controller
      */
     public function index(Request $request)
     {
-        // QUE EL FILTRO POR NOMBRE DE ROL
+        // El filtro por nombre de especialidad
         $name = $request->search;
 
-        $specialities = Specialitie::where("name","ilike","%".$name."%")->orderBy("id","desc")->get();
+        // 🟢 CORRECCIÓN: Cambiado 'ilike' por 'like' para compatibilidad MySQL/MAMP y Postgres/Supabase
+        $specialities = Specialitie::where("name", "like", "%".$name."%")
+            ->orderBy("id", "desc")
+            ->get();
 
         return response()->json([
             "specialities" => $specialities->map(function($rol) {
@@ -25,7 +28,7 @@ class SpecialityController extends Controller
                     "name" => $rol->name,
                     "state" => $rol->state,
                     "price" => $rol->price,
-                    "created_at" => $rol->created_at->format("Y-m-d h:i:s")
+                    "created_at" => $rol->created_at ? $rol->created_at->format("Y-m-d h:i:s") : null
                 ];
             }),
         ]);

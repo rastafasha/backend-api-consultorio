@@ -11,18 +11,24 @@ class CreateAppointmentsTable extends Migration
      *
      * @return void
      */
-    public function up()
+    
+        public function up()
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->bigIncrements('id');
+            
+            // 🚀 CORRECCIÓN AQUÍ: Sincronizado a clinica_id eliminando el ->after('id') defectuoso
+            $table->unsignedBigInteger('clinica_id')->nullable();
+            $table->index('clinica_id');
+
             // IDs de referencia
-            $table->unsignedBigInteger('doctor_id')->nullable();  // El médico (User ID)
+            $table->unsignedBigInteger('doctor_id')->nullable();  
             $table->unsignedBigInteger('patient_id')->nullable();
-            $table->unsignedBigInteger('user_id')->nullable();    // El que registró la cita (User ID 12)
+            $table->unsignedBigInteger('user_id')->nullable();    
             $table->unsignedBigInteger('speciality_id')->nullable(); 
             $table->unsignedBigInteger('doctor_schedule_join_hour_id')->nullable(); 
-
-            $table->double('amount', 250)->nullable();
+    
+            $table->double('amount', 8, 2)->nullable(); // Corregido formato estándar double/decimal
             $table->tinyInteger('cron_state')->default(1);
             $table->tinyInteger('confimation')->default(1);
             $table->timestamp('date_appointment')->nullable();
@@ -31,18 +37,13 @@ class CreateAppointmentsTable extends Migration
             $table->tinyInteger('status_pay')->default(1);
             $table->tinyInteger('laboratory')->default(1);
 
-            
-
-            // Foreign keys for provider relationships
-            $table->foreign('doctor_id')->references('id')->on('users')->nullOnDelete();
+            // Foreign keys
+            $table->foreign('doctor_id')->references('id')->on('users')->onDelete('set null');
             $table->foreign('patient_id')->references('id')->on('patients')->onDelete('set null');
-            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
 
             $table->timestamps();
             $table->softDeletes();
-
-            
-            
         });
     }
 

@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\Presupuesto; 
 use Faker\Factory as Faker; 
 use Illuminate\Database\Seeder; 
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class PresupuestoSeeder extends Seeder 
 { 
@@ -13,8 +15,10 @@ class PresupuestoSeeder extends Seeder
     { 
         $faker = Faker::create(); 
 
-        // 1. Wipe old records safely in Postgres if running seeds individually
-        \DB::statement('TRUNCATE TABLE presupuestos RESTART IDENTITY CASCADE;');
+        // 1. 🟢 LIMPIEZA DE SEGURIDAD NEUTRA (Compatible con MySQL/MAMP y Postgres/Supabase)
+        Schema::disableForeignKeyConstraints();
+        DB::table('presupuestos')->truncate();
+        Schema::enableForeignKeyConstraints();
 
         // 2. Create specific appointment (Forcing ID 1)
         $presupuesto = Presupuesto::firstOrCreate( 
@@ -39,11 +43,13 @@ class PresupuestoSeeder extends Seeder
         ); 
 
         // ====================================================================================
-        // 🔥 MAGIC LINE: Synchronize Postgres ID sequence so Factory knows to start at ID 2
+        // 🟢 3. REINICIO DE SECUENCIAS INTELIGENTE MULTI-MOTOR
         // ====================================================================================
-        \DB::statement("SELECT setval(pg_get_serial_sequence('presupuestos', 'id'), coalesce(max(id), 0) + 1, false) FROM presupuestos;");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("SELECT setval(pg_get_serial_sequence('presupuestos', 'id'), coalesce(max(id), 0) + 1, false) FROM presupuestos;");
+        }
 
-        // 3. Create additional random presupuestos safely
+        // 4. Create additional random presupuestos safely
         Presupuesto::factory()->count(2)->create()->each(function($p) use ($faker) { 
             // Loops logic here if you need to generate child records later
         }); 

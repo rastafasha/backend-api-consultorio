@@ -28,7 +28,12 @@ class CreateTiposdepagosTable extends Migration
                 ])->default('INACTIVE');
 
             
+             // 🚀 DOBLE CANAL: Soporta asignación médica o corporativa centralizada [7]
             $table->unsignedBigInteger('doctor_id')->nullable();
+            $table->unsignedBigInteger('clinica_id')->nullable(); // Nuevo índice
+            
+            $table->index('doctor_id');
+            $table->index('clinica_id');
             
             $table->timestamps();
             $table->softDeletes();

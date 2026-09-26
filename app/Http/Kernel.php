@@ -69,6 +69,9 @@ class Kernel extends HttpKernel
         // 🛡️ EL NUEVO MIDDLEWARE DE INTEGRACIÓN PARA EL CRM DE NODEJS
         'crm.auth' => \App\Http\Middleware\CrmTokenMiddleware::class,
         
+        // MIDDLEWARE ENTERPRISE KLYNTIC 🚀
+        'tenant.enterprise' => \App\Http\Middleware\TenantEnterpriseMiddleware::class,
+        
         // Spatie Permissions
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,

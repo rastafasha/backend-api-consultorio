@@ -23,6 +23,7 @@ class SettingGResource extends JsonResource
             "state" =>$this->resource->state,
             "zip" =>$this->resource->zip,
             "country" =>$this->resource->country,
+            "moneda" =>$this->resource->moneda,
             "phone" =>$this->resource->phone,
             "avatar"=> $this->resource->avatar ? env("APP_URL")."storage/".$this->resource->avatar : null,
             // "avatar"=> $this->resource->avatar ? env("APP_URL").$this->resource->avatar : null,

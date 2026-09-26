@@ -30,20 +30,18 @@ class StaffsController extends Controller
         //    }
 
         $search = $request->search;
-        $users = User::where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',users.email)"),"ilike","%".$search."%")
-                    // "name", "like", "%".$search."%"
-                    // ->orWhere("surname", "like", "%".$search."%")
-                    // ->orWhere("email", "like", "%".$search."%")
-                    ->orderBy("id", "desc")
+        
+        // 🟢 SANEADO: Cambiado CONCAT por CONCAT_WS y 'not ilike' por 'not like' universal
+        $users = User::where(DB::raw("CONCAT_WS(' ', users.name, users.surname, users.email)"), "like", "%".$search."%")
                     ->whereHas("roles", function($q){
-                        $q->where("name","not ilike","%DOCTOR%");
+                        $q->where("name", "not like", "%DOCTOR%");
                     })
+                    ->orderBy("id", "desc")
                     ->get();
                     
         return response()->json([
-            "users" => UserCollection::make($users) ,
-            
-        ]);          
+            "users" => UserCollection::make($users),
+        ]);         
     }
     public function config()
     {

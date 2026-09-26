@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\Doctor\DoctorController;
 use App\Http\Controllers\Admin\Doctor\SpecialityController;
 use App\Http\Controllers\Api\TenantContextController;
 use App\Http\Controllers\Appointment\AppointmentController;
+use App\Http\Controllers\Enterprise\ClinicaController;
 use App\Http\Controllers\tiposdepagoController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -99,22 +100,33 @@ Route::group(['middleware' => 'api'], function ($router) {
     // crm
     require __DIR__ . '/api_routes/crm.php';
 
+    // =========================================================================
+    // 🏢 MÓDULOS KLYNTIC ENTERPRISE SEPARADOS
+    // =========================================================================
+    
+    // Rutas Libres Enterprise (Selector Apple)
+    require __DIR__ . '/api_routes/enterprise_pub.php';
+
+    // Rutas Protegidas Enterprise (Recepción Centralizada)
+    require __DIR__ . '/api_routes/enterprise_private.php';
+
+
     // 🌍 RUTAS PÚBLICAS ABIERTAS (Sin middleware de autenticación de login)
     Route::get('appointments/config', [AppointmentController::class, 'config']);
     Route::get('specialities/show/{id}', [SpecialityController::class, 'show']);
     Route::get('doctors/profile/{id}', [DoctorController::class, 'profile']); // El de tu función unificada
     Route::get('doctor-addresses/doctor/{user_id}', [DoctorAddressController::class, 'getByDoctor']);
     Route::get('paymentmethods/bydoctor/{doctor_id}', [tiposdepagoController::class, 'byDoctor']);
-    
+
     // Endpoint express que guarda al paciente y la cita en un solo paso
     Route::post('appointments/filterbydoctor/{doctor_id}', [AppointmentController::class, 'filterByDoctor']);
-    Route::post('appointments/store-express', [AppointmentController::class, 'storeExpress']); 
+    Route::post('appointments/store-express', [AppointmentController::class, 'storeExpress']);
 
 
     // Endpoint para el control dinámico de subdominios
     Route::get('/v1/contexto-express', [TenantContextController::class, 'obtenerContextoExpress']);
 
-
+   
 
 
     //comandos desde la url del backend
@@ -150,7 +162,7 @@ Route::group(['middleware' => 'api'], function ($router) {
         return "Storage Link";
     });
 
-//     Artisan::call('migrate', [
+    //     Artisan::call('migrate', [
 //     '--path' => '/database/migrations/',
 //     '--force' => true
 // ]);
@@ -167,7 +179,7 @@ Route::group(['middleware' => 'api'], function ($router) {
         return "Migrate: creacion con datos, para uso";
     });
 
-    
+
 
     Route::get('/migrate-update', function () {
         try {

@@ -20,9 +20,9 @@ class RolesController extends Controller
     $name = $request->search;
     
     // Agregamos un condicional por si $name viene vacío
-    $roles = Role::where("name", "ilike", "%".$name."%")
-                 ->orderBy("id", "desc")
-                 ->get();
+    $roles = Role::where('name', 'like', '%' . $request->search . '%')
+             ->orderBy('id', 'desc')
+             ->get();
                  
     return response()->json([
         "roles" => $roles->map(function($rol){

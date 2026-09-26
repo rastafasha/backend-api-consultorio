@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Doctor\DoctorScheduleJoinHour;
-use App\Models\Doctor\DoctorScheduleDay;
 use App\Models\Doctor\DoctorAddress;
+use App\Models\Doctor\DoctorScheduleDay;
+use App\Models\Doctor\DoctorScheduleJoinHour;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DoctorScheduleJoinHourSeeder extends Seeder
@@ -14,14 +15,17 @@ class DoctorScheduleJoinHourSeeder extends Seeder
      */
     public function run(): void
     {
+        $doctor = User::whereHas('roles', function ($q) {
+            $q->where('name', 'like', '%DOCTOR%');
+        })->first() ?? User::factory()->create();
+
         // 1. SALVAGUARDA: Asegurar que existan las direcciones de consultorio de prueba
         $address1 = DoctorAddress::firstOrCreate(
             ['id' => 1],
             [
-                'user_id' => 3, // ID del doctor de pruebas
+                'user_id' => $doctor->id, // 🚀 ID relacional dinámico sincronizado
                 'name_consultorio' => 'Consultorio Clínico Norte',
                 'address' => 'Avenida Principal Norte, Edificio Médico, Local 4',
-                
             ]
         );
 
@@ -31,7 +35,7 @@ class DoctorScheduleJoinHourSeeder extends Seeder
                 'user_id' => 3,
                 'name_consultorio' => 'Clínica Integral del Sur',
                 'address' => 'Calle Secundaria Sur, Centro Médico San Lucas, Piso 2',
-                
+
             ]
         );
 

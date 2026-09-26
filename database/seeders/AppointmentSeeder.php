@@ -6,10 +6,11 @@ use App\Models\Appointment\Appointment;
 use App\Models\Appointment\AppointmentAttention;
 use App\Models\Appointment\AppointmentPay;
 use App\Models\Doctor\DoctorScheduleJoinHour;
-use App\Models\Doctor\DoctorAddress; // Importamos el modelo de direcciones
+use App\Models\Doctor\DoctorAddress;
 use Faker\Factory as Faker;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentSeeder extends Seeder
 {
@@ -20,8 +21,12 @@ class AppointmentSeeder extends Seeder
     {
         $faker = Faker::create();
 
-        // 1. Limpieza de seguridad (Actualizado para incluir tablas hijas)
-        \DB::statement('TRUNCATE TABLE appointment_attentions, appointment_pays, appointments RESTART IDENTITY CASCADE;');
+        // 🟢 1. LIMPIEZA DE SEGURIDAD NEUTRA (Funciona en MySQL/MAMP y Postgres/Supabase)
+        Schema::disableForeignKeyConstraints();
+        DB::table('appointment_attentions')->truncate();
+        DB::table('appointment_pays')->truncate();
+        DB::table('appointments')->truncate();
+        Schema::enableForeignKeyConstraints();
 
         // 2. SALVAGUARDA DE DIRECCIÓN: Aseguramos que el doctor 3 tenga al menos un consultorio activo
         $doctor_id = 3;
@@ -49,7 +54,7 @@ class AppointmentSeeder extends Seeder
             ['id' => 1],
             [
                 'doctor_schedule_join_hour_id' => $firstSchedule ? $firstSchedule->id : null,
-                'date_appointment' => '2026-07-02 09:00:00', // Actualizado a tus fechas de prueba recientes
+                'date_appointment' => '2026-07-02 09:00:00', 
                 'date_attention' => null,
                 'amount' => 30,
                 'cron_state' => 1,
@@ -91,11 +96,13 @@ class AppointmentSeeder extends Seeder
         ]);
 
         // ====================================================================================
-        // 🔥 LÍNEA MÁGICA: Sincroniza la secuencia de IDs de Postgres antes de usar el Factory
+        // 🟢 5. REINICIO DE SECUENCIAS INTELIGENTE MULTI-MOTOR (MySQL e iñigo Postgres)
         // ====================================================================================
-        \DB::statement("SELECT setval(pg_get_serial_sequence('appointments', 'id'), coalesce(max(id), 0) + 1, false) FROM appointments;");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("SELECT setval(pg_get_serial_sequence('appointments', 'id'), coalesce(max(id), 0) + 1, false) FROM appointments;");
+        }
 
-        // 5. Crear las 9 citas aleatorias restantes a través del Factory
+        // 6. Crear las 9 citas aleatorias restantes a través del Factory
         Appointment::factory()->count(9)->create([
             'doctor_schedule_join_hour_id' => $firstSchedule ? $firstSchedule->id : null,
             'doctor_id' => $doctor_id

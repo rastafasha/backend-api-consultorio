@@ -23,6 +23,7 @@ class CreateSettingeneralsTable extends Migration
             $table->string('state', 250)->nullable();
             $table->string('zip', 250)->nullable();
             $table->string('country', 250)->nullable();
+            $table->string('moneda')->nullable();
             $table->string('avatar', 250)->nullable();
             
             // $table->unsignedBigInteger('user_id')->nullable();

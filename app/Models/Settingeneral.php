@@ -16,6 +16,7 @@ class Settingeneral extends Model
         'state',
         'zip',
         'country',
+        'moneda',
         'avatar',
     ];
 }

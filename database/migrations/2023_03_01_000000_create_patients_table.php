@@ -15,9 +15,15 @@ class CreatePatientsTable extends Migration
     {
         Schema::create('patients', function (Blueprint $table) {
             $table->bigIncrements('id');
+            
+            // 🚀 CORRECCIÓN AQUÍ: Quitamos el ->after('id') y mantenemos tu index numérico limpio
+            $table->unsignedBigInteger('clinica_id')->nullable();
+            $table->index('clinica_id');
+            
             $table->unsignedBigInteger('user_id')->nullable(); 
             $table->string('mongo_user_id')->nullable();
-            $table->foreignId('location_id')->nullable();
+            $table->unsignedBigInteger('location_id')->nullable(); // Cambiado a unsignedBigInteger para coincidir con la FK
+    
             $table->string('name', 250);
             $table->string('surname', 250);
             $table->string('email', 250)->nullable();
@@ -39,11 +45,11 @@ class CreatePatientsTable extends Migration
             $table->string('temperature', 25)->nullable();
             $table->string('peso', 250)->nullable();
             $table->string('talla', 250)->nullable();
-            $table->text('historia_enfermedad', )->nullable();
-            $table->text('enfermedad_actual', )->nullable();
-            $table->text('diagnostico', )->nullable();
-            $table->text('tratamiento', )->nullable();
-            $table->text('examen_fisico', )->nullable();
+            $table->text('historia_enfermedad')->nullable();
+            $table->text('enfermedad_actual')->nullable();
+            $table->text('diagnostico')->nullable();
+            $table->text('tratamiento')->nullable();
+            $table->text('examen_fisico')->nullable();
             $table->string('reporte_laboratorio', 250)->nullable();
             $table->json('evolucion')->nullable();
             $table->json('vacunas')->nullable();
@@ -51,14 +57,10 @@ class CreatePatientsTable extends Migration
             $table->string('talla_al_nacer', 250)->nullable();
             $table->tinyInteger('is_vacuna')->default(1);
             
-
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
-            $table->foreign('location_id')->references('id')->on('locations')->nullOnDelete();
+            $table->foreign('location_id')->references('id')->on('locations')->onDelete('set null'); // Corregido el método nativo onDelete
             $table->timestamps();
             $table->softDeletes();
-
-            // Foreign keys for provider relationships
-            
         });
     }
 

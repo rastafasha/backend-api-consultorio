@@ -2,8 +2,8 @@
 
 namespace App\Models\Appointment;
 
-use App\Jobs\AppointmentRegisterJob;
-use App\Mail\NewAppointmentRegisterMail;
+// use App\Jobs\AppointmentRegisterJob;
+// use App\Mail\NewAppointmentRegisterMail;
 use App\Models\Appointment\AppointmentAttention;
 use App\Models\Appointment\AppointmentPay;
 use App\Models\Doctor\DoctorScheduleJoinHour;
@@ -17,12 +17,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use App\Traits\TenantScoped; // 👈 1. IMPORTAMOS EL TRAIT DEL ENTORNO EMPRESA
 
 class Appointment extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use TenantScoped; // 👈 2. ACTIVAMOS EL AISLAMIENTO DE DATOS AUTOMÁTICO
+
     protected $fillable = [
+        "clinica_id", // 👈 3. AGREGADO AL FILLABLE PARA EL CONTROL DE SUBDOMINIOS
         "doctor_id",
         "patient_id",
         "user_id",
@@ -38,11 +42,10 @@ class Appointment extends Model
         "cron_state",
         "confimation",
         "amount",
-
     ];
 
     public $incrementing = true;
-protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
+    protected $keyType = 'int'; 
 
 
     // relaciones
@@ -54,17 +57,15 @@ protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
 
     public function patient()
     {
-        // Esto conectará la cita con el ID 21 de patients
         return $this->belongsTo(Patient::class, 'patient_id');
     }
 
     public function user()
     {
-        // Esto conectará la cita con el ID 12 de users
         return $this->belongsTo(User::class, 'doctor_id');
     }
 
-    public function doctor_schedule_join_hour() // <--- Asegúrate que se llame así
+    public function doctor_schedule_join_hour() 
     {
         return $this->belongsTo(DoctorScheduleJoinHour::class, 'doctor_schedule_join_hour_id');
     }
@@ -89,13 +90,10 @@ protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
         return $this->hasMany(Payment::class);
     }
 
-    // relaciones
-
     // filtro buscador
 
     public function scopefilterAdvance($query, $speciality_id, $name_doctor, $date)
     {
-
         if ($speciality_id) {
             $query->where("speciality_id", $speciality_id);
         }
@@ -129,7 +127,6 @@ protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
         $date_start,
         $date_end
     ) {
-
         if ($speciality_id) {
             $query->where("speciality_id", $speciality_id);
         }
@@ -137,13 +134,11 @@ protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
                 $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "ilike", "%" . $search_doctor . "%");
-
             });
         }
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
                 $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "ilike", "%" . $search_patient . "%");
-
             });
         }
 
@@ -164,18 +159,14 @@ protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
         $date_start,
         $date_end
     ) {
-
-
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
                 $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "ilike", "%" . $search_doctor . "%");
-
             });
         }
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
                 $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "ilike", "%" . $search_patient . "%");
-
             });
         }
 
@@ -191,18 +182,15 @@ protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
 
     public function scopefilterAdvanceDoc($query, $search_doctor, $search_patient, $date, $search)
     {
-
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
                 $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "ilike", "%" . $search_doctor . "%");
-
             });
         }
 
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
                 $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "ilike", "%" . $search_patient . "%");
-
             });
         }
         if ($date) {
@@ -211,23 +199,15 @@ protected $keyType = 'int'; // O 'string' si cambiaste a UUID en Supabase
         return $query;
     }
 
+    // 👈 4. ASÍ SE COMPORTA EL BOOT DE LARAVEL 8 CON EL TRAIT DE FORMA SEGURA:
+    protected static function boot()
+    {
+        parent::boot();
 
-    //notificaciones
-
-    // protected static function boot(){
-
-    //     parent::boot();
-
-    //     static::store(function($appointment){
-
-    //         // PaymentRegisterJob::dispatch(
-    //         //     $user
-    //         // )->onQueue("high");
-
-    //     Mail::to('mercadocreativo@gmail.com')->send(new NewAppointmentRegisterMail($appointment));
-
-    //     });
-    // }
-
-
+        // Laravel 8 ejecutará de forma nativa bootTenantScoped() gracias a las convenciones de Traits.
+        // Si necesitas volver a activar los correos, descoméntalo aquí de manera segura:
+        // static::created(function($appointment){
+        //     Mail::to('mercadocreativo@gmail.com')->send(new NewAppointmentRegisterMail($appointment));
+        // });
+    }
 }

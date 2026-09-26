@@ -33,18 +33,20 @@ class PatientController extends Controller
     {
         $search = $request->search;
 
+        // 🟢 CORRECCIÓN: Cambiado 'ilike' por 'like' y adaptado CONCAT_WS para la tabla de pacientes
         $patients = Patient::where(
-            DB::raw("CONCAT(patients.name,' ', COALESCE(patients.surname,''),' ',patients.email)"),
-            "ilike",
+            DB::raw("CONCAT_WS(' ', patients.name, patients.surname, patients.email)"),
+            "like",
             "%" . $search . "%"
         )->orderBy("id", "desc")
-            ->paginate(10);
+         ->paginate(10);
 
         return response()->json([
-            "total" => $patients->total(),
+            "total"    => $patients->total(),
             "patients" => PatientCollection::make($patients),
-
         ]);
+
+        
     }
 
     public function patientsByDoctor(Request $request, $doctor_id)
@@ -283,71 +285,134 @@ class PatientController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-   public function store(Request $request) 
-{
-    // 1. Validar que el paciente no exista
-    $patient_is_valid = Patient::where("n_doc", $request->n_doc)->first();
-    if ($patient_is_valid) {
-        return response()->json([
-            "message" => 403,
-            "message_text" => 'el paciente ya existe'
-        ], 403);
+  
+    public function store(Request $request) 
+    {
+        // Recuperamos el ID de la clínica actual inyectado previamente por el Middleware
+        $clinicaId = app('current_clinica_id');
+        $doctorId = auth()->id() ?? $request->doctor_id;
+
+        // Iniciamos una transacción para asegurar consistencia absoluta de la adopción
+        DB::beginTransaction();
+
+        try {
+            // 1. MODIFICACIÓN CRÍTICA: Buscamos si la cédula existe GLOBALMENTE (saltando el aislamiento)
+            $patient = Patient::withoutGlobalScope('tenant')
+                ->where("n_doc", $request->n_doc)
+                ->first();
+
+            if ($patient) {
+                // 🔥 ¡FLUJO DE ADOPCIÓN DE FICHAS ACTIVADO! 🔥
+                
+                // Verificamos si ya está vinculado a ESTA clínica en la tabla relacional intermedia
+                $yaAsociadoClina = DB::table('clinica_paciente') // Tu tabla pivote Muchos a Muchos Enterprise
+                    ->where('clinica_id', $clinicaId)
+                    ->where('patient_id', $patient->id)
+                    ->exists();
+
+                if ($yaAsociadoClina) {
+                    DB::rollBack();
+                    return response()->json([
+                        "message" => 403,
+                        "message_text" => 'El paciente ya se encuentra registrado y activo en esta clínica.'
+                    ], 403);
+                }
+
+                // A. Vinculamos el paciente existente a la nueva clínica en la tabla intermedia corporativa
+                DB::table('clinica_paciente')->insert([
+                    'clinica_id' => $clinicaId,
+                    'patient_id' => $patient->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $message_text = 'Paciente global Klyntic adoptado con éxito. Nueva ficha clínica en blanco aperturada.';
+                $status_code = 201;
+
+            } else {
+                // 🟢 FLUJO TRADICIONAL: El paciente es totalmente nuevo en el ecosistema
+                
+                // 2. Procesar el Avatar con Cloudinary (Mantiene tu lógica intacta)
+                $path = null;
+                if ($request->hasFile('imagen')) {
+                    $cloudinaryResponse = Cloudinary::uploadApi()->upload(
+                        $request->file('imagen')->getRealPath(), 
+                        ['folder' => 'klyntic/patients']
+                    );
+                    $path = $cloudinaryResponse['secure_url'];
+                    $request->merge(["avatar" => $path, "image" => $path]); 
+                }
+
+                // 3. Formatear fecha de nacimiento de forma segura
+                if ($request->birth_date) {
+                    $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
+                    $request->merge(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
+                }
+
+                // 4. Guardar la ficha del paciente de forma explícita (El Trait inyecta el clinica_id)
+                $patient = Patient::create($request->all());
+
+                // También lo vinculamos en el pivote Enterprise por consistencia relacional del CORE
+                DB::table('clinica_paciente')->insert([
+                    'clinica_id' => $clinicaId,
+                    'patient_id' => $patient->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                // 5. Guardar datos complementarios en PatientPerson (Solo si es nuevo)
+                PatientPerson::create([
+                    'patient_id'        => $patient->id,
+                    'name_companion'    => $request->name_companion,
+                    'surname_companion' => $request->surname_companion,
+                ]);
+
+                $message_text = 'Nuevo paciente registrado exitosamente en el sistema.';
+                $status_code = 200;
+            }
+
+            // =========================================================================
+            // ENCAPSULAMIENTO ESTRICTO / VINCULACIÓN AL MÉDICO (Común para ambos flujos)
+            // =========================================================================
+            if ($doctorId) {
+                // El attach() en Laravel ignora scopes, vinculando al médico con el ID de paciente correcto
+                $patient->doctors()->attach($doctorId);
+                
+                // Limpieza de caché en Redis para el CRM del Doctor
+                Cache::forget("dashboard:doctor:{$doctorId}");
+            } else {
+                Log::warning("Paciente procesado sin doctor asociado. Request data: " . json_encode($request->all()));
+            }
+
+            // 6. ENCAPSULAMIENTO DE HISTORIAL EN BLANCO (Req. B)
+            // Creamos su registro de historial/evolución exclusivo para esta clínica. 
+            // Como este registro llevará el 'clinica_id' actual, el médico de otra sucursal jamás podrá leerlo.
+            DB::table('patient_histories')->insert([
+                'clinica_id'   => $clinicaId,
+                'patient_id'   => $patient->id,
+                'notes'        => 'Ficha e historial clínico aperturado mediante el módulo de recepción centralizada Enterprise.',
+                'created_at'   => now(),
+                'updated_at'   => now(),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                "message" => $status_code,
+                "message_text" => $message_text,
+                "patient" => $patient
+            ], $status_code);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error en el flujo de adopción de fichas: " . $e->getMessage());
+            return response()->json([
+                "message" => 500,
+                "message_text" => 'Ocurrió un error al procesar el registro en el backend.',
+                "error" => $e->getMessage()
+            ], 500);
+        }
     }
-
-    // 2. Procesar el Avatar con Cloudinary
-    $path = null;
-    if ($request->hasFile('imagen')) {
-        $cloudinaryResponse = Cloudinary::uploadApi()->upload(
-            $request->file('imagen')->getRealPath(), 
-            ['folder' => 'klyntic/patients']
-        );
-        $path = $cloudinaryResponse['secure_url'];
-        // CORRECCIÓN: Guardamos tanto 'avatar' como 'image' para dar compatibilidad a ambas tablas
-        $request->merge(["avatar" => $path, "image" => $path]); 
-    }
-
-    // 3. Formatear fecha de nacimiento de forma segura
-    if ($request->birth_date) {
-        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
-        $request->merge(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
-    }
-
-    // 4. Guardar la ficha del paciente de forma explícita o segura
-    // Pasamos el $request->all() pero ahora va con el campo 'image' inyectado
-    $patient = Patient::create($request->all());
-
-    // 5. Vincular al doctor logueado en la relación de muchos a muchos
-    $doctorId = auth()->id() ?? $request->doctor_id; 
-
-    if ($doctorId) {
-        $patient->doctors()->attach($doctorId);
-        
-        // =========================================================================
-        // ⚡ LIMPIEZA DE CACHÉ EN REDIS (KLYNTIC)
-        // =========================================================================
-        // Como el médico ahora tiene un nuevo paciente asociado, borramos la caché 
-        // de su dashboard para que la lista de pacientes recientes se actualice al tiro.
-        Cache::forget("dashboard:doctor:{$doctorId}");
-    } else {
-        // CORRECCIÓN: Cambiado a json_encode para evitar que tumbe el servidor
-        Log::warning("Paciente creado sin doctor asociado. Request data: " . json_encode($request->all()));
-    }
-
-    // 6. Guardar datos complementarios en PatientPerson
-    // Para evitar que explote por columnas sobrantes, extraemos solo lo que le pertenece
-    PatientPerson::create([
-        'patient_id'        => $patient->id,
-        'name_companion'    => $request->name_companion,
-        'surname_companion' => $request->surname_companion,
-        // Agrega aquí cualquier otro campo específico de la tabla personas si te hace falta
-    ]);
-
-    return response()->json([
-        "message" => 200,
-        "patient" => $patient
-    ]);
-}
-
 
 
 
@@ -506,7 +571,11 @@ class PatientController extends Controller
 
     public function verificarDocumento($n_doc)
     {
-        $existe = Patient::withTrashed()->where('n_doc', trim($n_doc))->exists();
+        // 🚀 CRÍTICO: Rompemos el aislamiento de la clínica actual para buscar en todo el universo Klyntic
+        $existe = Patient::withoutGlobalScope('tenant')
+            ->withTrashed()
+            ->where('n_doc', trim($n_doc))
+            ->exists();
 
         return response()->json([
             'existe' => $existe
