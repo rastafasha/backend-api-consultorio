@@ -13,6 +13,7 @@ class AppointmentPay extends Model
     use SoftDeletes;
     protected $fillable=[
         "appointment_id",
+        "clinica_id",
         "amount",
         "deuda",
         "method_payment",

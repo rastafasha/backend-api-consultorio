@@ -32,6 +32,7 @@ class Payment extends Model
         'patient_id',
         'doctor_id',
         'appointment_id',
+        'clinica_id',
         'image',
         'fecha',
         'status',

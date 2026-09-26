@@ -58,7 +58,16 @@ class PresupuestoController extends Controller
 
     public function config()
     {
-        $specialities = Specialitie::where("state", 1)->get();
+        $specialities = Specialitie::where('state', 1)
+            ->whereHas('activeDoctors', function ($query) {
+                $query->where('status', 2);
+            })
+            ->with([
+                'activeDoctors' => function ($query) {
+                    $query->where('status', 2);
+                }
+            ])
+            ->get();
 
         return response()->json([
             "specialities" => $specialities,
@@ -90,7 +99,16 @@ class PresupuestoController extends Controller
     public function storePresupuesto(Request $request)
     {
         $patient = Patient::where("n_doc", $request->n_doc)->first();
+        
+        // 🚀 CORRECCIÓN: Leemos prioritariamente el doctor_id del request enviado por el selector de la clínica
         $doctor = User::where("id", $request->doctor_id)->first();
+
+        if (!$doctor) {
+            return response()->json([
+                "message" => 400,
+                "message_text" => 'Error de contexto: No se identificó un médico especialista válido para este presupuesto.'
+            ], 400);
+        }
 
         $request->request->add(["medical" => json_encode($request->medical)]);
 
@@ -105,9 +123,9 @@ class PresupuestoController extends Controller
         }
 
         $presupuesto = Presupuesto::create([
-            "doctor_id" => $request->doctor_id,
+            "doctor_id" => $doctor->id, // ID asignado dinámicamente
             "patient_id" => $patient->id,
-            "speciality_id" => $request->speciality_id,
+            "speciality_id" => $request->speciality_id ?? $doctor->speciality_id,
             "description" => $request->description,
             "diagnostico" => $request->diagnostico,
             "amount" => $request->amount,

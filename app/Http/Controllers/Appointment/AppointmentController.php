@@ -27,9 +27,10 @@ use Illuminate\Support\Str;
 
 class AppointmentController extends Controller
 {
+    
     /**
      * Display a listing of the resource.
-     * (Optimizado para Recepción Centralizada Multi-Médico)
+     * (Optimizado para Recepción Centralizada Multi-Médico + Filtro Angular)
      *
      * @return \Illuminate\Http\Response
      */
@@ -38,21 +39,29 @@ class AppointmentController extends Controller
         $speciality_id = $request->speciality_id;
         $name_doctor = $request->search;
         $date = $request->date;
+        
+        // 🚀 NUEVA CAPTURA: Captura la orden del selector <select> reactivo de Angular
+        $doctor_id = $request->doctor_id; 
 
         $userLogueado = auth()->user();
 
-        // 1. Iniciamos la query (El Global Scope 'TenantScoped' filtra la clínica actual en el fondo)
+        // 1. Iniciamos la query (El Global Scope filtra la clínica actual en el fondo)
         $query = Appointment::query();
 
         // 2. DISCRIMINACIÓN DE PODERES POR ROL DE SPATIE (Req. A)
         if ($userLogueado && $userLogueado->hasRole('DOCTOR', 'api')) {
-            // 🔒 Si es un Médico, lo encerramos estrictamente en sus propias citas
+            // 🔒 Si el que consulta es un Médico, lo encerramos estrictamente en sus propias citas
             $query->where('doctor_id', $userLogueado->id);
+        } else {
+            // 🏢 SI ES RECEPCIÓN / ASISTENTE / ADMIN: Evaluamos el selector dinámico
+            if (!empty($doctor_id) && $doctor_id !== 'TODOS') {
+                // Si la secretaria aisló la grilla por un médico especialista específico
+                $query->where('doctor_id', $doctor_id);
+            }
+            // Si es 'TODOS' o viene vacío, no introduce el where, mostrando la sábana global de la clínica
         }
-        // Si el usuario es 'RECEPCION' o 'ASISTENTE', no entra al IF anterior,
-        // permitiéndole por herencia listar el pool completo de citas de la clínica.
 
-        // 3. Ejecutamos tu filtro avanzado y paginación original intacta [11]
+        // 3. Ejecutamos tu filtro avanzado y paginación original intacta
         $appointments = $query->filterAdvance($speciality_id, $name_doctor, $date)
             ->orderBy("id", "desc")
             ->paginate(10);

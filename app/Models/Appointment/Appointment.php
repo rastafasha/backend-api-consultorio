@@ -45,7 +45,7 @@ class Appointment extends Model
     ];
 
     public $incrementing = true;
-    protected $keyType = 'int'; 
+    protected $keyType = 'int';
 
 
     // relaciones
@@ -65,7 +65,7 @@ class Appointment extends Model
         return $this->belongsTo(User::class, 'doctor_id');
     }
 
-    public function doctor_schedule_join_hour() 
+    public function doctor_schedule_join_hour()
     {
         return $this->belongsTo(DoctorScheduleJoinHour::class, 'doctor_schedule_join_hour_id');
     }
@@ -91,23 +91,42 @@ class Appointment extends Model
     }
 
     // filtro buscador
+// =====================================================================
+    // 🛡️ BLOQUE SANEADO UNIVERSAL: COMPATIBLE CON MAMP (MYSQL) Y SUPABASE (POSTGRESQL)
+    // =====================================================================
 
-    public function scopefilterAdvance($query, $speciality_id, $name_doctor, $date)
+   // =====================================================================
+    // 🚀 FILTRO MAESTRO DE CITAS ADMINISTRATIVAS - REQUERIMIENTO A SANEADO
+    // =====================================================================
+
+    public function scopefilterAdvance($query, $speciality_id, $search, $date)
     {
-        if ($speciality_id) {
-            $query->where("speciality_id", $speciality_id);
-        }
-
-        if ($name_doctor) {
-            $query->whereHas("doctor", function ($q) use ($name_doctor) {
-                $q->where("name", "like", "%" . $name_doctor . "%")
-                    ->orWhere("surname", "ilike", "%" . $name_doctor . "%");
+        // 🩺 Validamos basándonos en la especialidad real indexada en el perfil del Doctor
+        if (!empty($speciality_id) && (int)$speciality_id > 0) {
+            $query->whereHas("doctor", function($q) use($speciality_id) {
+                $q->where("speciality_id", (int)$speciality_id);
             });
         }
 
         if ($date) {
             $query->whereDate("date_appointment", Carbon::parse($date)->format("Y-m-d"));
         }
+
+        if ($search) {
+            // Buscador universal inteligente (Doctor o Paciente)
+            $query->where(function($mainQuery) use ($search) {
+                
+                $mainQuery->whereHas("doctor", function ($q) use ($search) {
+                    $q->where(DB::raw("CONCAT_WS(' ', name, surname)"), "like", "%" . $search . "%");
+                })
+                
+                ->orWhereHas("patient", function ($q) use ($search) {
+                    $q->where(DB::raw("CONCAT_WS(' ', name, surname)"), "like", "%" . $search . "%");
+                });
+                
+            });
+        }
+
         return $query;
     }
 
@@ -127,18 +146,22 @@ class Appointment extends Model
         $date_start,
         $date_end
     ) {
-        if ($speciality_id) {
-            $query->where("speciality_id", $speciality_id);
+        // 🚀 SANEADO ENTERPRISE: Si se selecciona una especialidad específica, filtramos por el perfil real del doctor
+        if (!empty($speciality_id) && (int)$speciality_id > 0) {
+            $query->whereHas("doctor", function($q) use($speciality_id) {
+                $q->where("speciality_id", (int)$speciality_id);
+            });
         }
 
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
-                $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "ilike", "%" . $search_doctor . "%");
+                $q->where(DB::raw("CONCAT_WS(' ', name, surname, email)"), "like", "%" . $search_doctor . "%");
             });
         }
+        
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
-                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "ilike", "%" . $search_patient . "%");
+                $q->where(DB::raw("CONCAT_WS(' ', name, surname, email)"), "like", "%" . $search_patient . "%");
             });
         }
 
@@ -150,7 +173,6 @@ class Appointment extends Model
         }
         return $query;
     }
-
 
     public function scopefilterAdvanceDoctorPay(
         $query,
@@ -161,12 +183,13 @@ class Appointment extends Model
     ) {
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
-                $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "ilike", "%" . $search_doctor . "%");
+                $q->where(DB::raw("CONCAT_WS(' ', name, surname, email)"), "like", "%" . $search_doctor . "%");
             });
         }
+        
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
-                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "ilike", "%" . $search_patient . "%");
+                $q->where(DB::raw("CONCAT_WS(' ', name, surname, email)"), "like", "%" . $search_patient . "%");
             });
         }
 
@@ -179,20 +202,20 @@ class Appointment extends Model
         return $query;
     }
 
-
-    public function scopefilterAdvanceDoc($query, $search_doctor, $search_patient, $date, $search)
+   public function scopefilterAdvanceDoc($query, $search_doctor, $search_patient, $date, $search)
     {
         if ($search_doctor) {
             $query->whereHas("doctor", function ($q) use ($search_doctor) {
-                $q->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',COALESCE(users.email,''))"), "ilike", "%" . $search_doctor . "%");
+                $q->where(DB::raw("CONCAT_WS(' ', name, surname, email)"), "like", "%" . $search_doctor . "%");
             });
         }
 
         if ($search_patient) {
             $query->whereHas("patient", function ($q) use ($search_patient) {
-                $q->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',COALESCE(patients.email,''))"), "ilike", "%" . $search_patient . "%");
+                $q->where(DB::raw("CONCAT_WS(' ', name, surname, email)"), "like", "%" . $search_patient . "%");
             });
         }
+        
         if ($date) {
             $query->whereDate("date_appointment", Carbon::parse($date)->format("Y-m-d"));
         }

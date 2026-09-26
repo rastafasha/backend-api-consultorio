@@ -34,110 +34,193 @@ class DashboardkpiController extends Controller
             })
         ]);
     }
+    
+
+        
+        /**
+     * Display KPIs and lists for the Admin/Reception Central Dashboard.
+     * (Blindado contra Nulls de clinica_id + Fallback por Cabecera)
+     */
     public function dashboard_admin(Request $request)
     {
-
         date_default_timezone_set('America/Caracas');
-        //mes actual - appointments
         $now = now();
-        $num_appointments_current = DB::table("appointments")->where("deleted_at", NUll)
+        $before = now()->subMonth();
+
+        // 🏢 MOTOR MULTI-TENANT SEGURO: Buscamos el ID de la clínica sin romper el hilo
+        $userLogueado = auth('api')->user() ?? auth()->user();
+        $clinicaId = null;
+
+        if ($userLogueado) {
+            $clinicaId = $userLogueado->clinica_id;
+        }
+
+        // 🚀 FALLBACK ENTERPRISE: Si el usuario es SUPERADMIN o no tiene sucursal fija,
+        // interceptamos el Slug NoSQL que envía tu Angular en los Headers y recuperamos el ID
+        if (!$clinicaId) {
+            $slugHeader = $request->header('X-Clinica-Slug');
+            if (!empty($slugHeader)) {
+                // Buscamos el ID correspondiente en la tabla de control
+                $consultorio = DB::table('consultorios_express')
+                    ->where('subdomain', strtolower(trim($slugHeader)))
+                    ->first();
+                if ($consultorio) {
+                    $clinicaId = $consultorio->crm_id; // El _id de MongoDB indexado en Laravel
+                }
+            }
+        }
+
+        // Si después de buscar en todas partes sigue sin haber contexto, fijamos un salvavidas
+        if (!$clinicaId) {
+            return response()->json([
+                "ok" => false,
+                "message_text" => "Error de contexto multi-tenant: No se pudo determinar el identificador de la clínica."
+            ], 400);
+        }
+
+        // =========================================================================
+        // 📊 SECCIÓN A: KPI'S COMPATIBLES CON FILTRO EXPLÍCITO DE CLÍNICA
+        // =========================================================================
+        
+        // Usamos withoutGlobalScope si tu Trait está chocando, para meter el where de forma manual y limpia
+        $queryAppointment = Appointment::withoutGlobalScopes()->where('clinica_id', $clinicaId);
+        $queryPatient = Patient::withoutGlobalScopes()->where('clinica_id', $clinicaId);
+
+        // 1. Citas del mes actual y anterior
+        $num_appointments_current = (clone $queryAppointment)
             ->whereYear("date_appointment", $now->format("Y"))
             ->whereMonth("date_appointment", $now->format("m"))
             ->count();
-        //mes anterior - appointments
-        $before = now()->subMonth();
-        $num_appointments_before = DB::table("appointments")->where("deleted_at", NUll)
+
+        $num_appointments_before = (clone $queryAppointment)
             ->whereYear("date_appointment", $before->format("Y"))
             ->whereMonth("date_appointment", $before->format("m"))
             ->count();
-        // versus % -appointmens
-        $porcentajeD = 0;
-        if ($num_appointments_before > 0) {
-            $porcentajeD = (($num_appointments_current - $num_appointments_before) / $num_appointments_before) * 100;
-        }
 
+        $porcentajeD = $num_appointments_before > 0 
+            ? (($num_appointments_current - $num_appointments_before) / $num_appointments_before) * 100 
+            : 0;
 
-        //mes actual - patients
-        $now = now();
-        $num_patients_current = DB::table("patients")->where("deleted_at", NUll)
+        // 2. Pacientes del mes
+        $num_patients_current = (clone $queryPatient)
             ->whereYear("created_at", $now->format("Y"))
             ->whereMonth("created_at", $now->format("m"))
             ->count();
-        //mes anterior - patients
-        $before = now()->subMonth();
-        $num_patients_before = DB::table("patients")->where("deleted_at", NUll)
+
+        $num_patients_before = (clone $queryPatient)
             ->whereYear("created_at", $before->format("Y"))
             ->whereMonth("created_at", $before->format("m"))
             ->count();
-        // versus % -patients
-        $porcentajeDP = 0;
-        if ($num_patients_before > 0) {
-            $porcentajeDP = (($num_patients_current - $num_patients_before) / $num_patients_before) * 100;
-        }
 
+        $porcentajeDP = $num_patients_before > 0 
+            ? (($num_patients_current - $num_patients_before) / $num_patients_before) * 100 
+            : 0;
 
-        //mes actual - appointments-attentions
-        $now = now();
-        $num_appointments_attention_current = DB::table("appointments")->where("deleted_at", NUll)
+        // 3. Atenciones del mes
+        $num_appointments_attention_current = (clone $queryAppointment)
             ->whereYear("date_attention", $now->format("Y"))
             ->whereMonth("date_attention", $now->format("m"))
             ->count();
-        //mes anterior - appointments-attentions
-        $before = now()->subMonth();
-        $num_appointments_attention_before = DB::table("appointments")->where("deleted_at", NUll)
+
+        $num_appointments_attention_before = (clone $queryAppointment)
             ->whereYear("date_attention", $before->format("Y"))
             ->whereMonth("date_attention", $before->format("m"))
             ->count();
-        // versus % -appointmens-attentions
-        $porcentajeDA = 0;
-        if ($num_appointments_attention_before > 0) {
-            $porcentajeDA = (($num_appointments_attention_current - $num_appointments_attention_before) / $num_appointments_attention_before) * 100;
-        }
 
-        //mes actual -  appointement total $ - (ganancias)
-        $now = now();
-        $num_appointments_total_current = DB::table("appointments")->where("deleted_at", NUll)
+        $porcentajeDA = $num_appointments_attention_before > 0 
+            ? (($num_appointments_attention_current - $num_appointments_attention_before) / $num_appointments_attention_before) * 100 
+            : 0;
+
+        // 4. Ganancias totales liquidaciones
+        $num_appointments_total_current = (clone $queryAppointment)
             ->whereYear("date_appointment", $now->format("Y"))
             ->whereMonth("date_appointment", $now->format("m"))
-            ->sum("appointments.amount");
-        //mes anterior -  appointement total $ - (ganancias)
-        $before = now()->subMonth();
-        $num_appointments_total_before = DB::table("appointments")->where("deleted_at", NUll)
+            ->sum("amount");
+
+        $num_appointments_total_before = (clone $queryAppointment)
             ->whereYear("date_appointment", $before->format("Y"))
             ->whereMonth("date_appointment", $before->format("m"))
-            ->sum("appointments.amount");
-        // versus % - appointement total $ - (ganancias)
-        $porcentajeDT = 0;
-        if ($num_appointments_total_before > 0) {
-            $porcentajeDT = (($num_appointments_total_current - $num_appointments_total_before) / $num_appointments_total_before) * 100;
-        }
+            ->sum("amount");
 
-        $appointments = Appointment::whereYear("date_appointment", $now->format("Y"))
-            ->whereMonth("date_appointment", $now->format("m"))
-            ->where("status", 1)
+        $porcentajeDT = $num_appointments_total_before > 0 
+            ? (($num_appointments_total_current - $num_appointments_total_before) / $num_appointments_total_before) * 100 
+            : 0;
+// =========================================================================
+        // 📋 SECCIÓN B: COLECCIONES COMPATIBLES CON EL ARRANQUE DE LA RECEPCIÓN (SANEADO SEEDS)
+        // =========================================================================
+        
+        // 🚀 CITAS EN ESPERA: Removemos mes y año para que tus semillas viejas/futuras rendericen en local
+        $appointments = Appointment::withoutGlobalScopes()
+            ->with(['patient', 'doctor.speciality'])
+            ->where('clinica_id', $clinicaId)
+            ->where("cron_state", 1) // 🟢 Filtra estrictamente las que están en estado Pendiente
+            ->take(5)
+            ->orderBy("id", "desc")
+            ->get();
+
+        $patientsRecent = Patient::withoutGlobalScopes()
+            ->where('clinica_id', $clinicaId)
+            ->orderBy("id", "desc")
+            ->take(5)
+            ->get();
+
+        // 🚀 COBROS PENDIENTES: Listado absoluto de cuentas por cobrar en la sede
+        $appointmentPaysPending = Appointment::withoutGlobalScopes()
+            ->with(['patient', 'doctor'])
+            ->where('clinica_id', $clinicaId)
+            ->where("status_pay", 2) // 🟢 Filtra deudas (Pago Pendiente)
             ->take(5)
             ->orderBy("id", "desc")
             ->get();
 
         return response()->json([
             "appointments" => AppointmentCollection::make($appointments),
+            "appointmentpaysbydoc" => $appointmentPaysPending->map(function ($appointment) {
+                return [
+                    "id" => $appointment->id,
+                    "amount" => $appointment->amount,
+                    "status_pay" => $appointment->status_pay,
+                    "date_appointment" => $appointment->date_appointment,
+                    "patient" => $appointment->patient ? [
+                        "id" => $appointment->patient->id,
+                        "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+                        "n_doc" => $appointment->patient->n_doc,
+                        "phone" => $appointment->patient->phone,
+                    ] : null,
+                    "doctor" => $appointment->doctor ? [
+                        "id" => $appointment->doctor->id,
+                        "full_name" => $appointment->doctor->name . ' ' . $appointment->doctor->surname,
+                    ] : null
+                ];
+            }),
+            "patients" => $patientsRecent->map(function ($patient) {
+                return [
+                    "id" => $patient->id,
+                    "full_name" => $patient->name . ' ' . $patient->surname,
+                    "n_doc" => $patient->n_doc,
+                    "phone" => $patient->phone,
+                    "email" => $patient->email,
+                ];
+            }),
+
             "num_appointments_current" => $num_appointments_current,
             "num_appointments_before" => $num_appointments_before,
             "porcentaje_d" => round($porcentajeD, 2),
-            //
+            
             "num_patients_current" => $num_patients_current,
             "num_patients_before" => $num_patients_before,
             "porcentaje_dp" => round($porcentajeDP, 2),
-            //
+            
             "num_appointments_attention_current" => $num_appointments_attention_current,
             "num_appointments_attention_before" => $num_appointments_attention_before,
             "porcentaje_da" => round($porcentajeDA, 2),
-            //   
+               
             "num_appointments_total_current" => $num_appointments_total_current,
             "num_appointments_total_before" => $num_appointments_total_before,
             "porcentaje_dt" => round($porcentajeDT, 2),
         ]);
     }
+
 
     public function dashboard_admin_year(Request $request)
     {

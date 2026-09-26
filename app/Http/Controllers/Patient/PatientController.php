@@ -35,11 +35,11 @@ class PatientController extends Controller
 
         // 🟢 CORRECCIÓN: Cambiado 'ilike' por 'like' y adaptado CONCAT_WS para la tabla de pacientes
         $patients = Patient::where(
-            DB::raw("CONCAT_WS(' ', patients.name, patients.surname, patients.email)"),
+            DB::raw("CONCAT_WS(' ', name, surname, email)"),
             "like",
             "%" . $search . "%"
         )->orderBy("id", "desc")
-         ->paginate(10);
+        ->paginate(10);
 
         return response()->json([
             "total"    => $patients->total(),

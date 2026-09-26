@@ -113,64 +113,59 @@ class AdminPaymentController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+    /**
+     * Store a newly created resource in storage.
+     * (Optimizado para Pagos Centralizados de Clínicas y Directos de Médicos)
+     */
     public function paymentStore(Request $request)
     {
-        // Buscamos el appointment de forma segura
         $appointment = Appointment::where("id", $request->appointment_id)->first();
         if (!$appointment) {
             return response()->json(['message' => 'Appointment not found.'], 404);
         }
 
-        // Inicializamos la variable en null por seguridad si no viene imagen
         $path = null;
-
-        // Procesamos la imagen con Cloudinary
         if ($request->hasFile('image')) {
             $cloudinaryResponse = Cloudinary::uploadApi()->upload(
                 $request->file('image')->getRealPath(),
                 ['folder' => 'klyntic/payments']
             );
-
             $path = $cloudinaryResponse['secure_url'];
-            $request->request->add(["avatar" => $path]);
         }
 
-        // ⚡ CONVERSIÓN DE LA FECHA (Timestamp JS a Formato SQL YYYY-MM-DD)
-        $fecha_formateada = null;
-        if ($request->fecha) {
-            $fecha_formateada = Carbon::createFromTimestampMs($request->fecha)->format('Y-m-d');
-        } else {
-            // En caso de que por alguna razón no viaje la fecha, usamos la fecha de hoy por defecto
-            $fecha_formateada = Carbon::now()->format('Y-m-d');
-        }
+        $fecha_formateada = $request->fecha 
+            ? Carbon::createFromTimestampMs($request->fecha)->format('Y-m-d')
+            : Carbon::now()->format('Y-m-d');
+
+        // 🏢🩺 GESTIÓN POLIMÓRFICA DE CAJA CENTRALIZADA / INDIVIDUAL:
+        // Si la cita tiene clinica_id, el pago va a la caja centralizada de la clínica.
+        // Si está vacía, es un consultorio y se asigna directo al doctor_id del médico.
+        $ownerTenantId = !empty($appointment->clinica_id) ? $appointment->clinica_id : $request->doctor_id;
 
         $payment = Payment::create([
-            "patient_id" => $request->patient_id,
-            "doctor_id" => $request->doctor_id,
+            "patient_id"     => $request->patient_id,
+            "doctor_id"      => $request->doctor_id,
             "appointment_id" => $request->appointment_id,
-            "nombre" => $request->nombre,
-            "monto" => $request->monto,
-            "email" => $request->email,
-            "bank_name" => $request->bank_name,
-            "metodo" => $request->metodo,
-            "referencia" => $request->referencia,
-            "status" => $request->status,
-            "tasabcv" => $request->tasabcv,
-            "moneda" => $request->moneda,
-            "image" => $path,
-            "fecha" => $fecha_formateada, // 👈 NUEVO CAMPO ENVIADO A LA BASE DE DATOS 🎉
+            "nombre"         => $request->nombre,
+            "monto"          => $request->monto,
+            "email"          => $request->email,
+            "bank_name"      => $request->bank_name,
+            "metodo"         => $request->metodo,
+            "referencia"     => $request->referencia,
+            "status"         => $request->status,
+            "tasabcv"        => $request->tasabcv,
+            "moneda"         => $request->moneda,
+            "image"          => $path,
+            "fecha"          => $fecha_formateada,
+            
+            // 🚀 INYECCIÓN MAESTRA MULTI-TENANT:
+            "clinica_id"     => $ownerTenantId 
         ]);
 
-        // =========================================================================
-        // ⚡ LIMPIEZA DE CACHÉ EN REDIS (Actualización Contable del Médico)
-        // =========================================================================
-        // Borramos los dashboards para que el nuevo balance en dólares y la lista 
-        // de pagos recientes se calculen al instante en la pantalla del doctor.
         $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
         Cache::forget("dashboard:doctor:{$payment->doctor_id}");
         Cache::forget("dashboard:doctor:{$payment->doctor_id}:year:{$year_current}");
 
-        // Notificación en el CRM del médico
         NotificacionService::enviar(
             $payment->doctor_id,
             null,
@@ -314,30 +309,27 @@ class AdminPaymentController extends Controller
         // return Payment::search($request->buscar);
         return Payment::search($request->query('buscar'));
     }
-
+/**
+     * Update status of payment (APPROVED / REJECTED)
+     * (Sincronizado con el Blindaje Multi-Tenant de Citas de Caja)
+     */
     public function updateStatus(Request $request, $id)
     {
-        // 1. Buscamos el pago (siempre viene el ID)
         $payment = Payment::findOrFail($id);
         $payment->status = $request->status;
         $payment->motivo_rechazo = $request->motivo_rechazo;
         $payment->save();
 
-        // 2. Si es RECHAZADO, terminamos aquí para evitar errores de null
-        // 🧪 CASO RECHAZADO: Notificación al Paciente
         if ($request->status === 'REJECTED') {
             NotificacionService::enviar(
-                $payment->doctor_id, // ID del consultorio [15]
-                $payment->patient->phone, // WhatsApp del paciente [15]
+                $payment->doctor_id,
+                $payment->patient->phone,
                 "Hola " . $payment->nombre . ", tu pago reportado por $" . $payment->monto . " no pudo ser verificado...",
-                
-                // 🚀 CORRECCIÓN: Forzamos string para el canal de la campana del paciente
                 (string)$payment->patient_id, 
-                
                 'PACIENTE',
                 '❌ Pago Rechazado',
                 'PAGO_RECHAZADO',
-                $payment->id // Referencia MySQL [15]
+                $payment->id 
             );
 
             return response()->json([
@@ -346,74 +338,55 @@ class AdminPaymentController extends Controller
             ]);
         }
 
-        // 3. Si llega aquí, es porque es APPROVED o PENDIENTE
-        // Buscamos la cita usando el appointment_id que SI enviaste en el JSON
         $appointment = Appointment::find($request->appointment_id);
-
         if (!$appointment) {
             return response()->json(['message' => 'Cita no encontrada'], 404);
         }
 
-        // Cálculos solo para aprobaciones
         $sum_total_pays = AppointmentPay::where("appointment_id", $request->appointment_id)->sum("amount");
         $costo = $appointment->amount;
         $deuda = ($costo - $sum_total_pays);
 
         if ($request->status === 'APPROVED') {
-            // Marcamos pagada si el monto actual completa la deuda
             if ($request->monto >= $deuda) {
                 $appointment->update(["status_pay" => 1]);
             }
 
-            // Registramos el pago en la tabla de pagos de citas
+            // 🚀 SANEADO: Inyectamos el dueño real (Clínica o Médico) también en la tabla secundaria de abonos
+            $ownerTenantId = !empty($appointment->clinica_id) ? $appointment->clinica_id : $payment->doctor_id;
+
             AppointmentPay::create([
                 "appointment_id" => $request->appointment_id,
-                "amount" => $request->monto,
-                "method_payment" => "TRANSFERENCIA", // O el campo que uses
-            ]);
-            $appointmentpay = AppointmentPay::create([
-                "appointment_id" => $request->appointment_id,
-                "amount" => $request->monto,
-                "method_payment" => $request->bank_name,
+                "amount"         => $request->monto,
+                "method_payment" => "TRANSFERENCIA",
+                "clinica_id"     => $ownerTenantId // 🔒 Consistencia contable absoluta
             ]);
 
-            // =========================================================================
-            // 🧪 VENENO INYECTADO: NOTIFICACIÓN DE PAGO APROBADO AL PACIENTE
-            // =========================================================================
-            // 🧪 CASO APROBADO: Notificación al Paciente
+            $appointmentpay = AppointmentPay::create([
+                "appointment_id" => $request->appointment_id,
+                "amount"         => $request->monto,
+                "method_payment" => $request->bank_name,
+                "clinica_id"     => $ownerTenantId // 🔒 Consistencia contable absoluta
+            ]);
+
             NotificacionService::enviar(
                 $payment->doctor_id,
                 $payment->patient->phone,
                 "Hola " . $payment->nombre . ", te confirmamos que tu pago de $" . $payment->monto . " ha sido VERIFICADO...",
-                
-                // 🚀 CORRECCIÓN: Forzamos string para la campana del paciente en Angular
                 (string)$payment->patient_id, 
-                
                 'PACIENTE',
                 '✅ Tu Pago ha sido Verificado',
                 'PAGO_RECIBIDO',
-                $payment->id // Referencia MySQL [15]
+                $payment->id 
             );
         }
-        // Ejemplo para el futuro: Solo envía el correo si el campo no está vacío
-        // if (!empty($appointment->patient->email)) {
-        //     NewAppointmentRegisterJob::dispatch($appointment)->onQueue('emails');
-        // }
-        // if ($request->status === 'APPROVED') {
-        //     Mail::to($appointment->patient->email)->send(new ConfirmationAppointment($appointment));
-
-        // }
 
         return response()->json([
             "message" => 200,
             "payment" => $payment,
             "appointment" => $appointment,
-            "appointmentpay" => $appointmentpay,
-
+            "appointmentpay" => isset($appointmentpay) ? $appointmentpay : null,
         ]);
-
-
-
     }
 
 
@@ -431,11 +404,20 @@ class AdminPaymentController extends Controller
 
     }
 
-    public function pagosPendientes()
+   /**
+     * Lista los pagos en espera de verificación para la recepción de la clínica/médico actual
+     */
+    public function pagosPendientes(Request $request)
     {
+        // Capturamos el identificador del Tenant enviado por el motor de Angular
+        $clinica_id = $request->clinica_id;
 
-        $payments = Payment::
-            where('status', 'PENDING')
+        if (!$clinica_id) {
+            return response()->json(["message" => "Falta el identificador de contexto de caja."], 400);
+        }
+
+        $payments = Payment::where('status', 'PENDING')
+            ->where('clinica_id', $clinica_id) // 🔒 FILTRO TENANT EXCLUSIVO DE ENTORNO
             ->orderBy("id", "desc")
             ->paginate(10);
 
@@ -443,7 +425,6 @@ class AdminPaymentController extends Controller
             "total" => $payments->total(),
             "payments" => PaymentCollection::make($payments)
         ]);
-
     }
     public function pagosPendientesShowId(Request $request, $doctor_id)
     {

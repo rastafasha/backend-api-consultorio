@@ -11,12 +11,14 @@ class AppointmentResource extends JsonResource
     {
         return [
             "id" => $this->resource->id,
+            "clinica_id" => $this->resource->clinica_id,
             "doctor_id" => $this->resource->doctor_id,
             "doctor" => $this->resource->doctor ? [
                 "id" => $this->resource->doctor->id,
                 "address" => $this->resource->doctor->address,
                 "email" => $this->resource->doctor->email,
                 "mobile" => $this->resource->doctor->mobile,
+                "clinica_id" => $this->resource->doctor->clinica_id,
                 "precio_cita" => $this->resource->doctor->precio_cita,
                 "full_name" => $this->resource->doctor->name . ' ' . $this->resource->doctor->surname,
                 "avatar" => $this->resource->doctor->avatar ? env("APP_URL") . $this->resource->doctor->avatar : null,

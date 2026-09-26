@@ -24,25 +24,33 @@ class StaffsController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
-    {
-        // if(!auth('api')->user()->can('list_staff')){
-        //     return response()->json(["message"=>"El usuario no esta autenticado"],403);
-        //    }
+{
+    // if(!auth('api')->user()->can('list_staff')){
+    //     return response()->json(["message"=>"El usuario no esta autenticado"],403);
+    // }
 
-        $search = $request->search;
-        
-        // 🟢 SANEADO: Cambiado CONCAT por CONCAT_WS y 'not ilike' por 'not like' universal
-        $users = User::where(DB::raw("CONCAT_WS(' ', users.name, users.surname, users.email)"), "like", "%".$search."%")
-                    ->whereHas("roles", function($q){
-                        $q->where("name", "not like", "%DOCTOR%");
-                    })
-                    ->orderBy("id", "desc")
-                    ->get();
-                    
-        return response()->json([
-            "users" => UserCollection::make($users),
-        ]);         
-    }
+    $search = $request->search;
+    
+    // 🚀 SANEADO ENTERPRISE: Exclusión estricta de Pacientes (GUEST) y Médicos (DOCTOR)
+    $users = User::where(DB::raw("CONCAT_WS(' ', users.name, users.surname, users.email)"), "like", "%".$search."%")
+                ->whereHas("roles", function($q){
+                    // 🛡️ Lista negra de roles que NO deben aparecer en el listado de personal administrativo
+                    $q->whereNotIn("name", [
+                        "DOCTOR", 
+                        "GUEST", 
+                        "PACIENTE",
+                        "guest",
+                        "paciente"
+                    ]);
+                })
+                ->orderBy("id", "desc")
+                ->get();
+                
+    return response()->json([
+        "users" => UserCollection::make($users),
+    ]);         
+}
+
     public function config()
     {
         // $roles = Role::where("name","not like","%DOCTOR%")->get();
@@ -62,56 +70,62 @@ class StaffsController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
-        // $this->authorize('index', User::class); 
-        $user_is_valid = User::where("email", $request->email)->first();
+{
+    // $this->authorize('index', User::class); 
+    $user_is_valid = User::where("email", $request->email)->first();
 
-        if($user_is_valid){
-            return response()->json([
-                "message"=>403,
-                "message_text"=> 'el usuario con este email ya existe'
-            ]);
-        }
-
-        // if($request->hasFile('imagen')){
-        //     $path = Storage::putFile("staffs", $request->file('imagen'));
-        //     $request->request->add(["avatar"=>$path]);
-        // }
-
-        // 3. Procesamos el Avatar con Cloudinary (Compatible con v3)
-        if ($request->hasFile('imagen')) {
-            // Sube la imagen utilizando el uploadApi nativo del SDK
-            $cloudinaryResponse = Cloudinary::uploadApi()->upload(
-                $request->file('imagen')->getRealPath(),
-                ['folder' => 'klyntic/staffs']
-            );
-
-            // Obtenemos la URL de manera directa desde el arreglo de respuesta
-            $path = $cloudinaryResponse['secure_url'];
-
-            $request->request->add(["avatar" => $path]);
-        }
-
-        if($request->password){
-             $request->request->add(["password"=>Hash::make($request->password)]);
-        }
-
-        //para el error:
-        //Could not parse 'Fri Dec 08 2023 00:00:00 GMT-0400 (Venezuela Time)
-        //colocamos:
-        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '',$request->birth_date );
-
-        $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
-
-        $user = User::create($request->all());
-
-        $role=  Role::findOrFail($request->role_id);
-        $user->assignRole($role);
-
+    if($user_is_valid){
         return response()->json([
-            "message"=>200,
+            "message" => 403,
+            "message_text" => 'el usuario con este email ya existe'
         ]);
     }
+
+    // 🚀 PROCESAMIENTO MULTIMEDIA: Cloudinary (Compatible con v3)
+    if ($request->hasFile('imagen')) {
+        $cloudinaryResponse = Cloudinary::uploadApi()->upload(
+            $request->file('imagen')->getRealPath(),
+            ['folder' => 'klyntic/staffs']
+        );
+        $path = $cloudinaryResponse['secure_url'];
+        $request->request->add(["avatar" => $path]);
+    }
+
+    if($request->password){
+         $request->request->add(["password" => Hash::make($request->password)]);
+    }
+
+    // 🛠️ PARSEO ANTIGUO DE FECHAS: Limpieza de strings de zona horaria de navegadores
+    if($request->birth_date) {
+        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '', $request->birth_date);
+        $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d H:i:s')]);
+    }
+
+    // 🏢 VÍNCULO ENTERPRISE: Relacionamos el usuario a la clínica actual
+    // Capturamos el identificador enviado por Angular (ya sea por Header o parámetro de formulario)
+    $clinicaId = $request->header('X-Clinica-Id') ?? $request->input('clinica_id');
+
+    if (!$clinicaId) {
+        return response()->json([
+            "message" => 400,
+            "message_text" => 'Error de contexto: No se especificó el identificador de la clínica'
+        ], 400);
+    }
+
+    // Inyectamos el ID de la clínica de forma segura antes del Mass Assignment
+    $request->request->add(["clinica_id" => $clinicaId]);
+
+    // Creación masiva segura incluyendo el contexto de la clínica
+    $user = User::create($request->all());
+
+    // Asignación de Roles mediante Spatie
+    $role = Role::findOrFail($request->role_id);
+    $user->assignRole($role);
+
+    return response()->json([
+        "message" => 200,
+    ]);
+}
 
     /**
      * Display the specified resource.
@@ -149,13 +163,6 @@ class StaffsController extends Controller
         
         $user = User::findOrFail($id);
         
-        // if($request->hasFile('imagen')){
-        //     if($user->avatar){
-        //         Storage::delete($user->avatar);
-        //     }
-        //     $path = Storage::putFile("staffs", $request->file('imagen'));
-        //     $request->request->add(["avatar"=>$path]);
-        // }
 
         //upload a cloudinary
         if ($request->hasFile('imagen')) {
@@ -195,8 +202,7 @@ class StaffsController extends Controller
         
         $user->update($request->all());
         
-        Mail::to($user)->send(new NewUserRegisterMail($user));
-        // Mail::to('mercadocreativo@gmail.com')->send(new NewUserRegisterMail($user));
+        // Mail::to($user)->send(new NewUserRegisterMail($user));
 
         return response()->json([
             "message"=>200,

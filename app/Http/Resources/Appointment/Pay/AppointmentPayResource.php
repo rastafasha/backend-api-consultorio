@@ -17,6 +17,7 @@ class AppointmentPayResource extends JsonResource
     {
         return [
             "id" =>$this->resource->id,
+            "clinica_id" =>$this->resource->clinica_id,
             "doctor_id" =>$this->resource->doctor_id,
             "doctor" =>$this->resource->doctor ? 
                 [

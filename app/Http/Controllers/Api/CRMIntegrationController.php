@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User; 
@@ -26,12 +26,12 @@ class CRMIntegrationController extends Controller
             'apellido'           => 'required|string',
             'email'              => 'required|email',
             'n_doc'              => 'required|string',
-            'phone'              => 'required|string', // Obligatorio para usarlo de contraseña
+            'phone'              => 'required|string',
             'speciality_id'      => 'nullable|integer',
             'plan_suscripcion'   => 'required|string', 
             'status_app'         => 'required|string', 
             'moneda_cobro'       => 'string',
-            'password_inicial'   => 'nullable|string' // Captura el teléfono limpio enviado por Node.js
+            'password_inicial'   => 'nullable|string'
         ]);
 
         try {
@@ -41,10 +41,9 @@ class CRMIntegrationController extends Controller
                           ->orWhere('email', strtolower(trim($validated['email'])))
                           ->first();
 
-            $statusMongoose = $validated['status_app'] === 'Activo' ? 1 : 2; // Sintonizado con tu tinyInteger 'status'
+            $statusMongoose = $validated['status_app'] === 'Activo' ? 1 : 2;
 
             if ($medico) {
-                // Si ya existe, actualizamos sus datos comerciales
                 $medico->update([
                     'name'          => $validated['nombre'],
                     'surname'       => $validated['apellido'],
@@ -55,7 +54,6 @@ class CRMIntegrationController extends Controller
                 ]);
                 Log::info("🔄 [CRM Sync] Médico existente actualizado. ID: #" . $medico->id);
             } else {
-                // 🔥 SI ES NUEVO: Lo creamos y aplicamos TU ESTRATEGIA de contraseña telefónica
                 $medico = User::create([
                     'name'          => $validated['nombre'],
                     'surname'       => $validated['apellido'],
@@ -65,18 +63,15 @@ class CRMIntegrationController extends Controller
                     'moneda'        => $validated['moneda_cobro'] ?? 'USD',
                     'status'        => $statusMongoose,
                     'speciality_id' => $validated['speciality_id'] ?? null,
-                    // Encriptamos el teléfono recibido, o una clave aleatoria como plan de respaldo
                     'password'      => Hash::make($validated['password_inicial'] ?? $validated['phone']), 
                 ]);
 
-                // Asignamos el rol oficial de Spatie
                 if (method_exists($medico, 'assignRole')) {
                     $medico->assignRole('DOCTOR'); 
                 }
                 Log::info("✨ [CRM Sync] Nuevo Médico creado en la tabla users. ID: #" . $medico->id);
             }
 
-            // 🔀 PASO B: Sincronización en tu tabla ligera de subdominios
             DB::table('consultorios_express')->updateOrInsert(
                 ['crm_id' => $validated['crm_doctor_id']], 
                 [
@@ -90,16 +85,103 @@ class CRMIntegrationController extends Controller
                 ]
             );
 
-            // 🚀 RETORNO MAGISTRAL: Le respondemos a Node.js con el ID autoincremental número 9, 10, etc.
             return response()->json([
                 'ok' => true,
                 'message' => 'Médico y subdominio sincronizados con éxito en Laravel Core.',
-                'laravel_user_id' => $medico->id // Este campo lo lee Node.js para guardarlo en Mongoose
+                'laravel_user_id' => $medico->id
             ], 200);
 
         } catch (\Exception $e) {
             Log::error("❌ Error CRM Sync: " . $e->getMessage());
             return response()->json(['ok' => false, 'message' => 'Error en el Core Central.'], 500);
+        }
+    }
+/**
+     * 🔥 NUEVO MÉTODO ENTERPRISE: Registra el ADMIN Maestro de una Clínica Institucional
+     *    Sincronizado con tus requerimientos multi-tenant y tu UserSeeder.
+     */
+    public function syncEnterpriseAdmin(Request $request)
+    {
+        // 🛡️ Filtro de seguridad interno compartido
+        if ($request->header('Authorization') !== 'KlynticCRMSecretToken_2026_vM0MmcxxA4Ih') {
+            return response()->json(["ok" => false, "message" => "No autorizado"], 401);
+        }
+
+        $validated = $request->validate([
+            'crm_clinica_id'   => 'required|string',
+            'subdomain'        => 'required|string',
+            'nombre'           => 'required|string',
+            'apellido'         => 'required|string',
+            'email'            => 'required|email',
+            'n_doc'            => 'required|string',
+            'phone'            => 'required|string',
+            'status_app'       => 'required|string',
+            'moneda_cobro'     => 'string',
+            'password_inicial' => 'required|string'
+        ]);
+
+        try {
+            // Buscamos si el administrador ya existe por cédula o correo
+            $admin = User::where('n_doc', $validated['n_doc'])
+                         ->orWhere('email', strtolower(trim($validated['email'])))
+                         ->first();
+
+            $statusMongoose = $validated['status_app'] === 'Activo' ? 1 : 2; // Alineado a tu TinyInteger
+
+            if ($admin) {
+                // Si ya existe, nos aseguramos de amarrar el clinica_id por si acaso
+                $admin->update([
+                    'clinica_id' => $validated['crm_clinica_id'],
+                    'status'     => $statusMongoose
+                ]);
+                Log::info("🔄 [CRM Enterprise Sync] Administrador existente actualizado. ID: #" . $admin->id);
+            } {
+                // 🔥 SI ES NUEVO: Creamos el perfil usando la columna mobile y contraseña telefónica
+                $admin = User::create([
+                    'name'         => $validated['nombre'],
+                    'surname'      => $validated['apellido'],
+                    'n_doc'        => $validated['n_doc'],
+                    'mobile'       => $validated['phone'], // Alineado a tu UserSeeder
+                    'email'        => strtolower(trim($validated['email'])),
+                    'moneda'       => $validated['moneda_cobro'] ?? 'USD',
+                    'status'       => $statusMongoose,
+                    'gender'       => 1, // Neutro inicial
+                    'pais_id'      => 1, // Default Venezuela
+                    'password'     => Hash::make($validated['password_inicial']), // Contraseña telefónica limpia
+                    'clinica_id'   => $validated['crm_clinica_id'] // 🏢 Clave Multi-tenant
+                ]);
+
+                // Asignamos el rol estricto de Spatie configurado en tu Seeder
+                if (method_exists($admin, 'assignRole')) {
+                    $admin->assignRole('ADMIN'); 
+                }
+                Log::info("✨ [CRM Enterprise Sync] Nuevo ADMIN institucional creado para la clínica. ID: #" . $admin->id);
+            }
+
+            // 🔀 Registramos el subdominio en la tabla de control (puedes usar la misma o adaptarla)
+            DB::table('consultorios_express')->updateOrInsert(
+                ['crm_id' => $validated['crm_clinica_id']], 
+                [
+                    'subdomain'  => strtolower(trim($validated['subdomain'])),
+                    'nombre'     => $validated['nombre'] . ' ' . $validated['apellido'],
+                    'plan'       => 'PRO',
+                    'status'     => $validated['status_app'],
+                    'moneda'     => $validated['moneda_cobro'] ?? 'USD',
+                    'updated_at' => now(),
+                    'created_at' => now(), 
+                ]
+            );
+
+            // 🚀 RETORNO EXITOSO: Le mandamos el ID autoincremental de Supabase de vuelta a Node.js
+            return response()->json([
+                'ok' => true,
+                'message' => 'Entorno Enterprise y cuenta de ADMIN sincronizados con éxito en Laravel Core.',
+                'laravel_user_id' => $admin->id
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error("❌ Error CRM Enterprise Sync: " . $e->getMessage());
+            return response()->json(['ok' => false, 'message' => 'Error en el Core Central Enterprise.'], 500);
         }
     }
 
