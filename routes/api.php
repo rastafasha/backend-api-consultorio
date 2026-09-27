@@ -2,6 +2,7 @@
 use App\Http\Controllers\Admin\Doctor\DoctorAddressController;
 use App\Http\Controllers\Admin\Doctor\DoctorController;
 use App\Http\Controllers\Admin\Doctor\SpecialityController;
+use App\Http\Controllers\Admin\SettingGController;
 use App\Http\Controllers\Api\TenantContextController;
 use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\Enterprise\ClinicaController;
@@ -117,6 +118,7 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::get('doctors/profile/{id}', [DoctorController::class, 'profile']); // El de tu función unificada
     Route::get('doctor-addresses/doctor/{user_id}', [DoctorAddressController::class, 'getByDoctor']);
     Route::get('paymentmethods/bydoctor/{doctor_id}', [tiposdepagoController::class, 'byDoctor']);
+
 
     // Endpoint express que guarda al paciente y la cita en un solo paso
     Route::post('appointments/filterbydoctor/{doctor_id}', [AppointmentController::class, 'filterByDoctor']);
