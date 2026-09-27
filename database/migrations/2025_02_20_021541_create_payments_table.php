@@ -37,7 +37,7 @@ class CreatePaymentsTable extends Migration
             $table->unsignedBigInteger('patient_id')->nullable();
             $table->unsignedBigInteger('doctor_id')->nullable();
             $table->unsignedBigInteger('appointment_id')->nullable();
-            $table->unsignedBigInteger('clinica_id')->nullable();
+            $table->string('clinica_id')->nullable()->index();
 
             $table->timestamps();
             $table->softDeletes();
