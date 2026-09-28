@@ -384,6 +384,7 @@ class AppointmentController extends Controller
         $date_formatted = Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s");
         $appointment = Appointment::create([
             "doctor_id" => $request->doctor_id,
+            "clinica_id" => $request->clinica_id,
             'patient_id' => $patient->id,
             "date_appointment" => $date_formatted,
             "speciality_id" => $request->speciality_id,
@@ -667,7 +668,8 @@ class AppointmentController extends Controller
             'surname' => 'required|string|max:250',
             'n_doc' => 'required|string|max:50',
             'phone' => 'required|string|max:50',
-            'email' => 'required|email'
+            'email' => 'required|email',
+            
         ]);
         $patient = Patient::where("n_doc", $request->n_doc)->first();
         $doctor = User::findOrFail($request->doctor_id);
@@ -702,6 +704,7 @@ class AppointmentController extends Controller
         $appointment = Appointment::create([
             "doctor_id" => $request->doctor_id,
             'patient_id' => $patient->id,
+            "clinica_id" => $request->clinica_id,
             "date_appointment" => $date_formatted,
             "speciality_id" => $request->speciality_id,
             "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
