@@ -8,20 +8,25 @@ use Illuminate\Support\Facades\Log;
 class NotificacionService
 {
     /**
-     * Envía una notificación al backend de Node.js
+     * Envía una notificación al backend de Node.js (Ruta Sincronizada con Express)
      */
     public static function enviar($usuarioId, $rol, $consultorioId, $telefonoPaciente, $mensajeTexto, $tituloToastr, $tipoEnum, $refId = null)
     {
-        // 1. Limpiamos la URL para evitar el bug de la doble barra '//' en producción
+        // 1. Jalamos la URL local de tu .env (http://localhost:5000)
         $baseNodeUrl = rtrim(env('KLYNTIC_NODE_URL', 'http://localhost:5000'), '/');
         
-        // 2. Apuntamos a la ruta real de tu módulo de recursos/notificaciones de Node.js
-        $urlNode = $baseNodeUrl . '/api/recursos/webhook-recordatorio';
+        // 2. 🟢 RECTIFICACIÓN MAESTRA: Apuntamos al prefijo legítimo de tu archivo de rutas
+        $urlNode = $baseNodeUrl . '/api/klyntic/notificaciones/webhook-recordatorio';
 
         try {
-            // Enviamos el token secreto interno que definimos en tu .env para comunicación segura
+            Log::info("🚀 [LARAVEL DISPARO]: Despachando alerta hacia Node en: " . $urlNode);
+
+            // 3. Enviamos el token unificado de tu .env (d651c7c2...)
+            $tokenSecreto = env('CRM_INTERNAL_TOKEN');
+
             $response = Http::withHeaders([
-                'Authorization' => env('CRM_INTERNAL_TOKEN', 'KlynticCRMSecretToken_2026_vM0MmcxxA4Ih')
+                'Authorization' => $tokenSecreto,
+                'Accept'        => 'application/json'
             ])->post($urlNode, [
                 'consultorio_id' => $consultorioId,
                 'telefono'       => $telefonoPaciente, 
@@ -33,16 +38,16 @@ class NotificacionService
                 'referenciaId'   => $refId ? (string) $refId : null
             ]);
 
+            Log::info("📡 [LARAVEL RESPUESTA]: Código de estatus recibido: " . $response->status());
+
             if (!$response->successful()) {
                 Log::error("❌ Error HTTP en Node.js (Estatus " . $response->status() . "): " . $response->body());
-            } else {
-                Log::info("🔔 Notificación enviada con éxito a Node.js para el usuario: " . $usuarioId);
             }
 
             return $response->successful();
 
         } catch (\Exception $e) {
-            Log::error("💥 Fallo crítico de conexión con Node.js en Render: " . $e->getMessage());
+            Log::error("💥 Fallo de conexión con Node.js en MAMP: " . $e->getMessage());
             return false;
         }
     }

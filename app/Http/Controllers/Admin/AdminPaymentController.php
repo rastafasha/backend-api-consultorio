@@ -47,10 +47,6 @@ class AdminPaymentController extends Controller
         $monto = $request->monto;
         $fecha = $request->fecha;
 
-        // $payments = Payment::where("referencia","like","%".$referencia."%")
-        // ->orderBy("id","desc")
-        // ->paginate(10);
-        // // ->get();
 
         $payments = Payment::filterAdvancePayment($search_referencia)->orderBy("id", "desc")
             ->paginate(10);
@@ -117,13 +113,15 @@ class AdminPaymentController extends Controller
      * Store a newly created resource in storage.
      * (Optimizado para Pagos Centralizados de Clínicas y Directos de Médicos)
      */
-    public function paymentStore(Request $request)
+public function paymentStore(Request $request)
     {
+        // 1. Validar la existencia de la cita en MAMP
         $appointment = Appointment::where("id", $request->appointment_id)->first();
         if (!$appointment) {
             return response()->json(['message' => 'Appointment not found.'], 404);
         }
 
+        // 2. Carga Segura y Directa a Cloudinary
         $path = null;
         if ($request->hasFile('image')) {
             $cloudinaryResponse = Cloudinary::uploadApi()->upload(
@@ -133,15 +131,15 @@ class AdminPaymentController extends Controller
             $path = $cloudinaryResponse['secure_url'];
         }
 
+        // 3. Formateo de fechas mediante Carbon
         $fecha_formateada = $request->fecha 
             ? Carbon::createFromTimestampMs($request->fecha)->format('Y-m-d')
             : Carbon::now()->format('Y-m-d');
 
-        // 🏢🩺 GESTIÓN POLIMÓRFICA DE CAJA CENTRALIZADA / INDIVIDUAL:
-        // Si la cita tiene clinica_id, el pago va a la caja centralizada de la clínica.
-        // Si está vacía, es un consultorio y se asigna directo al doctor_id del médico.
+        // 🏢 GESTIÓN POLIMÓRFICA DE CAJA CENTRALIZADA / INDIVIDUAL
         $ownerTenantId = !empty($appointment->clinica_id) ? $appointment->clinica_id : $request->doctor_id;
 
+        // 4. Persistencia del Pago con Aislamiento de Entorno
         $payment = Payment::create([
             "patient_id"     => $request->patient_id,
             "doctor_id"      => $request->doctor_id,
@@ -157,25 +155,56 @@ class AdminPaymentController extends Controller
             "moneda"         => $request->moneda,
             "image"          => $path,
             "fecha"          => $fecha_formateada,
-            
-            // 🚀 INYECCIÓN MAESTRA MULTI-TENANT:
-            "clinica_id"     => $ownerTenantId 
+            "clinica_id"     => $ownerTenantId
         ]);
 
+        // 5. Invalidación de Caché del Dashboard Contable
         $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
         Cache::forget("dashboard:doctor:{$payment->doctor_id}");
         Cache::forget("dashboard:doctor:{$payment->doctor_id}:year:{$year_current}");
 
+        // =========================================================================
+        // 📲 MOTOR DE DOBLE CANAL DE NOTIFICACIONES CORREGIDO (MÉDICO + RECEPCIÓN)
+        // =========================================================================
+        
+        // Recuperamos el teléfono del médico para que Node no reciba data corrupta
+        $medicoObj = User::find($payment->doctor_id);
+        $telefonoMedico = $medicoObj ? $medicoObj->mobile : '';
+
+        // 🟢 Alerta 1: Envío Obligatorio al Buzón Privado del Médico (Orden Alineado)
         NotificacionService::enviar(
-            $payment->doctor_id,
-            null,
-            "El paciente " . $payment->nombre . " ha reportado un pago de $" . $payment->monto . " (Ref: " . $payment->referencia . ") para su cita.",
-            $payment->doctor_id,
-            'MEDICO',
-            '💰 Nuevo Pago por Verificar',
-            'PAGO_RECIBIDO',
-            $payment->id
+            $payment->doctor_id,    // 1. $usuarioId (Receptor físico)
+            'DOCTOR',               // 2. $rol (Enum válido en Mongo)
+            $ownerTenantId,         // 3. $consultorioId
+            $telefonoMedico,        // 4. $telefonoPaciente/Destinatario
+            "El paciente " . $payment->nombre . " ha reportado un pago de $" . $payment->monto . " (Ref: " . $payment->referencia . ") para su cita.", // 5. $mensajeTexto
+            '💰 Nuevo Pago por Verificar', // 6. $tituloToastr
+            'PAGO_RECIBIDO',        // 7. $tipoEnum
+            $payment->id            // 8. $refId
         );
+
+        // Alerta 2: Duplicación en tiempo real para el Canal de Recepción de la Clínica
+        if (!empty($appointment->clinica_id)) {
+            
+            $recepcionistas = User::where('clinica_id', $appointment->clinica_id)
+                ->where('role', 'RECEPCION')
+                ->get();
+
+            foreach ($recepcionistas as $recepcionista) {
+                // 🟢 Alerta 2: Envío estructurado para la campana de recepción de la sede
+                NotificacionService::enviar(
+                    $recepcionista->id,     // 1. $usuarioId
+                    'RECEPCION',            // 2. $rol
+                    $appointment->clinica_id, // 3. $consultorioId
+                    $recepcionista->mobile ?? '', // 4. $telefonoPaciente
+                    "🚨 [Caja Clínica] Pago de $" . $payment->monto . " por verificar del paciente " . $payment->nombre . " (Dr. ID: " . $payment->doctor_id . ").", // 5. $mensajeTexto
+                    '🏢 Nuevo Pago Clínica', // 6. $tituloToastr
+                    'PAGO_RECIBIDO_CLINICA', // 7. $tipoEnum
+                    $payment->id            // 8. $refId
+                );
+            }
+        }
+        // =========================================================================
 
         return response()->json([
             "message" => 200,
@@ -192,8 +221,6 @@ class AdminPaymentController extends Controller
      */
     public function paymentShow(Payment $payment)
     {
-
-
         if (!$payment) {
             return response()->json([
                 'message' => 'Pago not found.'
@@ -245,33 +272,64 @@ class AdminPaymentController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function paymentDestroy(Payment $payment)
-    {
-        $this->authorize('paymentDestroy', Payment::class);
+   public function paymentDestroy(Payment $payment)
+{
+    $this->authorize('paymentDestroy', Payment::class);
 
-        try {
-            DB::beginTransaction();
+    try {
+        DB::beginTransaction();
 
-            if ($payment->image) {
-                Uploader::removeFile("public/payments", $payment->image);
+        // ☁️ LIMPIEZA EN LA NUBE DE CLOUDINARY
+        if ($payment->image) {
+            
+            // 🔍 MOTOR DE EXTRACCIÓN DE PUBLIC ID
+            // Ejemplo URL: https://cloudinary.com
+            // Queremos extraer estrictamente: "klyntic/payments/abc123xyz"
+            
+            $pathText = parse_url($payment->image, PHP_URL_PATH); // Obtiene "/demo/image/upload/v1234567/klyntic/payments/abc123xyz.jpg"
+            $pathPieces = explode('/', $pathText);
+            
+            // Buscamos el índice donde arranca tu carpeta en Cloudinary
+            $startIndex = array_search('klyntic', $pathPieces);
+            
+            if ($startIndex !== false) {
+                // Unimos las piezas desde "klyntic" en adelante
+                $pathWithFolder = implode('/', array_slice($pathPieces, $startIndex)); 
+                
+                // Removemos la extensión del archivo (.jpg, .png, .jpeg) para obtener el Public ID puro
+                $publicId = preg_replace('/\\.[^.\\s]{3,4}$/', '', $pathWithFolder);
+                
+                Log::info("☁️ [Cloudinary Destroy] Solicitando borrado del Public ID: " . $publicId);
+                
+                // Ejecutamos la destrucción en los servidores de Cloudinary
+                Cloudinary::uploadApi()->destroy($publicId);
+            } else {
+                // Fallback clásico por si la estructura de la URL cambia o no tiene la carpeta raíz
+                $filenameWithExtension = basename($payment->image);
+                $filename = pathinfo($filenameWithExtension, PATHINFO_FILENAME);
+                Cloudinary::uploadApi()->destroy($filename);
             }
-
-            $payment->delete();
-
-            DB::commit();
-            return response()->json([
-                'code' => 200,
-                'status' => 'Pago delete',
-            ], 200);
-        } catch (\Throwable $exception) {
-            DB::rollBack();
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Borrado fallido. Conflicto',
-            ], 409);
         }
-    }
 
+        // Eliminamos el registro de la base de datos MAMP/Supabase
+        $payment->delete();
+
+        DB::commit();
+        return response()->json([
+            'code' => 200,
+            'status' => 'Pago delete',
+        ], 200);
+
+    } catch (\Throwable $exception) {
+        DB::rollBack();
+        Log::error("🚨 Error destruyendo pago y capture de Cloudinary: " . $exception->getMessage());
+        
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Borrado fallido. Conflicto',
+        ], 409);
+    }
+}
 
 
     public function recientes()
@@ -288,22 +346,6 @@ class AdminPaymentController extends Controller
 
 
 
-    public function deleteFotoPayment($id)
-    {
-        $payment = Payment::findOrFail($id);
-        \Storage::delete('payments/' . $payment->image);
-        $payment->image = '';
-        $payment->save();
-        return response()->json([
-            'data' => $payment,
-            'msg' => [
-                'summary' => 'Archivo eliminado',
-                'detail' => '',
-                'code' => ''
-            ]
-        ]);
-    }
-
     public function search(Request $request)
     {
         // return Payment::search($request->buscar);
@@ -313,82 +355,88 @@ class AdminPaymentController extends Controller
      * Update status of payment (APPROVED / REJECTED)
      * (Sincronizado con el Blindaje Multi-Tenant de Citas de Caja)
      */
-    public function updateStatus(Request $request, $id)
-    {
-        $payment = Payment::findOrFail($id);
-        $payment->status = $request->status;
-        $payment->motivo_rechazo = $request->motivo_rechazo;
-        $payment->save();
+ 
 
-        if ($request->status === 'REJECTED') {
-            NotificacionService::enviar(
-                $payment->doctor_id,
-                $payment->patient->phone,
-                "Hola " . $payment->nombre . ", tu pago reportado por $" . $payment->monto . " no pudo ser verificado...",
-                (string)$payment->patient_id, 
-                'PACIENTE',
-                '❌ Pago Rechazado',
-                'PAGO_RECHAZADO',
-                $payment->id 
-            );
+public function updateStatus(Request $request, $id)
+{
+    // 1. Buscamos el pago reportado
+    $payment = Payment::findOrFail($id);
+    $payment->status = $request->status;
+    $payment->motivo_rechazo = $request->motivo_rechazo;
+    $payment->save();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Pago rechazado y notificado correctamente'
-            ]);
-        }
+    // Localizamos al paciente usando su modelo para recuperar el teléfono
+    $pacienteEncontrado = \App\Models\Patient\Patient::find($payment->patient_id);
+    $telefonoPaciente = $pacienteEncontrado ? $pacienteEncontrado->phone : '';
 
-        $appointment = Appointment::find($request->appointment_id);
-        if (!$appointment) {
-            return response()->json(['message' => 'Cita no encontrada'], 404);
-        }
+    $appointment = Appointment::find($request->appointment_id);
+    if (!$appointment) {
+        return response()->json(['message' => 'Cita no encontrada'], 404);
+    }
 
-        $sum_total_pays = AppointmentPay::where("appointment_id", $request->appointment_id)->sum("amount");
-        $costo = $appointment->amount;
-        $deuda = ($costo - $sum_total_pays);
+    // Inyectamos el dueño real (Clínica o Médico) para el aislamiento contable
+    $ownerTenantId = !empty($appointment->clinica_id) ? $appointment->clinica_id : $payment->doctor_id;
 
-        if ($request->status === 'APPROVED') {
-            if ($request->monto >= $deuda) {
-                $appointment->update(["status_pay" => 1]);
-            }
-
-            // 🚀 SANEADO: Inyectamos el dueño real (Clínica o Médico) también en la tabla secundaria de abonos
-            $ownerTenantId = !empty($appointment->clinica_id) ? $appointment->clinica_id : $payment->doctor_id;
-
-            AppointmentPay::create([
-                "appointment_id" => $request->appointment_id,
-                "amount"         => $request->monto,
-                "method_payment" => "TRANSFERENCIA",
-                "clinica_id"     => $ownerTenantId // 🔒 Consistencia contable absoluta
-            ]);
-
-            $appointmentpay = AppointmentPay::create([
-                "appointment_id" => $request->appointment_id,
-                "amount"         => $request->monto,
-                "method_payment" => $request->bank_name,
-                "clinica_id"     => $ownerTenantId // 🔒 Consistencia contable absoluta
-            ]);
-
-            NotificacionService::enviar(
-                $payment->doctor_id,
-                $payment->patient->phone,
-                "Hola " . $payment->nombre . ", te confirmamos que tu pago de $" . $payment->monto . " ha sido VERIFICADO...",
-                (string)$payment->patient_id, 
-                'PACIENTE',
-                '✅ Tu Pago ha sido Verificado',
-                'PAGO_RECIBIDO',
-                $payment->id 
-            );
-        }
+    if ($request->status === 'REJECTED') {
+        
+        // 🟢 RECTIFICACIÓN CANAL DE ALERTAS: Orden alineado a la firma del Servicio
+        NotificacionService::enviar(
+            $payment->patient_id,    // 1. $usuarioId (El receptor de la campana es el PACIENTE)
+            'PACIENTE',              // 2. $rol
+            $ownerTenantId,          // 3. $consultorioId
+            $telefonoPaciente,       // 4. $telefonoPaciente
+            "Hola " . $payment->nombre . ", tu pago reportado por $" . $payment->monto . " no pudo ser verificado...", // 5. $mensajeTexto
+            '❌ Pago Rechazado',     // 6. $tituloToastr
+            'PAGO_RECHAZADO',        // 7. $tipoEnum
+            $payment->id             // 8. $refId
+        );
 
         return response()->json([
-            "message" => 200,
-            "payment" => $payment,
-            "appointment" => $appointment,
-            "appointmentpay" => isset($appointmentpay) ? $appointmentpay : null,
+            'status' => 'success',
+            'message' => 'Pago rechazado y notificado correctamente'
         ]);
     }
 
+    $sum_total_pays = AppointmentPay::where("appointment_id", $request->appointment_id)->sum("amount");
+    $costo = $appointment->amount;
+    $deuda = ($costo - $sum_total_pays);
+
+    $appointmentpay = null;
+
+    if ($request->status === 'APPROVED') {
+        if ($request->monto >= $deuda) {
+            $appointment->update(["status_pay" => 1]);
+        }
+
+        $metodoPagoFinal = $request->metodo ?? ($request->method_payment ?? 'Efectivo');
+
+        $appointmentpay = AppointmentPay::create([
+            "appointment_id" => $request->appointment_id,
+            "amount"         => $request->monto,
+            "method_payment" => $metodoPagoFinal, 
+            "clinica_id"     => $ownerTenantId
+        ]);
+
+        // 🟢 RECTIFICACIÓN CANAL DE ALERTAS: Orden alineado a la firma del Servicio
+        NotificacionService::enviar(
+            $payment->patient_id,    // 1. $usuarioId (El receptor de la campana es el PACIENTE)
+            'PACIENTE',              // 2. $rol
+            $ownerTenantId,          // 3. $consultorioId
+            $telefonoPaciente,       // 4. $telefonoPaciente
+            "Hola " . $payment->nombre . ", te confirmamos que tu pago de $" . $payment->monto . " ha sido VERIFICADO...", // 5. $mensajeTexto
+            '✅ Tu Pago ha sido Verificado', // 6. $tituloToastr
+            'PAGO_RECIBIDO',         // 7. $tipoEnum
+            $payment->id             // 8. $refId
+        );
+    }
+
+    return response()->json([
+        "message" => 200,
+        "payment" => $payment,
+        "appointment" => $appointment,
+        "appointmentpay" => $appointmentpay,
+    ]);
+}
 
     public function pagosbyUser(Request $request, $patient_id)
     {

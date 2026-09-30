@@ -357,95 +357,133 @@ class AppointmentController extends Controller
         ]);
     }
     public function store(Request $request): JsonResponse
-    {
-        $patient = Patient::where("n_doc", $request->n_doc)->first();
-        $doctor = User::findOrFail($request->doctor_id);
-        if (!$patient) {
-            $patient = Patient::create([
-                "name" => $request->name,
-                "surname" => $request->surname,
-                "email" => $request->email,
-                "n_doc" => $request->n_doc,
-                "phone" => $request->phone,
-            ]);
-            PatientPerson::create([
-                'patient_id' => $patient->id,
+{
+    $patient = Patient::where("n_doc", $request->n_doc)->first();
+    $doctor = User::findOrFail($request->doctor_id);
+    
+    if (!$patient) {
+        $patient = Patient::create([
+            "name" => $request->name,
+            "surname" => $request->surname,
+            "email" => $request->email,
+            "n_doc" => $request->n_doc,
+            "phone" => $request->phone,
+        ]);
+        PatientPerson::create([
+            'patient_id' => $patient->id,
+            'name_companion' => $request->name_companion,
+            'surname_companion' => $request->surname_companion,
+        ]);
+    } else {
+        if ($patient->person) {
+            $patient->person->update([
                 'name_companion' => $request->name_companion,
                 'surname_companion' => $request->surname_companion,
             ]);
-        } else {
-            if ($patient->person) {
-                $patient->person->update([
-                    'name_companion' => $request->name_companion,
-                    'surname_companion' => $request->surname_companion,
-                ]);
-            }
         }
-        $date_formatted = Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s");
-        $appointment = Appointment::create([
-            "doctor_id" => $request->doctor_id,
-            "clinica_id" => $request->clinica_id,
-            'patient_id' => $patient->id,
-            "date_appointment" => $date_formatted,
-            "speciality_id" => $request->speciality_id,
-            "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
-            'user_id' => auth()->id() ?? $doctor->id,
-            "amount" => $request->amount,
-            "status_pay" => $request->status_pay,
-            "status" => $request->status,
-        ]);
-        if ($request->status_pay === 1) {
-            AppointmentPay::create([
-                "appointment_id" => $appointment->id,
-                "amount" => $request->amount_add,
-                "method_payment" => $request->method_payment,
-                "status_pay" => 1,
-            ]);
-        }
-        $appointment->load(['patient', 'speciality']);
-        $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
-        Cache::forget("dashboard:doctor:{$appointment->doctor_id}");
-        Cache::forget("dashboard:doctor:{$appointment->doctor_id}:year:{$year_current}");
-        try {
-            if (class_exists('NotificacionService')) {
-                NotificacionService::enviar(
-                    $appointment->doctor_id,
-                    null,
-                    "Tienes un nuevo paciente agendado para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-                    (string) $appointment->doctor_id,
-                    'MEDICO',
-                    '📅 Nueva Cita Agendada',
-                    'CONSULTA_NUEVA',
-                    $appointment->id
-                );
-            }
-        } catch (\Exception $e) {
-            Log::error("Aviso: Notificación interna de cita estándar en espera: " . $e->getMessage());
-        }
-        return response()->json([
-            "message" => 200,
-            "appointment" => $appointment,
-            "amount" => $request->amount,
-            "paymentmethod" => $request->method_payment,
-            "amountadd" => $request->amount_add,
-            "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-            "patient" => [
-                "id" => $appointment->patient->id,
-                "email" => $appointment->patient->email,
-                "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
-            ],
-            "speciality" => $appointment->speciality ? [
-                "id" => $appointment->speciality->id,
-                "name" => $appointment->speciality->name,
-            ] : NULL,
-            "doctor_id" => $appointment->doctor_id,
-            "doctor" => [
-                "id" => $doctor->id,
-                "email" => $doctor->email,
-                "full_name" => $doctor->name . ' ' . $doctor->surname,
-            ],
+    }
+    
+    $date_formatted = Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s");
+    
+    $appointment = Appointment::create([
+        "doctor_id" => $request->doctor_id,
+        "clinica_id" => $request->clinica_id,
+        'patient_id' => $patient->id,
+        "date_appointment" => $date_formatted,
+        "speciality_id" => $request->speciality_id,
+        "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
+        'user_id' => auth()->id() ?? $doctor->id,
+        "amount" => $request->amount,
+        "status_pay" => $request->status_pay,
+        "status" => $request->status,
+    ]);
+    
+    if ($request->status_pay === 1) {
+        AppointmentPay::create([
+            "appointment_id" => $appointment->id,
+            "amount" => $request->amount_add,
+            "method_payment" => $request->method_payment,
+            "status_pay" => 1,
         ]);
     }
+    
+    $appointment->load(['patient', 'speciality']);
+    $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}");
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}:year:{$year_current}");
+    
+    // =========================================================================
+    // 📲 MOTOR DE DOBLE CANAL DE NOTIFICACIONES PARA CITAS (MÉDICO + RECEPCIÓN)
+    // =========================================================================
+    try {
+        if (class_exists('NotificacionService')) {
+            
+            $medicoObj = User::find($appointment->doctor_id);
+            $telefonoMedico = $medicoObj ? $medicoObj->mobile : '';
+            $ownerTenantId = !empty($appointment->clinica_id) ? $appointment->clinica_id : 1;
+
+            // 🟢 Alerta 1: Envío Obligatorio al Buzón Privado del Médico (Orden Alineado)
+            NotificacionService::enviar(
+                $appointment->doctor_id,    // 1. $usuarioId
+                'DOCTOR',                   // 2. $rol
+                $ownerTenantId,             // 3. $consultorioId
+                $telefonoMedico,            // 4. $telefonoPaciente
+                "Tienes un nuevo paciente agendado (" . $appointment->patient->name . " " . $appointment->patient->surname . ") para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y \a \l\a\s H:i'), // 5. $mensajeTexto
+                '📅 Nueva Cita Agendada',   // 6. $tituloToastr
+                'CONSULTA_NUEVA',           // 7. $tipoEnum
+                $appointment->id            // 8. $refId
+            );
+
+            // 🏢 Alerta 2: Duplicación en espejo para el Canal de Recepción de la Clínica
+            if (!empty($appointment->clinica_id)) {
+                
+                $recepcionistas = \App\Models\User::where('clinica_id', $appointment->clinica_id)
+                    ->where('role', 'RECEPCION')
+                    ->get();
+
+                foreach ($recepcionistas as $recepcionista) {
+                    NotificacionService::enviar(
+                        $recepcionista->id,         // 1. $usuarioId
+                        'RECEPCION',                // 2. $rol
+                        $appointment->clinica_id,   // 3. $consultorioId
+                        $recepcionista->mobile ?? '', // 4. $telefonoPaciente
+                        "📅 [Cita Clínica] Nueva cita para el Dr. " . $doctor->name . " " . $doctor->surname . " con el paciente " . $appointment->patient->name . " para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y H:i'), // 5. $mensajeTexto
+                        '🏢 Nueva Cita en Recepción', // 6. $tituloToastr
+                        'CONSULTA_NUEVA_CLINICA',   // 7. $tipoEnum
+                        $appointment->id            // 8. $refId
+                    );
+                }
+            }
+        }
+    } catch (\Exception $e) {
+        Log::error("🚨 Error inyectando el doble canal de notificaciones de cita: " . $e->getMessage());
+    }
+    // =========================================================================
+
+    return response()->json([
+        "message" => 200,
+        "appointment" => $appointment,
+        "amount" => $request->amount,
+        "paymentmethod" => $request->method_payment,
+        "amountadd" => $request->amount_add,
+        "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
+        "patient" => [
+            "id" => $appointment->patient->id,
+            "email" => $appointment->patient->email,
+            "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+        ],
+        "speciality" => $appointment->speciality ? [
+            "id" => $appointment->speciality->id,
+            "name" => $appointment->speciality->name,
+        ] : NULL,
+        "doctor_id" => $appointment->doctor_id,
+        "doctor" => [
+            "id" => $doctor->id,
+            "email" => $doctor->email,
+            "full_name" => $doctor->name . ' ' . $doctor->surname,
+        ],
+    ]);
+}
     public function show($id)
     {
         $appointment = Appointment::findOrFail($id);
@@ -511,49 +549,84 @@ class AppointmentController extends Controller
             "appointments" => AppointmentCollection::make($appointments)
         ]);
     }
-    public function updateConfirmation(Request $request, $id)
-    {
-        $appointment = Appointment::findOrFail($id);
-        $doctor = User::where("id", $request->doctor_id)->first();
-        $appointment->confimation = $request->confimation;
-        $appointment->update();
-        if ($request->confimation == 2) {
-            NotificacionService::enviar(
-                $appointment->doctor_id,
-                $appointment->patient->phone,
-                "Hola " . $appointment->patient->name . ", te confirmamos que tu cita médica para el día " . Carbon::parse($appointment->date_appointment)->format('d-m-Y') . " se encuentra oficialmente CONFIRMADA. ¡Te esperamos!",
-                $appointment->patient_id,
-                'PACIENTE',
-                '📅 Tu Cita ha sido Confirmada',
-                'CITA_AGENDADA',
-                $appointment->id
-            );
+   public function updateConfirmation(Request $request, $id)
+{
+    // 1. Buscamos la cita cargando sus relaciones para agilizar la respuesta
+    $appointment = Appointment::with(['patient', 'speciality', 'doctor'])->findOrFail($id);
+    
+    // Candado de seguridad para el médico (evita quiebres si el request no trae doctor_id)
+    $doctor = $appointment->doctor; 
+
+    // 2. Actualizamos el estado de confirmación
+    $appointment->confimation = $request->confimation;
+    $appointment->update();
+
+        // 3. 📲 MOTOR DE NOTIFICACIONES MULTI-CANAL (Si pasa a estatus CONFIRMADA = 2)
+    if ($request->confimation == 2) {
+        
+        $telefonoPaciente = $appointment->patient->phone ?? '';
+        $ownerTenantId = !empty($appointment->clinica_id) ? $appointment->clinica_id : 1;
+
+        // 🟢 Canal A: Alerta Obligatoria al buzón privado del PACIENTE (Orden Alineado)
+        NotificacionService::enviar(
+            $appointment->patient_id,       // 1. $usuarioId (Recibe el PACIENTE)
+            'PACIENTE',                     // 2. $rol
+            $ownerTenantId,                 // 3. $consultorioId
+            $telefonoPaciente,              // 4. $telefonoPaciente
+            "Hola " . $appointment->patient->name . ", te confirmamos que tu cita médica para el día " . Carbon::parse($appointment->date_appointment)->format('d-m-Y') . " se encuentra oficialmente CONFIRMADA. ¡Te esperamos!", // 5. $mensajeTexto
+            '📅 Tu Cita ha sido Confirmada',// 6. $tituloToastr
+            'CITA_AGENDADA',                // 7. $tipoEnum
+            $appointment->id                // 8. $refId
+        );
+
+        // Canal B: 🏢 Espejo para las secretarias de la RECEPCIÓN
+        if (!empty($appointment->clinica_id)) {
+            
+            $recepcionistas = \App\Models\User::where('clinica_id', $appointment->clinica_id)
+                ->where('role', 'RECEPCION')
+                ->get();
+
+            foreach ($recepcionistas as $recepcionista) {
+                NotificacionService::enviar(
+                    $recepcionista->id,             // 1. $usuarioId (Recibe la secretaria)
+                    'RECEPCION',                    // 2. $rol
+                    $appointment->clinica_id,       // 3. $consultorioId
+                    $recepcionista->mobile ?? '',   // 4. $telefonoPaciente
+                    "El paciente " . $appointment->patient->name . " " . $appointment->patient->surname . " tiene su cita CONFIRMADA para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'), // 5. $mensajeTexto
+                    '🏢 Cita Confirmada por Clínica', // 6. $tituloToastr
+                    'CITA_AGENDADA_CLINICA',        // 7. $tipoEnum
+                    $appointment->id                // 8. $refId
+                );
+            }
         }
-        return response()->json([
-            "message" => 200,
-            "status" => $request->confimation == 2 ? 'Confirmada' : 'Pendiente',
-            "appointment" => $appointment,
-            "amount" => $request->amount,
-            "paymentmethod" => $request->method_payment,
-            "amountadd" => $request->amount_add,
-            "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-            "patient" => $appointment->patient_id ? [
-                "id" => $appointment->patient->id,
-                "email" => $appointment->patient->email,
-                "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
-            ] : NULL,
-            "speciality" => $appointment->speciality ? [
-                "id" => $appointment->speciality->id,
-                "name" => $appointment->speciality->name,
-            ] : NULL,
-            "doctor_id" => $appointment->doctor_id,
-            "doctor" => $appointment->doctor_id ? [
-                "id" => $doctor->id,
-                "email" => $doctor->email,
-                "full_name" => $doctor->name . ' ' . $doctor->surname,
-            ] : NULL,
-        ]);
     }
+
+
+    return response()->json([
+        "message" => 200,
+        "status" => $request->confimation == 2 ? 'Confirmada' : 'Pendiente',
+        "appointment" => $appointment,
+        "amount" => $request->amount,
+        "paymentmethod" => $request->method_payment,
+        "amountadd" => $request->amount_add,
+        "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
+        "patient" => $appointment->patient_id ? [
+            "id" => $appointment->patient->id,
+            "email" => $appointment->patient->email,
+            "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+        ] : NULL,
+        "speciality" => $appointment->speciality ? [
+            "id" => $appointment->speciality->id,
+            "name" => $appointment->speciality->name,
+        ] : NULL,
+        "doctor_id" => $appointment->doctor_id,
+        "doctor" => $appointment->doctor_id && $doctor ? [
+            "id" => $doctor->id,
+            "email" => $doctor->email,
+            "full_name" => $doctor->name . ' ' . $doctor->surname,
+        ] : NULL,
+    ]);
+}
    
     public function cancelarCita($id)
     {
@@ -565,7 +638,7 @@ class AppointmentController extends Controller
             null,
             "La cita del paciente " . $appointment->patient->name . " para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y') . " ha sido eliminada por Recepción.",
             $appointment->doctor_id,
-            'MEDICO',
+            'DOCTOR',
             '🚨 Cita Eliminada',
             'CITA_CANCELADA',
             $appointment->id
@@ -605,7 +678,7 @@ class AppointmentController extends Controller
             null,
             "La cita del paciente " . $appointment->patient->name . " para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y') . " ha sido cancelada por Recepción." . $motivoTexto,
             $appointment->doctor_id,
-            'MEDICO',
+            'DOCTOR',
             '❌ Cita Cancelada',
             'CITA_CANCELADA',
             $appointment->id
@@ -657,101 +730,141 @@ class AppointmentController extends Controller
         return response()->json(AppointmentCollection::make($appointments));
     }
     public function storeExpress(Request $request): JsonResponse
-    {
-        $request->validate([
-            'doctor_id' => 'required|integer',
-            'date_appointment' => 'required|date',
-            'speciality_id' => 'required|integer',
-            'doctor_schedule_join_hour_id' => 'required|integer',
-            'amount' => 'required|numeric',
-            'name' => 'required|string|max:250',
-            'surname' => 'required|string|max:250',
-            'n_doc' => 'required|string|max:50',
-            'phone' => 'required|string|max:50',
-            'email' => 'required|email',
-            
+{
+    $request->validate([
+        'doctor_id'                    => 'required|integer',
+        'date_appointment'             => 'required|date',
+        'speciality_id'                => 'required|integer',
+        'doctor_schedule_join_hour_id' => 'required|integer',
+        'amount'                       => 'required|numeric',
+        'name'                         => 'required|string|max:250',
+        'surname'                      => 'required|string|max:250',
+        'n_doc'                        => 'required|string|max:50',
+        'phone'                        => 'required|string|max:50',
+        'email'                        => 'required|email',
+    ]);
+
+    $patient = Patient::where("n_doc", $request->n_doc)->first();
+    $doctor = User::findOrFail($request->doctor_id);
+
+    if (!$patient) {
+        $patient = Patient::create([
+            "name"    => $request->name,
+            "surname" => $request->surname,
+            "email"   => strtolower(trim($request->email)),
+            "n_doc"   => $request->n_doc,
+            "phone"   => $request->phone,
         ]);
-        $patient = Patient::where("n_doc", $request->n_doc)->first();
-        $doctor = User::findOrFail($request->doctor_id);
-        if (!$patient) {
-            $patient = Patient::create([
-                "name" => $request->name,
-                "surname" => $request->surname,
-                "email" => strtolower(trim($request->email)),
-                "n_doc" => $request->n_doc,
-                "phone" => $request->phone,
-            ]);
-            Log::info("✨ [Express] Nuevo paciente registrado silenciosamente. ID: #" . $patient->id);
-        } else {
-            $patient->update([
-                "phone" => $request->phone,
-                "email" => strtolower(trim($request->email))
-            ]);
-            Log::info("🔄 [Express] Paciente existente identificado. Vinculando cita al ID: #" . $patient->id);
-        }
-        $date_formatted = Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s");
-        $bloqueOcupado = Appointment::where('doctor_id', $request->doctor_id)
-            ->where('date_appointment', $date_formatted)
-            ->where('doctor_schedule_join_hour_id', $request->doctor_schedule_join_hour_id)
-            ->whereNull('deleted_at')
-            ->exists();
-        if ($bloqueOcupado) {
-            return response()->json([
-                "message" => 403,
-                "message_text" => "Lo sentimos, este horario acaba de ser reservado por otro paciente. Por favor, seleccione otra hora."
-            ], 200);
-        }
-        $appointment = Appointment::create([
-            "doctor_id" => $request->doctor_id,
-            'patient_id' => $patient->id,
-            "clinica_id" => $request->clinica_id,
-            "date_appointment" => $date_formatted,
-            "speciality_id" => $request->speciality_id,
-            "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
-            'user_id' => $doctor->id,
-            "amount" => $request->amount,
-            "status_pay" => $request->status_pay ?? 2,
-            "status" => $request->status ?? 1,
+        Log::info("✨ [Express] Nuevo paciente registrado silenciosamente. ID: #" . $patient->id);
+    } else {
+        $patient->update([
+            "phone" => $request->phone,
+            "email" => strtolower(trim($request->email))
         ]);
-        $appointment->load(['patient', 'speciality']);
-        $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
-        Cache::forget("dashboard:doctor:{$appointment->doctor_id}");
-        Cache::forget("dashboard:doctor:{$appointment->doctor_id}:year:{$year_current}");
-        try {
-            if (class_exists('NotificacionService')) {
-                NotificacionService::enviar(
-                    $appointment->doctor_id,
-                    null,
-                    "📅 Cita Express: El paciente {$patient->name} solicita consulta para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-                    (string) $appointment->doctor_id,
-                    'MEDICO',
-                    '📅 Nueva Cita Express Solicitada',
-                    'CONSULTA_NUEVA',
-                    $appointment->id
-                );
-            }
-        } catch (\Exception $e) {
-            Log::error("Aviso: Notificación interna al dashboard en espera: " . $e->getMessage());
-        }
+        Log::info("🔄 [Express] Paciente existente identificado. Vinculando cita al ID: #" . $patient->id);
+    }
+
+    $date_formatted = Carbon::parse($request->date_appointment)->format("Y-m-d H:i:s");
+    
+    $bloqueOcupado = Appointment::where('doctor_id', $request->doctor_id)
+        ->where('date_appointment', $date_formatted)
+        ->where('doctor_schedule_join_hour_id', $request->doctor_schedule_join_hour_id)
+        ->whereNull('deleted_at')
+        ->exists();
+
+    if ($bloqueOcupado) {
         return response()->json([
-            "message" => 200,
-            "appointment" => $appointment,
-            "amount" => $appointment->amount,
-            "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
-            "patient" => [
-                "id" => $appointment->patient->id,
-                "email" => $appointment->patient->email,
-                "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
-            ],
-            "speciality" => $appointment->speciality ? [
-                "id" => $appointment->speciality->id,
-                "name" => $appointment->speciality->name,
-            ] : NULL,
-            "doctor_id" => $appointment->doctor_id,
-            "doctor" => [
-                "id" => $doctor->id,
-                "full_name" => $doctor->name . ' ' . $doctor->surname,
-            ],
+            "message"      => 403,
+            "message_text" => "Lo sentimos, este horario acaba de ser reservado por otro paciente. Por favor, seleccione otra hora."
         ], 200);
     }
+
+    $appointment = Appointment::create([
+        "doctor_id"                    => $request->doctor_id,
+        'patient_id'                   => $patient->id,
+        "clinica_id"                   => $request->clinica_id,
+        "date_appointment"             => $date_formatted,
+        "speciality_id"                => $request->speciality_id,
+        "doctor_schedule_join_hour_id" => $request->doctor_schedule_join_hour_id,
+        'user_id'                      => $doctor->id,
+        "amount"                       => $request->amount,
+        "status_pay"                   => $request->status_pay ?? 2,
+        "status"                       => $request->status ?? 1,
+    ]);
+
+    $appointment->load(['patient', 'speciality']);
+    $year_current = Carbon::parse($appointment->date_appointment)->format('Y');
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}");
+    Cache::forget("dashboard:doctor:{$appointment->doctor_id}:year:{$year_current}");
+
+        // =========================================================================
+    // 📲 MOTOR DE DOBLE CANAL DE NOTIFICACIONES EXPRESS (MÉDICO + RECEPCIÓN)
+    // =========================================================================
+    try {
+        if (class_exists('NotificacionService')) {
+            
+            $medicoObj = User::find($appointment->doctor_id);
+            $telefonoMedico = $medicoObj ? $medicoObj->mobile : '';
+            $ownerTenantId = !empty($appointment->clinica_id) ? $appointment->clinica_id : 1;
+
+            // 🟢 Alerta 1: Notificación al buzón privado del Especialista (Orden Alineado)
+            NotificacionService::enviar(
+                $appointment->doctor_id,    // 1. $usuarioId
+                'DOCTOR',                   // 2. $rol
+                $ownerTenantId,             // 3. $consultorioId
+                $telefonoMedico,            // 4. $telefonoPaciente
+                "📅 Cita Express: El paciente {$patient->name} {$patient->surname} solicita consulta para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y \a \l\a\s H:i'), // 5. $mensajeTexto
+                '📅 Nueva Cita Express Solicitada', // 6. $tituloToastr
+                'CONSULTA_NUEVA',           // 7. $tipoEnum
+                $appointment->id            // 8. $refId
+            );
+
+            // 🏢 Alerta 2: Duplicación en tiempo real para el Canal de Recepción de la Clínica
+            if (!empty($appointment->clinica_id)) {
+                
+                $recepcionistas = \App\Models\User::where('clinica_id', $appointment->clinica_id)
+                    ->where('role', 'RECEPCION')
+                    ->get();
+
+                foreach ($recepcionistas as $recepcionista) {
+                    NotificacionService::enviar(
+                        $recepcionista->id,         // 1. $usuarioId
+                        'RECEPCION',                // 2. $rol
+                        $appointment->clinica_id,   // 3. $consultorioId
+                        $recepcionista->mobile ?? '', // 4. $telefonoPaciente
+                        "⚡ [Express Clínica] El paciente {$patient->name} {$patient->surname} agendó con el Dr. {$doctor->name} {$doctor->surname} para el " . Carbon::parse($appointment->date_appointment)->format('d-m-Y H:i'), // 5. $mensajeTexto
+                        '🏢 Nueva Cita Express en Recepción', // 6. $tituloToastr
+                        'CONSULTA_NUEVA_CLINICA',   // 7. $tipoEnum
+                        $appointment->id            // 8. $refId
+                    );
+                }
+            }
+        }
+    } catch (\Exception $e) {
+        Log::error("🚨 Error inyectando el doble canal de notificaciones en cita Express: " . $e->getMessage());
+    }
+
+    // =========================================================================
+
+    return response()->json([
+        "message"          => 200,
+        "appointment"      => $appointment,
+        "amount"           => $appointment->amount,
+        "date_appointment" => Carbon::parse($appointment->date_appointment)->format('d-m-Y'),
+        "patient"          => [
+            "id"        => $appointment->patient->id,
+            "email"     => $appointment->patient->email,
+            "full_name" => $appointment->patient->name . ' ' . $appointment->patient->surname,
+        ],
+        "speciality"       => $appointment->speciality ? [
+            "id"   => $appointment->speciality->id,
+            "name" => $appointment->speciality->name,
+        ] : NULL,
+        "doctor_id"        => $appointment->doctor_id,
+        "doctor"           => [
+            "id"        => $doctor->id,
+            "full_name" => $doctor->name . ' ' . $doctor->surname,
+        ],
+    ], 200);
+}
 }

@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\tiposdepagoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\tiposdepagoController;
 
 //pagos
 Route::get('/paymentmethods', [tiposdepagoController::class, 'index'])
@@ -16,6 +16,8 @@ Route::get('/paymentmethods/bydoctor/{doctor_id}', [tiposdepagoController::class
     
 Route::get('/paymentmethods/bydoctor-activo/{doctor_id}', [tiposdepagoController::class, 'byDoctorActivo'])
     ->name('paymentmethods.byDoctorActivo');
+
+Route::get('paymentmethods/byclinica-activa/{clinica_id}', [tiposdepagoController::class, 'byClinicaActiva']);
 
 Route::post('/paymentmethods/store', [tiposdepagoController::class, 'paymentStore'])
     ->name('paymentmethod.store');

@@ -100,6 +100,26 @@ class tiposdepagoController extends Controller
         ]);
     }
 
+    /**
+ * Obtener los métodos de pago activos de la caja central de una clínica.
+ * Endpoint: /api/paymentmethods/byclinica-activa/{clinica_id}
+ */
+public function byClinicaActiva(Request $request, $clinica_id)
+{
+    // Buscamos directamente las cuentas asociadas a la institución centralizada
+    $tiposdepagos = Tiposdepago::where('status', 'ACTIVE')
+        ->where('clinica_id', $clinica_id)
+        ->orderBy('id', 'desc')
+        ->get();
+
+    return response()->json([
+        "status" => "success",
+        "entorno" => "CLINICA_CENTRAL",
+        "clinica_id" => (int)$clinica_id,
+        "tiposdepagos" => $tiposdepagos
+    ]);
+}
+
     
    public function paymentStore(Request $request)
     {

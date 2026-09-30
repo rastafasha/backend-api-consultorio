@@ -102,8 +102,11 @@ class CRMIntegrationController extends Controller
      */
     public function syncEnterpriseAdmin(Request $request)
     {
-        // 🛡️ Filtro de seguridad interno compartido
-        if ($request->header('Authorization') !== 'KlynticCRMSecretToken_2026_vM0MmcxxA4Ih') {
+        // 🟢 SEGURIDAD DINÁMICA: Recuperamos el token unificado de tu archivo .env
+        $tokenEsperado = env('CRM_INTERNAL_TOKEN', 'd651c7c26dc8b2ced09973ea35943a8e5cec7bcb4ba21cf7d341625c692d88d5');
+
+        if ($request->header('Authorization') !== $tokenEsperado) {
+            Log::warning("⚠️ [CRM Enterprise Sync] Intento de sincronización rechazado por token inválido.");
             return response()->json(["ok" => false, "message" => "No autorizado"], 401);
         }
 
@@ -135,20 +138,20 @@ class CRMIntegrationController extends Controller
                     'status'     => $statusMongoose
                 ]);
                 Log::info("🔄 [CRM Enterprise Sync] Administrador existente actualizado. ID: #" . $admin->id);
-            } {
+            } else { // 🟢 CORRECCIÓN CRÍTICA: Inyectado el 'else' ausente para evitar ejecuciones duplicadas en cascada
                 // 🔥 SI ES NUEVO: Creamos el perfil usando la columna mobile y contraseña telefónica
                 $admin = User::create([
                     'name'         => $validated['nombre'],
                     'surname'      => $validated['apellido'],
                     'n_doc'        => $validated['n_doc'],
-                    'mobile'       => $validated['phone'], // Alineado a tu UserSeeder
+                    'mobile'       => $validated['phone'], 
                     'email'        => strtolower(trim($validated['email'])),
                     'moneda'       => $validated['moneda_cobro'] ?? 'USD',
                     'status'       => $statusMongoose,
-                    'gender'       => 1, // Neutro inicial
-                    'pais_id'      => 1, // Default Venezuela
-                    'password'     => Hash::make($validated['password_inicial']), // Contraseña telefónica limpia
-                    'clinica_id'   => $validated['crm_clinica_id'] // 🏢 Clave Multi-tenant
+                    'gender'       => 1, 
+                    'pais_id'      => 1, 
+                    'password'     => Hash::make($validated['password_inicial']), 
+                    'clinica_id'   => $validated['crm_clinica_id'] 
                 ]);
 
                 // Asignamos el rol estricto de Spatie configurado en tu Seeder
@@ -158,7 +161,7 @@ class CRMIntegrationController extends Controller
                 Log::info("✨ [CRM Enterprise Sync] Nuevo ADMIN institucional creado para la clínica. ID: #" . $admin->id);
             }
 
-            // 🔀 Registramos el subdominio en la tabla de control (puedes usar la misma o adaptarla)
+            // Registramos o actualizamos el subdominio en la tabla de control
             DB::table('consultorios_express')->updateOrInsert(
                 ['crm_id' => $validated['crm_clinica_id']], 
                 [
@@ -172,7 +175,6 @@ class CRMIntegrationController extends Controller
                 ]
             );
 
-            // 🚀 RETORNO EXITOSO: Le mandamos el ID autoincremental de Supabase de vuelta a Node.js
             return response()->json([
                 'ok' => true,
                 'message' => 'Entorno Enterprise y cuenta de ADMIN sincronizados con éxito en Laravel Core.',

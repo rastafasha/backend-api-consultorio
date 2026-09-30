@@ -93,14 +93,15 @@ class PresupuestoController extends Controller
         ]);
     }
 
-    /**
+       /**
      * Store a newly created resource in storage.
+     * (Optimizado con Alertas de Presupuestos Sincronizadas y Alineadas)
      */
     public function storePresupuesto(Request $request)
     {
         $patient = Patient::where("n_doc", $request->n_doc)->first();
         
-        // 🚀 CORRECCIÓN: Leemos prioritariamente el doctor_id del request enviado por el selector de la clínica
+        // Leemos prioritariamente el doctor_id del request enviado por el selector de la clínica o consultorio
         $doctor = User::where("id", $request->doctor_id)->first();
 
         if (!$doctor) {
@@ -122,17 +123,21 @@ class PresupuestoController extends Controller
             ]);
         }
 
+        // 🏢 GESTIÓN POLIMÓRFICA DE CONTEXTO INSTITUCIONAL (Aislamiento Multi-Tenant)
+        $ownerClinicaId = $request->clinica_id ?? ($doctor->clinica_id ?? 1);
+
         $presupuesto = Presupuesto::create([
-            "doctor_id" => $doctor->id, // ID asignado dinámicamente
-            "patient_id" => $patient->id,
+            "doctor_id"     => $doctor->id, 
+            "patient_id"    => $patient->id,
+            "clinica_id"    => $ownerClinicaId, 
             "speciality_id" => $request->speciality_id ?? $doctor->speciality_id,
-            "description" => $request->description,
-            "diagnostico" => $request->diagnostico,
-            "amount" => $request->amount,
-            "medical" => $request->medical,
+            "description"   => $request->description,
+            "diagnostico"   => $request->diagnostico,
+            "amount"        => $request->amount,
+            "medical"       => $request->medical,
         ]);
 
-        // 🛡️ CONTROL DE CORREO DE RESPALDO: Solo despacha si el paciente posee correo
+        // 🛡️ DESPACHO DE CORREO DIRECTO AL PACIENTE
         if ($patient && !empty($patient->email)) {
             try {
                 Mail::to($patient->email)->send(new NewpresupuestoRegisterMail($presupuesto));
@@ -141,39 +146,35 @@ class PresupuestoController extends Controller
             }
         }
 
-        if ($doctor && !empty($doctor->email)) {
-            try {
-                Mail::to($doctor->email)->send(new NewpresupuestoRegisterMail($presupuesto));
-            } catch (\Exception $e) {
-                Log::warning("Fallo al enviar correo de presupuesto al médico: " . $e->getMessage());
-            }
-        }
-
         // =========================================================================
-        // 🔔 DISPARO DE NOTIFICACIÓN PUSH EN TIEMPO REAL
+        // 📋 MOTOR DE NOTIFICACIONES SANEADO: Envío alineado a la firma del Servicio
         // =========================================================================
         try {
             if (class_exists('NotificacionService')) {
+                
+                // 🟢 RECTIFICACIÓN MAESTRA: Los parámetros caen exactamente en su posición nativa
                 NotificacionService::enviar(
-                    $presupuesto->doctor_id,
-                    $patient->phone,
-                    "Hola " . $patient->name . ", el establecimiento ha generado un nuevo presupuesto médico para tu tratamiento por un monto de $" . $presupuesto->amount . ". Ya puedes revisarlo detalladamente ingresando a tu portal.",
-                    (string) $presupuesto->patient_id,
-                    'PACIENTE',
-                    '📋 Nuevo Presupuesto Disponible',
-                    'PRESUPUESTO_NUEVO',
-                    $presupuesto->id
+                    $presupuesto->patient_id,   // 1. $usuarioId (El receptor de la campana en Angular es el PACIENTE)
+                    'PACIENTE',                 // 2. $rol (Enum válido para Mongoose)
+                    $ownerClinicaId,            // 3. $consultorioId
+                    $patient->phone ?? '',      // 4. $telefonoPaciente
+                    "Hola " . $patient->name . ", se ha generado un nuevo presupuesto médico para tu tratamiento por un monto de $" . $presupuesto->amount . ". Ya puedes revisarlo detalladamente ingresando a tu portal.", // 5. $mensajeTexto
+                    '📋 Nuevo Presupuesto Disponible', // 6. $tituloToastr
+                    'PRESUPUESTO_NUEVO',        // 7. $tipoEnum (Enciende el Toastr del Paciente)
+                    $presupuesto->id            // 8. $refId
                 );
             }
         } catch (\Exception $e) {
-            Log::error("Aviso: Notificación interna de presupuesto en espera: " . $e->getMessage());
+            Log::error("Aviso: Notificación externa de presupuesto en espera: " . $e->getMessage());
         }
+        // =========================================================================
 
         return response()->json([
             "message" => 200,
             "presupuesto" => $presupuesto,
         ]);
     }
+
 
     /**
      * Display the specified resource.
@@ -246,70 +247,120 @@ class PresupuestoController extends Controller
         ]);
     }
 
+  
     public function updateConfirmation(Request $request, $id)
-    {
-        $presupuesto = Presupuesto::findOrFail($id);
-        $doctor = User::where("id", $request->doctor_id)->first();
+{
+    // 1. Buscamos el presupuesto cargando relaciones esenciales
+    $presupuesto = Presupuesto::with(['patient', 'speciality', 'doctor'])->findOrFail($id);
+    $doctor = $presupuesto->doctor;
 
-        $presupuesto->confimation = $request->confimation;
-        $presupuesto->update();
+    // 🔥 LOG DE RASTREO: Registra en laravel.log qué datos exactos están llegando al controlador
+    Log::info("📥 [PRESUPUESTO UPDATE] ID: #{$id} - Datos recibidos en Request:", $request->all());
 
-        // 🛡️ CONTROL DE SEGURIDAD CORREOS: Solo si el paciente posee correo
-        if ($presupuesto->patient && !empty($presupuesto->patient->email) && $request->confimation == 2) {
-            try {
+    // 🟢 BLINDAJE DE ENTRADA: Leemos la variable sin importar si viene como número, string o nulo
+    $valorEstatus = $request->confimation;
+    
+    // Evaluamos de forma flexible (==) para aceptar tanto 2 como "2"
+    $isAprobado  = ($valorEstatus == 2);
+    $isRechazado = ($valorEstatus == 3);
+
+    // Asignamos el valor entero correspondiente para persistir en MySQL
+    if ($isAprobado)  $presupuesto->confimation = 2;
+    if ($isRechazado) $presupuesto->confimation = 3;
+    
+    $presupuesto->update();
+
+    Log::info("📊 [PRESUPUESTO ESTADO]: Banderas de control calculadas -> Aprobado: " . ($isAprobado ? 'SÍ' : 'NO') . " | Rechazado: " . ($isRechazado ? 'SÍ' : 'NO'));
+
+    // 2. CONTROL DE SEGURIDAD CORREOS: Envío al paciente según la acción
+    if ($presupuesto->patient && !empty($presupuesto->patient->email)) {
+        try {
+            if ($isAprobado) {
                 // Mail::to($presupuesto->patient->email)->send(new Confirmationpresupuesto($presupuesto));
-            } catch (\Exception $e) {
-                Log::warning("Fallo al enviar correo de confirmación al paciente: " . $e->getMessage());
             }
+        } catch (\Exception $e) {
+            Log::warning("Fallo al enviar correo al paciente: " . $e->getMessage());
         }
+    }
 
-        // =========================================================================
-        // ⚡ NOTIFICACIÓN EN TIEMPO REAL AL CRM (Mismo formato de cobros)
-        // =========================================================================
-        if ($request->confimation == 2) {
-            try {
-                if (class_exists('NotificacionService')) {
+    // =========================================================================
+    // ⚡ MOTOR DE DOBLE CANAL DE NOTIFICACIONES CORREGIDO (MÉDICO + RECEPCIÓN)
+    // =========================================================================
+    if (($isAprobado || $isRechazado) && class_exists('App\Services\NotificacionService')) {
+        try {
+            $accionTexto  = $isAprobado ? 'APROBADO' : 'RECHAZADO';
+            $accionVerbo  = $isAprobado ? 'aprobó' : 'rechazó';
+            $emoji        = $isAprobado ? '🎉' : '❌';
+            $doctorNombre = $doctor->name ?? '';
+            $telefonoMedico = $doctor->mobile ?? '';
+
+            $mensajeMedico = $emoji . " El paciente " . $presupuesto->patient->name . " " . $presupuesto->patient->surname . " ha " . $accionTexto . " el presupuesto por un monto de $" . $presupuesto->amount . ".";
+            $tituloMedico  = $emoji . " ¡Presupuesto " . $accionTexto . " por Paciente!";
+
+            $mensajeRecepcion = $emoji . " [Presupuesto " . $accionTexto . "] El paciente " . $presupuesto->patient->name . " " . $accionVerbo . " el presupuesto de $" . $presupuesto->amount . " (Dr. " . $doctorNombre . ").";
+            $tituloRecepcion  = "🏢 Presupuesto " . $accionTexto . " Clínica";
+
+            $clinicaIdTarget = $presupuesto->clinica_id ?? ($doctor->clinica_id ?? 1);
+
+            Log::info("📡 [PRESUPUESTO DISPARO]: Invocando microservicio de alertas para el Médico ID: " . $presupuesto->doctor_id);
+
+            // Canal A: Alerta al buzón privado del MÉDICO
+            NotificacionService::enviar(
+                $presupuesto->doctor_id,    
+                'DOCTOR',                   
+                $clinicaIdTarget,           
+                $telefonoMedico,            
+                $mensajeMedico,             
+                $tituloMedico,              
+                "PRESUPUESTO_" . $accionTexto, 
+                $presupuesto->id            
+            );
+
+            // Canal B: Duplicación en espejo para RECEPCIÓN de la Clínica
+            if (!empty($clinicaIdTarget)) {
+                $recepcionistas = User::where('clinica_id', $clinicaIdTarget)
+                    ->where('role', 'RECEPCION')
+                    ->get();
+
+                foreach ($recepcionistas as $recepcionista) {
                     NotificacionService::enviar(
-                        $presupuesto->doctor_id,
-                        null,
-                        "El paciente " . $presupuesto->patient->name . " " . $presupuesto->patient->surname . " ha APROBADO el presupuesto por un monto de $" . $presupuesto->amount . ".",
-                        (string) $presupuesto->doctor_id,
-                        'MEDICO',                                                             // 5. Rol destinatario
-                        '🎉 ¡Presupuesto Aprobado por Paciente!',
-                        'PRESUPUESTO_APROBADO',
-                        $presupuesto->id
+                        $recepcionista->id,         
+                        'RECEPCION',                
+                        $clinicaIdTarget,           
+                        $recepcionista->mobile ?? '', 
+                        $mensajeRecepcion,          
+                        $tituloRecepcion,           
+                        "PRESUPUESTO_" . $accionTexto . "_CLINICA", 
+                        $presupuesto->id            
                     );
                 }
-            } catch (\Exception $e) {
-                Log::error("Aviso: Notificación de aprobación en espera: " . $e->getMessage());
             }
+        } catch (\Exception $e) {
+            Log::error("❌ Error enviando notificación de presupuesto: " . $e->getMessage());
         }
-        // Limpieza de Redis para mantener la sincronía
-        Cache::forget("presupuestos:doctor:{$presupuesto->doctor_id}:page:1:limit:10");
-        return response()->json([
-            "message" => 200,
-            "presupuesto" => $presupuesto,
-            "amount" => $request->amount,
-            "paymentmethod" => $request->method_payment,
-            "amountadd" => $request->amount_add,
-            "date_presupuesto" => Carbon::parse($presupuesto->date_presupuesto)->format('d-m-Y'),
-            "patient" => $presupuesto->patient_id ? [
-                "id" => $presupuesto->patient->id,
-                "email" => $presupuesto->patient->email,
-                "full_name" => $presupuesto->patient->name . ' ' . $presupuesto->patient->surname,
-            ] : NULL,
-            "speciality" => $presupuesto->speciality ? [
-                "id" => $presupuesto->speciality->id,
-                "name" => $presupuesto->speciality->name,
-            ] : NULL,
-            "doctor_id" => $presupuesto->doctor_id,
-            "doctor" => $presupuesto->doctor_id ? [
-                "id" => $doctor->id,
-                "email" => $doctor->email,
-                "full_name" => $doctor->name . ' ' . $doctor->surname,
-            ] : NULL,
-        ]);
+    } else {
+        Log::warning("⚠️ [ALERTA OMITIDA]: No se cumplió la condición para notificar. ¿Estatus inválido o Servicio inexistente?");
     }
+
+    // Limpieza de caché optimizada
+    Cache::forget("presupuestos:doctor:{$presupuesto->doctor_id}:page:1:limit:10");
+
+    return response()->json([
+        "message" => 200,
+        "presupuesto" => $presupuesto,
+        "amount" => $presupuesto->amount,
+        "patient" => $presupuesto->patient_id ? [
+            "id" => $presupuesto->patient->id,
+            "full_name" => $presupuesto->patient->name . ' ' . $presupuesto->patient->surname,
+        ] : NULL,
+        "doctor" => $presupuesto->doctor_id && $doctor ? [
+            "id" => $doctor->id,
+            "full_name" => $doctor->name . ' ' . $doctor->surname,
+        ] : NULL,
+    ]);
+}
+
+
     public function presupuestoByDoctor(Request $request, $doctor_id)
     {
         $doctor_exists = User::where("id", $doctor_id)->exists();
