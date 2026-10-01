@@ -3,6 +3,30 @@
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 
+// 🚀 BYPASS ATÓMICO DE CORS PARA KLYNTIC ENTERPRISE (Remoto Render)
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    // Permitimos cualquier subdominio de klyntic o vercel
+    if (preg_match('/klyntic\.com$/', $_SERVER['HTTP_ORIGIN']) || preg_match('/vercel\.app$/', $_SERVER['HTTP_ORIGIN'])) {
+        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+        header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Max-Age: 86400');    // Caché de 24 horas para el Preflight
+    }
+}
+
+// Si la petición es OPTIONS (El Preflight que te está trancando el juego)
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
+        header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+    }
+    
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
+        // 🟢 FORZAMOS LA ACEPTACIÓN DE TU CABECERA EN MAYÚSCULA Y MINÚSCULA
+        header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, x-token, X-Token, x-uid, X-Uid, x-tenant-slug, X-Tenant-Slug");
+    }
+    // Matamos la ejecución aquí con un 200 limpio para que no toque a Symfony ni dé el error 405
+    exit(0);
+}
+
 define('LARAVEL_START', microtime(true));
 
 /*
