@@ -130,38 +130,9 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::get('/v1/contexto-express', [TenantContextController::class, 'obtenerContextoExpress']);
 
 
-    // =========================================================================
-// 🔓 ZONA DE CONTROL ABSOLUTO (Rutas totalmente vírgenes y libres de Middleware)
-// =========================================================================
-
-    Route::get('/klyntic-clear-cache-remoto', function () {
-        try {
-            Artisan::call('cache:clear');
-            Artisan::call('route:clear');
-            Artisan::call('config:clear');
-            Artisan::call('view:clear');
-
-            if (function_exists('opcache_reset')) {
-                opcache_reset();
-            }
-
-            Log::info('Purga remota ejecutada con éxito en la raíz de Render.');
-
-            return response()->json([
-                'status' => 'success',
-                'message' => '¡Búfer y caché reventados en la raíz sin pasar por middlewares!',
-                'opcache_reset' => function_exists('opcache_reset') ? 'Si' : 'No disponible'
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'error' => $e->getMessage()], 500);
-        }
-    });
-
+    
 
     //comandos desde la url del backend
-
-    
 
     Route::get('/clear-all', function () {
         Artisan::call('cache:clear');
@@ -217,7 +188,29 @@ Route::group(['middleware' => 'api'], function ($router) {
         Artisan::call('route:clear');
         return "Route cache cleared successfully.";
     });
+    
+});
 
+// =========================================================================
+// 🔓 ZONA DE CONTROL ABSOLUTO (Rutas totalmente vírgenes y libres de Middleware)
+// =========================================================================
 
+    Route::get('/klyntic-clear-cache-remoto', function () {
+    try {
+        Artisan::call('cache:clear');
+        Artisan::call('route:clear');
+        Artisan::call('config:clear');
+        Artisan::call('view:clear');
+        
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
 
+        return response()->json([
+            'status' => 'success',
+            'message' => '¡Búfer y caché reventados desde la raíz de Render!'
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
 });
