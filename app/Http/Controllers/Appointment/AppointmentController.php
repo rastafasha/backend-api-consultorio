@@ -714,19 +714,71 @@ class AppointmentController extends Controller
             "appointment" => $appointment
         ]);
     }
+    
+    
     public function updateCronState($id)
     {
         $appointment = Appointment::find($id);
         if (!$appointment) {
             return response()->json(['message' => 'Cita no encontrada'], 404);
         }
-        $appointment->cron_state = 2;
+        
+        // Si estaba en 1 (aviso de ayer), pasa a 2 (esperando el aviso de hoy)
+        // Si estaba en 2 (aviso de hoy), pasa a 3 (notificado por completo, ciclo cerrado)
+        if ($appointment->cron_state == 1) {
+            $appointment->cron_state = 2;
+        } elseif ($appointment->cron_state == 2) {
+            $appointment->cron_state = 3;
+        }
+        
         $appointment->save();
-        return response()->json(['message' => 'Estado del cron actualizado con éxito']);
+        return response()->json(['message' => 'Estado del cron Klyntic actualizado con éxito']);
     }
+   
+    /**
+     * ⏰ EXTRACTOR INTELIGENTE PARA CRONJOB (Cada 2 Horas)
+     * Ruta: /api/appointments/cron-pendientes
+     * Captura dinámicamente las citas que entran en la próxima ventana de tiempo
+     */
     public function pendientesCron()
     {
-        $appointments = Appointment::where('status', 1)->where('cron_state', 1)->orderBy("id", "desc")->get();
+        // 🟢 Fijamos la zona horaria oficial de Caracas de tu proyecto
+        date_default_timezone_set('America/Caracas');
+
+        // Calculamos la ventana de tiempo exacta desde este momento hasta dentro de 2 horas
+        // Si el cron ejecuta a las 2:00 PM, buscará citas entre las 2:00 PM y las 4:00 PM
+        $ahora = Carbon::now('America/Caracas')->format('Y-m-d H:i:s');
+        $enDosHoras = Carbon::now('America/Caracas')->addHours(2)->format('Y-m-d H:i:s');
+
+        // Filtramos las citas encerradas estrictamente en este bloque de tiempo
+        $appointments = Appointment::where('status', 1)
+            ->where('cron_state', 1) // Solo las que no han sido procesadas
+            ->whereBetween('date_appointment', [$ahora, $enDosHoras])
+            ->orderBy("id", "desc")
+            ->get();
+
+        return response()->json(AppointmentCollection::make($appointments));
+    }
+
+    /**
+     * ⏰ EXTRACTOR 2: RECORDATORIO DE ÚLTIMA HORA (Una Hora Antes)
+     * Ruta: /api/appointments/cron-pendientes-hora
+     * Filtra las citas de hoy que falten entre 1 y 2 horas para iniciar
+     */
+    public function pendientesCronHora()
+    {
+        date_default_timezone_set('America/Caracas');
+
+        // Calculamos la ventana de tiempo de la próxima hora (Hora de Caracas)
+        $ahora = Carbon::now('America/Caracas')->format('Y-m-d H:i:s');
+        $enDosHoras = Carbon::now('America/Caracas')->addHours(2)->format('Y-m-d H:i:s');
+
+        $appointments = Appointment::where('status', 1)
+            ->where('cron_state', 2) // 2 = Ya se le avisó ayer, ahora le toca el aviso de 1 hora antes
+            ->whereBetween('date_appointment', [$ahora, $enDosHoras])
+            ->orderBy("id", "desc")
+            ->get();
+
         return response()->json(AppointmentCollection::make($appointments));
     }
     public function storeExpress(Request $request): JsonResponse

@@ -13,17 +13,17 @@ class EnviarRecordatoriosMedicos extends Command
     protected $signature = 'medicos:enviar-recordatorios';
     protected $description = 'Envía alertas de WhatsApp a través del microservicio Node.js';
 
-    public function handle() 
+   public function handle() 
     {
-        // Forzamos la hora de Caracas para la ventana de tiempo del recordatorio
+        // Forzamos la hora de Caracas para calcular la ventana de tiempo del recordatorio
         $ahora = Carbon::now('America/Caracas')->setTimezone('UTC');
         $enUnaHora = Carbon::now('America/Caracas')->addHour()->setTimezone('UTC');
 
-        // 1. Buscamos las citas en la ventana de tiempo
-        // Usamos eager loading (with) para Patient y Doctor (User) para no saturar MySQL
+        // 1. Buscamos las citas en la ventana de una hora (Eager loading para evitar saturar MySQL)
+        // 🟢 NOTA: Asegúrate de usar las columnas reales de tu base de datos (fecha_hora o date_appointment)
         $citas = Appointment::with(['patient', 'doctor'])
-                     ->whereBetween('fecha_hora', [$ahora, $enUnaHora])
-                     ->where('notificado', false)
+                     ->whereBetween('date_appointment', [$ahora, $enUnaHora]) // Ajustado a la columna de tu AppointmentController
+                     ->where('cron_state', 1) // Usamos tu switch de estado '1' para pendientes
                      ->get();
 
         if ($citas->isEmpty()) {
@@ -31,32 +31,46 @@ class EnviarRecordatoriosMedicos extends Command
             return 0;
         }
 
+        // Jalamos la configuración de tus tokens y URLs unificadas del .env de Laravel
+        $baseNodeUrl = rtrim(env('KLYNTIC_NODE_URL', 'https://back-klyntic-envios.onrender.com'), '/');
+        $urlNodeWebhook = $baseNodeUrl . '/api/klyntic/notificaciones/webhook-recordatorio';
+        $tokenSecreto = env('CRM_INTERNAL_TOKEN');
+
         foreach ($citas as $cita) {
             $paciente = $cita->patient; 
             $doctor = $cita->doctor; 
 
-            // Validamos que la cita tenga un paciente y doctor asignado para evitar caídas
             if (!$paciente || !$doctor) {
                 continue;
             }
 
-            // Convertimos el string de la cita a un objeto Carbon manejable
-            $horaCita = Carbon::parse($cita->fecha_hora)->timezone('America/Caracas');
+            // Convertimos el string de la fecha al huso horario de Caracas para el texto del WhatsApp
+            $horaCita = Carbon::parse($cita->date_appointment)->timezone('America/Caracas');
+            
+            // Determinamos el ID del consultorio o clínica para encolar el WhatsApp corporativo
+            $ownerTenantId = !empty($cita->clinica_id) ? $cita->clinica_id : 1;
 
-            // 2. Disparamos el payload exacto a tu microservicio Node
-            // Nota: Recuerda cambiar 'https://render.com' por tu URL de endpoint real (ej: https://tudominio.com)
-            $response = Http::post('https://back-klyntic-envios.onrender.com', [
-                'doctor_id' => (string) $doctor->id, // Lo pasamos como string para enlazar con klyntic_consultorios (_id)
-                'telefono'  => $paciente->phone,     // CAMBIO: Campo real en tu modelo Patient
-                'mensaje'   => "Hola {$paciente->name} {$paciente->surname}, te recordamos tu cita médica hoy a las {$horaCita->format('h:i A')}."
+            // 🚀 2. MAPEO EN ESPEJO PERFECTO: Mandamos las propiedades exactas que tu Node espera recibir
+            $response = Http::withHeaders([
+                'Authorization' => $tokenSecreto, // 🟢 Sincronizado con tu middleware de anoche (validarWebhookLaravel)
+                'Accept'        => 'application/json'
+            ])->post($urlNodeWebhook, [
+                'consultorio_id'  => $ownerTenantId,
+                'telefono'        => $paciente->phone,
+                'mensaje'         => "Hola {$paciente->name} {$paciente->surname}, le recordamos su cita médica hoy a las {$horaCita->format('h:i A')}.",
+                'usuario'         => (string) $paciente->id, // El paciente recibe el ID de MySQL en string para encender su campana
+                'rolDestinatario' => 'PACIENTE',
+                'titulo'          => '⏰ Recordatorio de Cita',
+                'tipo'            => 'RECORDATORIO',
+                'referenciaId'    => (string) $cita->id
             ]);
 
-            // Marcamos como notificado solo si la petición HTTP al microservicio fue exitosa (código 200)
+            // Marcamos como notificado (cron_state = 2) solo si el microservicio de Node aceptó el paquete
             if ($response->successful()) {
-                $cita->update(['notificado' => true]);
-                $this->info("Recordatorio enviado con éxito para el paciente: {$paciente->name}");
+                $cita->update(['cron_state' => 2]); // Cambiado a cron_state para hacer juego con tu controlador
+                $this->info("✅ Recordatorio encolado en Node para el paciente: {$paciente->name}");
             } else {
-                $this->error("Error al enviar recordatorio a Node para la cita ID: {$cita->id}");
+                $this->error("❌ Error de comunicación con Node (Estatus " . $response->status() . ") para la cita ID: {$cita->id}");
             }
         }
 

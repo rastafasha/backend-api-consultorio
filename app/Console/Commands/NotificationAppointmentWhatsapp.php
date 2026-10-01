@@ -52,21 +52,33 @@ class NotificationAppointmentWhatsapp extends Command
             }
         }
 
-        // 🚀 UN SOLO DISPARO HTTP (Ideal para Shared Hosting)
-        // 🚀 DISPARO EN LOTE HACIA TU RUTA DE KLYNTIC INYECTADA EN NODE
+        // =========================================================================
+        // 🚀 UN SOLO DISPARO HTTP EN LOTE (Sincronizado con tu Middleware de Node)
+        // =========================================================================
         if ($whatsappQueue->count() > 0) {
             try {
-                $response = Http::post('https://back-klyntic-envios.onrender.com', [
+                // 1. Jalamos la URL y las llaves unificadas de tus archivos .env
+                $baseNodeUrl = rtrim(env('KLYNTIC_NODE_URL', 'https://back-klyntic-envios.onrender.com'), '/');
+                
+                // 🟢 LA RUTA REAL: Apuntamos al endpoint masivo que mapeaste en tus rutas de Node
+                $urlNodeBulk = $baseNodeUrl . '/api/klyntic/notificaciones/bulk';
+                $tokenSecreto = env('CRM_INTERNAL_TOKEN');
+
+                // 2. Despachamos la ráfaga inyectándole la cabecera de autorización de anoche
+                $response = Http::withHeaders([
+                    'Authorization' => $tokenSecreto, // 🟢 Pasa el middleware 'validarWebhookLaravel'
+                    'Accept'        => 'application/json'
+                ])->post($urlNodeBulk, [
                     'recordatorios' => $whatsappQueue->toArray()
                 ]);
 
                 if ($response->successful()) {
-                    $this->info($whatsappQueue->count() . ' recordatorios enviados al microservicio Node.');
+                    $this->info('✅ ' . $whatsappQueue->count() . ' recordatorios empaquetados y encolados con éxito en MongoDB Atlas.');
                 } else {
-                    $this->error('Node (Klyntic) rechazó el lote de mensajes.');
+                    $this->error('❌ Node (Klyntic) rechazó el lote. Código de Estatus: ' . $response->status());
                 }
             } catch (\Exception $e) {
-                $this->error('Error conectando con Render: ' . $e->getMessage());
+                $this->error('❌ Error de red conectando con el microservicio: ' . $e->getMessage());
             }
 
         } else {
