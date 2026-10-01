@@ -130,64 +130,45 @@ Route::group(['middleware' => 'api'], function ($router) {
     Route::get('/v1/contexto-express', [TenantContextController::class, 'obtenerContextoExpress']);
 
 
+    // =========================================================================
+// 🔓 ZONA DE CONTROL ABSOLUTO (Rutas totalmente vírgenes y libres de Middleware)
+// =========================================================================
+
     Route::get('/klyntic-clear-cache-remoto', function () {
-    try {
-        // 1. Limpiar caché de la aplicación
-        Artisan::call('cache:clear');
-        
-        // 2. Limpiar caché de rutas y configuraciones
-        Artisan::call('route:clear');
-        Artisan::call('config:clear');
-        
-        // 3. Limpiar vistas optimizadas
-        Artisan::call('view:clear');
-        
-        // 4. Forzar la limpieza del OPcache de PHP si está activo
-        if (function_exists('opcache_reset')) {
-            opcache_reset();
+        try {
+            Artisan::call('cache:clear');
+            Artisan::call('route:clear');
+            Artisan::call('config:clear');
+            Artisan::call('view:clear');
+
+            if (function_exists('opcache_reset')) {
+                opcache_reset();
+            }
+
+            Log::info('Purga remota ejecutada con éxito en la raíz de Render.');
+
+            return response()->json([
+                'status' => 'success',
+                'message' => '¡Búfer y caché reventados en la raíz sin pasar por middlewares!',
+                'opcache_reset' => function_exists('opcache_reset') ? 'Si' : 'No disponible'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'error' => $e->getMessage()], 500);
         }
-
-        Log::info('Purga remota ejecutada con éxito en Render.');
-
-        return response()->json([
-            'status' => 'success',
-            'message' => '¡Búfer y caché reventados con éxito en Render!',
-            'opcache_reset' => function_exists('opcache_reset') ? 'Si' : 'No disponible'
-        ], 200);
-
-    } catch (\Exception $e) {
-        Log::error('Error en purga remota: ' . $e->getMessage());
-        
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Falló la purga',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-});
+    });
 
 
     //comandos desde la url del backend
 
-    Route::get('/cache', function () {
-        Artisan::call('cache:clear');
-        return "Cache";
-    });
+    
 
     Route::get('/clear-all', function () {
-        // Limpia el caché de la aplicación
         Artisan::call('cache:clear');
-
-        // Limpia el caché de la configuración (crucial para cambios en el .env)
         Artisan::call('config:clear');
-
-        // Limpia el caché de las rutas
         Artisan::call('route:clear');
-
-        // Limpia las vistas compiladas
         Artisan::call('view:clear');
-
-        return "✅ Sistema optimizado: Caché, Configuración, Rutas y Vistas han sido limpiadas.";
+        return "✅ Pizarra limpia desde la raíz.";
     });
 
     Route::get('/optimize', function () {
