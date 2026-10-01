@@ -63,19 +63,18 @@ class tiposdepagoController extends Controller
 
     public function byDoctor(Request $request, $doctor_id)
     {
-        $query = Tiposdepago::query();
+        $query = Tiposdepago::where('doctor_id', $doctor_id);
 
-        if (app()->has('current_clinica_id')) {
-            $query->where('clinica_id', app('current_clinica_id'));
-        } else {
-            $query->where('doctor_id', $doctor_id);
-        }
+    // Si es Enterprise, además aseguramos el contexto de la clínica
+    if (app()->has('current_clinica_id')) {
+        $query->where('clinica_id', app('current_clinica_id'));
+    }
 
-        $tiposdepagos = $query->orderBy("id", "desc")->get();
+    $tiposdepagos = $query->orderBy("id", "desc")->get();
 
-        return response()->json([
-            "tiposdepagos" => $tiposdepagos
-        ]);
+    return response()->json([
+        "tiposdepagos" => $tiposdepagos
+    ], 200);
     }
 
    /**
