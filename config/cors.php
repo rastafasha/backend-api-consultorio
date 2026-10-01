@@ -21,8 +21,8 @@ return [
         'https://localhost:3002',
         'http://localhost:3003',
         'https://onrender.com', 
-        'https://klyntic.com', 
-        'https://klyntic.com',
+        'https://consultorio.klyntic.com', 
+        'https://pconsultorio.klyntic.com',
         'https://klyntic.com', // 👈 Añádelo explícitamente para asegurar que Render lo tome sí o sí
     ],
 
