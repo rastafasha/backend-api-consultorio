@@ -8,6 +8,7 @@ use App\Http\Controllers\Appointment\AppointmentController;
 use App\Http\Controllers\Enterprise\ClinicaController;
 use App\Http\Controllers\tiposdepagoController;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -104,7 +105,7 @@ Route::group(['middleware' => 'api'], function ($router) {
     // =========================================================================
     // 🏢 MÓDULOS KLYNTIC ENTERPRISE SEPARADOS
     // =========================================================================
-    
+
     // Rutas Libres Enterprise (Selector Apple)
     require __DIR__ . '/api_routes/enterprise_pub.php';
 
@@ -128,7 +129,42 @@ Route::group(['middleware' => 'api'], function ($router) {
     // Endpoint para el control dinámico de subdominios
     Route::get('/v1/contexto-express', [TenantContextController::class, 'obtenerContextoExpress']);
 
-   
+
+    Route::get('/klyntic-clear-cache-remoto', function () {
+    try {
+        // 1. Limpiar caché de la aplicación
+        Artisan::call('cache:clear');
+        
+        // 2. Limpiar caché de rutas y configuraciones
+        Artisan::call('route:clear');
+        Artisan::call('config:clear');
+        
+        // 3. Limpiar vistas optimizadas
+        Artisan::call('view:clear');
+        
+        // 4. Forzar la limpieza del OPcache de PHP si está activo
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
+
+        Log::info('Purga remota ejecutada con éxito en Render.');
+
+        return response()->json([
+            'status' => 'success',
+            'message' => '¡Búfer y caché reventados con éxito en Render!',
+            'opcache_reset' => function_exists('opcache_reset') ? 'Si' : 'No disponible'
+        ], 200);
+
+    } catch (\Exception $e) {
+        Log::error('Error en purga remota: ' . $e->getMessage());
+        
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Falló la purga',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
 
 
     //comandos desde la url del backend
