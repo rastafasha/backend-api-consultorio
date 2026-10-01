@@ -1,3 +1,30 @@
+# =========================================================================
+# 🚀 BLINDAJE DE CABECERAS PREFLIGHT - KLYNTIC ENTERPRISE (Render Pro)
+# =========================================================================
+<IfModule mod_headers.c>
+    # Capturamos dinámicamente el origen si termina en klyntic.com o vercel.app
+    SetEnvIf Origin "https?://(.*)?klyntic\.com$" AccessControlAllowOrigin=$0
+    SetEnvIf Origin "https?://(.*)?vercel\.app$" AccessControlAllowOrigin=$0
+    
+    Header set Access-Control-Allow-Origin %{AccessControlAllowOrigin}e env=AccessControlAllowOrigin
+    Header set Access-Control-Allow-Credentials "true"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    
+    # 🟢 EL REVENTÓN DE CABECERAS: Forzamos la aceptación del X-Tenant-Slug al hardware de red
+    Header set Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization, X-Requested-With, x-token, X-Token, x-uid, X-Uid, x-tenant-slug, X-Tenant-Slug"
+</IfModule>
+
+# Interceptamos el método OPTIONS y respondemos con un 200 limpio sin tocar a PHP
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ - [R=200,L]
+</IfModule>
+# =========================================================================
+
+# =========================================================================
+# 🔒 TU ESTRUCTURA ORIGINAL INTACTA (Saneada y acoplada abajo)
+# =========================================================================
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
