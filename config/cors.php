@@ -31,7 +31,17 @@ return [
     ],
 
     // Forzamos a aceptar todos los headers, incluyendo x-token
-    'allowed_headers' => ['*'], 
+    'allowed_headers' => [
+        'Content-Type', 
+        'X-Requested-With', 
+        'Authorization', 
+        'x-token', 
+        'X-Token', 
+        'x-uid', 
+        'X-Uid', 
+        'x-tenant-slug', // 👈 Agregada en minúscula estricta
+        'X-Tenant-Slug'  // 👈 Agregada en mayúscula estricta para marchar con el error de Chrome
+    ], 
 
     'exposed_headers' => [],
 

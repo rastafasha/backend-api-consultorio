@@ -74,92 +74,93 @@ class AuthController extends Controller
      * Register a User
      * @return \Illuminate\Http\JsonResponse
      */
-public function registrar(Request $request)
-{
-    // 1. VALIDACIÓN: Forzamos los 7 campos exactos de tu formulario de la landing
-    $validator = Validator::make($request->all(), [
-        'name'           => 'required|string|max:255',
-        'surname'         => 'required|string|max:255',
-        'email'            => 'required|string|email|max:255|unique:users,email',
-        'mobile'         => 'required|string|max:50',
-    ], [
-        'email.unique'     => 'Este correo electrónico ya tiene una cuenta activa en Klyntic.',
-        'name.required'  => 'El nombre del especialista es obligatorio.',
-    ]);
+    public function registrar(Request $request)
+    {
+        // 1. VALIDACIÓN: Forzamos los 7 campos exactos de tu formulario de la landing
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'surname' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'mobile' => 'required|string|max:50',
+        ], [
+            'email.unique' => 'Este correo electrónico ya tiene una cuenta activa en Klyntic.',
+            'name.required' => 'El nombre del especialista es obligatorio.',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // 🔑 CONTRASEÑA AUTOMÁTICA SEGURA: 
+        // Usamos su mismo número de teléfono como contraseña inicial limpia 
+        // para podérsela mandar por correo de forma segura antes de encriptarla en la BD.
+        $passwordInicial = $request->telefono;
+
+        // 2. CREACIÓN: Insertamos al médico directo en la tabla 'users'
+        $user = User::create([
+            'name' => $request->nombre,
+            'surname' => $request->apellido,
+            'email' => $request->email,
+            'mobile' => $request->telefono,
+            'password' => Hash::make($passwordInicial), // Guardada de forma segura con Bcrypt
+
+            // Banderas operativas del CRM y Mailjet unificadas
+            'correo_enviado' => false,
+            'estado_seguimiento' => 'PENDIENTE'
+        ]);
+
+        // 3. ROL: Le asignamos los accesos del ecosistema clínico
+        $user->assignRole('doctor');
+
+        // 4. DISPARO DE CREDENCIALES: Aquí llamarías a tu servicio de Mailjet enviándole 
+        Mail::to($user->email)->send(new NewUserRegisterMail($user));
+        // el $request->email y la $passwordInicial (en texto plano) para que le llegue su tarjeta de bienvenida.
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Médico registrado exitosamente en el ecosistema Klyntic',
+            'access_token' => JWTAuth::fromUser($user),
+            'user' => $user
+        ], 201);
     }
 
-    // 🔑 CONTRASEÑA AUTOMÁTICA SEGURA: 
-    // Usamos su mismo número de teléfono como contraseña inicial limpia 
-    // para podérsela mandar por correo de forma segura antes de encriptarla en la BD.
-    $passwordInicial = $request->telefono;
-
-    // 2. CREACIÓN: Insertamos al médico directo en la tabla 'users'
-    $user = User::create([
-        'name'             => $request->nombre,
-        'surname'          => $request->apellido,
-        'email'            => $request->email,
-        'mobile'            => $request->telefono,
-        'password'         => Hash::make($passwordInicial), // Guardada de forma segura con Bcrypt
-        
-        // Banderas operativas del CRM y Mailjet unificadas
-        'correo_enviado'     => false,
-        'estado_seguimiento' => 'PENDIENTE'
-    ]);
-
-    // 3. ROL: Le asignamos los accesos del ecosistema clínico
-    $user->assignRole('doctor'); 
-
-    // 4. DISPARO DE CREDENCIALES: Aquí llamarías a tu servicio de Mailjet enviándole 
-    Mail::to($user->email)->send(new NewUserRegisterMail($user));
-    // el $request->email y la $passwordInicial (en texto plano) para que le llegue su tarjeta de bienvenida.
-
-    return response()->json([
-        'ok'           => true,
-        'message'      => 'Médico registrado exitosamente en el ecosistema Klyntic',
-        'access_token' => JWTAuth::fromUser($user),
-        'user'         => $user
-    ], 201);
-}
 
 
+    public function loginPaciente(Request $request): \Illuminate\Http\JsonResponse
+    {
+        // 1. Limpiamos espacios
+        $name = trim($request->input('name'));
+        $n_doc = trim($request->input('n_doc'));
 
-    public function loginPaciente(Request $request): \Illuminate\Http\JsonResponse { 
-    // 1. Limpiamos espacios
-    $name = trim($request->input('name'));
-    $n_doc = trim($request->input('n_doc'));
+        $validator = Validator::make(['name' => $name, 'n_doc' => $n_doc], [
+            'name' => 'required|string',
+            'n_doc' => 'required|string',
+        ]);
 
-    $validator = Validator::make(['name' => $name, 'n_doc' => $n_doc], [
-        'name' => 'required|string',
-        'n_doc' => 'required|string',
-    ]);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
+        // 2. Buscamos al paciente (Forzando minúsculas compatible con Postgres)
+        $user = Patient::whereRaw('LOWER(TRIM(name)) = ?', [Str::lower($name)])
+            ->whereRaw('TRIM(n_doc) = ?', [$n_doc])
+            ->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized - Datos del paciente incorrectos'], 401);
+        }
+
+        // 3. 🚀 SOLUCIÓN SUPABASE: Autenticación directa por Instancia de Objeto
+        // En Postgres, usar attempt() con contraseñas dinámicas clonadas suele fallar por Collation.
+        // Usar login($user) salta el validador de Hash pero emite el token JWT firmado original 
+        // basándose en el ID del paciente que ya encontramos y validamos en el paso 2.
+        if (!$token = auth('paciente-api')->login($user)) {
+            return response()->json(['error' => 'Unauthorized - No se pudo verificar la firma del paciente'], 401);
+        }
+
+        // 4. Despachamos la respuesta exitosa
+        return $this->respondWithTokenPaciente($token, $user);
     }
-
-    // 2. Buscamos al paciente (Forzando minúsculas compatible con Postgres)
-    $user = Patient::whereRaw('LOWER(TRIM(name)) = ?', [Str::lower($name)])
-                   ->whereRaw('TRIM(n_doc) = ?', [$n_doc])
-                   ->first();
-
-    if (!$user) {
-        return response()->json(['error' => 'Unauthorized - Datos del paciente incorrectos'], 401);
-    }
-
-    // 3. 🚀 SOLUCIÓN SUPABASE: Autenticación directa por Instancia de Objeto
-    // En Postgres, usar attempt() con contraseñas dinámicas clonadas suele fallar por Collation.
-    // Usar login($user) salta el validador de Hash pero emite el token JWT firmado original 
-    // basándose en el ID del paciente que ya encontramos y validamos en el paso 2.
-    if (!$token = auth('paciente-api')->login($user)) {
-        return response()->json(['error' => 'Unauthorized - No se pudo verificar la firma del paciente'], 401);
-    }
-
-    // 4. Despachamos la respuesta exitosa
-    return $this->respondWithTokenPaciente($token, $user);
-}
 
     // el nombre del paciente es el usuario para registro y el n_doc seria la contraseña
     public function registerPaciente(Request $request)
@@ -291,26 +292,26 @@ public function registrar(Request $request)
     }
 
     protected function respondWithTokenPaciente($token, $user)
-{
-    // El paciente de tipo GUEST no maneja permisos dinámicos, dejamos un array vacío
-    $permissions = collect([]);
+    {
+        // El paciente de tipo GUEST no maneja permisos dinámicos, dejamos un array vacío
+        $permissions = collect([]);
 
-    return response()->json([
-        'message' => "Inicio de sesión de paciente exitoso",
-        'access_token' => $token, // El token firmado nativamente por la librería
-        'token_type' => 'Bearer',
-        'user' => [
-            "id"          => $user->id,
-            "name"        => $user->name,
-            "surname"     => $user->surname,
-            "roles"       => $user->getRoleNames(), // Devolverá ["GUEST"]
-            "avatar"      => $user->avatar,
-            "email"       => $user->email,
-            "n_doc"       => $user->n_doc,
-            "permissions" => $permissions,
-        ],
-    ], 201);
-}
+        return response()->json([
+            'message' => "Inicio de sesión de paciente exitoso",
+            'access_token' => $token, // El token firmado nativamente por la librería
+            'token_type' => 'Bearer',
+            'user' => [
+                "id" => $user->id,
+                "name" => $user->name,
+                "surname" => $user->surname,
+                "roles" => $user->getRoleNames(), // Devolverá ["GUEST"]
+                "avatar" => $user->avatar,
+                "email" => $user->email,
+                "n_doc" => $user->n_doc,
+                "permissions" => $permissions,
+            ],
+        ], 201);
+    }
 
 
     /**
