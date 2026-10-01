@@ -46,7 +46,7 @@ class Patient extends Authenticatable implements JWTSubject
         'peso',
         'current_desease',
         'location_id',
-        'user_id',
+        'doctor_id',
         'mongo_user_id',
         
         'talla',
@@ -93,7 +93,7 @@ class Patient extends Authenticatable implements JWTSubject
     public function account()
     {
         // Esta se queda igual: es su cuenta de acceso (User ID 12)
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'doctor_id');
     }
     public function appointments()
     {

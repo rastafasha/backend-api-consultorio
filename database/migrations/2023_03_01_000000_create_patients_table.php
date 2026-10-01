@@ -20,7 +20,7 @@ class CreatePatientsTable extends Migration
             $table->unsignedBigInteger('clinica_id')->nullable();
             $table->index('clinica_id');
             
-            $table->unsignedBigInteger('user_id')->nullable(); 
+            $table->unsignedBigInteger('doctor_id')->nullable(); 
             $table->string('mongo_user_id')->nullable();
             $table->unsignedBigInteger('location_id')->nullable(); // Cambiado a unsignedBigInteger para coincidir con la FK
     
@@ -57,7 +57,7 @@ class CreatePatientsTable extends Migration
             $table->string('talla_al_nacer', 250)->nullable();
             $table->tinyInteger('is_vacuna')->default(1);
             
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('doctor_id')->references('id')->on('users')->onDelete('set null');
             $table->foreign('location_id')->references('id')->on('locations')->onDelete('set null'); // Corregido el método nativo onDelete
             $table->timestamps();
             $table->softDeletes();
