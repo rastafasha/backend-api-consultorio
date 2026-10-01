@@ -176,23 +176,26 @@ class AdminUserController extends Controller
 
    public function showNdoc($n_doc)
 {
-    // 1. Buscamos el usuario (Doctor) y cargamos sus pacientes para evitar errores en el Resource
-    $user = User::with('patients')->where('n_doc', $n_doc)
+    // 1. Buscamos el usuario (Doctor) por su n_doc
+    $user = User::where('n_doc', $n_doc)
         ->orderBy('id', 'desc')
         ->get();
 
-    // 2. Buscamos el paciente y cargamos sus doctores (indispensable para la línea 66 del Resource)
-    $patient = Patient::with('doctors')->where('n_doc', $n_doc)
+    // 2. Buscamos el paciente por su n_doc cargando sus relaciones muchos a muchos limpias
+    $patient = Patient::with(['doctors', 'person', 'appointments'])
+        ->where('n_doc', $n_doc)
         ->orderBy('id', 'desc')
         ->get();
 
+    // 🚀 BYPASS RECURSOS: Retornamos el array nativo de Eloquent en el JSON 
+    // para evitar que transformadores viejos hagan colapsar el hilo PHP en la nube
     return response()->json([
         'code' => 200,
         'status' => 'Listar patient by n_doc',
-        // OJO: Si $user son doctores, no deberías usar PatientCollection. 
-        // Si necesitas los datos del doctor, usa un UserCollection o Json directo.
         "user" => $user, 
-        "patient" => PatientCollection::make($patient),
+        "patient" => [
+            "data" => $patient
+        ]
     ], 200);
 }
 
