@@ -1,55 +1,18 @@
 <?php
 
 return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | Cross-Origin Resource Sharing (CORS) Configuration
-    |--------------------------------------------------------------------------
-    */
-
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
-
-    'allowed_methods' => ['*'],
-
-    // 🌍 AGREGAMOS TUS SUBDOMINIOS DE PRUEBAS EXPLÍCITAMENTE AQUÍ
-    'allowed_origins' => [
-        'http://localhost:4300', 
-        'http://localhost:4200',
-        'http://localhost:4203',
-        'http://localhost:3001',
-        'https://localhost:3002',
-        'http://localhost:3003',
-        'https://consultorio.klyntic.com', 
-        'https://pconsultorio.klyntic.com',
-    ],
-
-    // 🔥 Expresión regular corregida y estricta para subdominios multi-tenant con guiones
-    'allowed_origins_patterns' => [
-        '/^https:\/\/(.*\.)?klyntic\.com$/', // 🟢 EL CAMBIO: El (.*\.)? acepta CUALQUIER combinación de subdominios
-        '/^https:\/\/(.*\.)?vercel\.app$/',  // Permite todas las ramas de pruebas de Vercel
-    ],
-
-    // Forzamos a aceptar todos los headers, incluyendo x-token
-    'allowed_headers' => [
-        'Content-Type', 
-        'X-Requested-With', 
-        'Authorization', 
-        'x-token', 
-        'X-Token', 
-        'x-uid', 
-        'X-Uid', 
-        'x-clinica-slug', // 👈 AGREGADA en minúscula estricta
-        'X-Clinica-Slug',  // 👈 AGREGADA en mayúscula estricta
-        'x-tenant-slug', // 👈 Agregada en minúscula estricta
-        'x-tenant-slug', // 👈 Agregada en minúscula estricta
-        'X-Tenant-Slug'  // 👈 Agregada en mayúscula estricta para marchar con el error de Chrome
-    ], 
-
+    
+    // 🟢 Aceptamos peticiones únicamente de tus frentes reales y locales
+    'allowed_origins' => ['https://klyntic.com', 'https://klyntic.com', 'http://localhost:4200'], 
+    
+    'allowed_origins_patterns' => [],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    
+    // 🛡️ EL BLINDAJE MÁXIMO: Permitimos cualquier cabecera personalizada (Borrando el duplicado)
+    'allowed_headers' => ['*'], 
+    
     'exposed_headers' => [],
-
-    'max_age' => 0,
-
+    'max_age' => 86400, // 24 horas de caché para que el navegador no sature con peticiones OPTIONS
     'supports_credentials' => true,
-
 ];
