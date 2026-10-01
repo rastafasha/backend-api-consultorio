@@ -4,25 +4,14 @@ return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
     
     // 🟢 Aceptamos peticiones únicamente de tus frentes reales y locales
-    'allowed_origins' => ['https://pconsultorio.klyntic.com', 'https://consultorio.klyntic.com','https://klyntic.com', 'http://localhost:4200', 'http://localhost:4203'], 
+    'allowed_origins' => ['https://pconsultorio.klyntic.com', 'https://consultorio.klyntic.com', 'https://klyntic.com', 'http://localhost:4200'], 
     
-    'allowed_origins_patterns' => [],
-    'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    'allowed_methods' => ['*'],
     
-    // 🛡️ EL BLINDAJE MÁXIMO: Permitimos cualquier cabecera personalizada (Borrando el duplicado)
-    'allowed_headers' => [
-        'Content-Type', 
-        'X-Requested-With', 
-        'Authorization', 
-        'x-token', 
-        'X-Token', 
-        'x-uid', 
-        'X-Uid', 
-        'x-tenant-slug', // Variante Fetch
-        'X-Tenant-Slug'  // Variante Interceptor
-    ],
+    // 🛡️ BLINDAJE MÁXIMO: Permitimos cualquier cabecera personalizada para el login del paciente
+    'allowed_headers' => ['*'], 
     
     'exposed_headers' => [],
-    'max_age' => 86400, // 24 horas de caché para que el navegador no sature con peticiones OPTIONS
+    'max_age' => 86400,
     'supports_credentials' => true,
 ];
