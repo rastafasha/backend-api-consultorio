@@ -20,16 +20,14 @@ return [
         'http://localhost:3001',
         'https://localhost:3002',
         'http://localhost:3003',
-        'https://onrender.com', 
         'https://consultorio.klyntic.com', 
         'https://pconsultorio.klyntic.com',
-        'https://klyntic.com', // 👈 Añádelo explícitamente para asegurar que Render lo tome sí o sí
     ],
 
     // 🔥 Expresión regular corregida y estricta para subdominios multi-tenant con guiones
     'allowed_origins_patterns' => [
-        '/^https:\/\/[a-zA-Z0-9\-_]+\.klyntic\.com$/', // 👈 Soporta letras, números, guiones bajos y guiones medios
-        '/^https:\/\/[a-zA-Z0-9\-_]+\.vercel\.app$/',
+        '/^https:\/\/(.*\.)?klyntic\.com$/', // 🟢 EL CAMBIO: El (.*\.)? acepta CUALQUIER combinación de subdominios
+        '/^https:\/\/(.*\.)?vercel\.app$/',  // Permite todas las ramas de pruebas de Vercel
     ],
 
     // Forzamos a aceptar todos los headers, incluyendo x-token
