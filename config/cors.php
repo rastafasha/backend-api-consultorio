@@ -8,8 +8,8 @@ return [
     
     'allowed_methods' => ['*'],
     
-    // 🛡️ BLINDAJE MÁXIMO: Permitimos cualquier cabecera personalizada para el login del paciente
-    'allowed_headers' => ['*'], 
+    // 🛡️ REFUERZO CORS: Declaramos explícitamente las cabeceras personalizadas de Klyntic
+    'allowed_headers' => ['*', 'X-Tenant-Slug', 'x-tenant-slug', 'Authorization', 'Content-Type', 'Accept', 'x-token', 'x-uid'], 
     
     'exposed_headers' => [],
     'max_age' => 86400,
