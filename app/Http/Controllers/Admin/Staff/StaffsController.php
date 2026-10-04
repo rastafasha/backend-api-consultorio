@@ -151,64 +151,69 @@ class StaffsController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
-    {
-        $user_is_valid = User::where("id", "<>", $id)->where("email", $request->email)->first();
+{
+    $user_is_valid = User::where("id", "<>", $id)->where("email", $request->email)->first();
 
-        if($user_is_valid){
-            return response()->json([
-                "message"=>403,
-                "message_text"=> 'el usuario con este email ya existe'
-            ]);
-        }
-        
-        $user = User::findOrFail($id);
-        
-
-        //upload a cloudinary
-        if ($request->hasFile('imagen')) {
-            // 1. Si el usuario ya tiene un avatar en Cloudinary, lo borramos de la nube
-            if ($user->avatar) {
-                // Extraemos el public_id de la URL completa (ej: staffs/nombre_archivo)
-                $publicId = 'klyntic/staffs/' . pathinfo($user->avatar, PATHINFO_FILENAME);
-
-                // Eliminamos la imagen vieja de Cloudinary
-                Cloudinary::uploadApi()->destroy($publicId);
-            }
-
-            // 2. Subimos la nueva imagen utilizando el método compatible con tu versión
-            $uploadedFile = $request->file('imagen')->storeOnCloudinary('klyntic/staffs');
-            $path = $uploadedFile->getSecurePath();
-
-            $request->request->add(["avatar" => $path]);
-        }
-        
-        if($request->password){
-             $request->request->add(["password"=>Hash::make($request->password)]);
-        }
-
-        if($request->birth_date){
-            $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '',$request->birth_date );
-            $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
-        }
+    if($user_is_valid){
+        return response()->json([
+            "message"=>403,
+            "message_text"=> 'el usuario con este email ya existe'
+        ]);
+    }
     
-        if($request->role_id && $request->role_id != $user->roles()->first()->id){
-            // error_log($user->roles()->first()->id);
-            $role_old = Role::findOrFail($user->roles()->first()->id);
-            $user->removeRole($role_old);
-            // error_log($request->role_id);
+    $user = User::findOrFail($id);
+    
+    // Upload a Cloudinary
+    if ($request->hasFile('imagen')) {
+        if ($user->avatar) {
+            $publicId = 'klyntic/staffs/' . pathinfo($user->avatar, PATHINFO_FILENAME);
+            Cloudinary::uploadApi()->destroy($publicId);
+        }
+
+        $uploadedFile = $request->file('imagen')->storeOnCloudinary('klyntic/staffs');
+        $path = $uploadedFile->getSecurePath();
+        $request->request->add(["avatar" => $path]);
+    }
+    
+    if($request->password){
+         $request->request->add(["password"=>Hash::make($request->password)]);
+    }
+
+    if($request->birth_date){
+        $date_clean = preg_replace('/\(.*\)|[A-Z]{3}-\d{4}/', '',$request->birth_date );
+        $request->request->add(["birth_date" => Carbon::parse($date_clean)->format('Y-m-d h:i:s')]);
+    }
+
+    // =========================================================================
+    // 🛡️ SANEAMIENTO Y BLINDAJE DE ROLES (Evita el error 'undefined' en Postgres)
+    // =========================================================================
+    if($request->role_id && $request->role_id !== 'undefined') {
+        
+        // Obtenemos el rol actual de forma segura sin romper si es nulo
+        $currentRole = $user->roles()->first();
+        
+        // Si no tiene rol previo, o si el rol enviado es diferente al actual
+        if (!$currentRole || $request->role_id != $currentRole->id) {
+            
+            // Si tenía un rol viejo, lo removemos con seguridad
+            if ($currentRole) {
+                $user->removeRole($currentRole);
+            }
+            
+            // Buscamos y asignamos el nuevo rol unificado
             $role_new = Role::findOrFail($request->role_id);
             $user->assignRole($role_new);
         }
-        
-        $user->update($request->all());
-        
-        // Mail::to($user)->send(new NewUserRegisterMail($user));
-
-        return response()->json([
-            "message"=>200,
-            "user"=>UserResource::make($user)
-        ]);
     }
+    // =========================================================================
+    
+    $user->update($request->all());
+    
+    return response()->json([
+        "message"=>200,
+        "user"=>UserResource::make($user)
+    ]);
+}
 
     /**
      * Remove the specified resource from storage.
