@@ -104,19 +104,23 @@ class AppointmentController extends Controller
         return response()->json($data);
     }
 
-    public function filter(Request $request)
-    {
-        date_default_timezone_set('America/Caracas');
-        Carbon::setLocale('es');
-        DB::statement("SET lc_time_names = 'es_ES'");
+   public function filter(Request $request)
+{
+    date_default_timezone_set('America/Caracas');
+    Carbon::setLocale('es');
+    
+    // 🟢 CORRECCIÓN: Para PostgreSQL en Supabase usamos lc_time en lugar de lc_time_names
+    DB::statement("SET lc_time = 'es_ES.UTF-8'");
 
-        $date_appointment = Carbon::parse($request->date_appointment)
-            ->setTimezone('America/Caracas')
-            ->format('Y-m-d');
+    $date_appointment = Carbon::parse($request->date_appointment)
+        ->setTimezone('America/Caracas')
+        ->format('Y-m-d');
 
-        $hour = $request->hour;
-        $speciality_id = $request->speciality_id;
-        $name_day = Carbon::parse($date_appointment)->dayName;
+    $hour = $request->hour;
+    $speciality_id = $request->speciality_id;
+    
+    // Carbon obtendrá el día en español gracias a Carbon::setLocale('es')
+    $name_day = Carbon::parse($date_appointment)->dayName; 
 
         // 🟢 SANEADO COMPATIBILIDAD MAMP: Cambiado 'ilike' por 'like' neutro
         $doctor_query = DoctorScheduleDay::where("day", "like", "%" . $name_day . "%")
