@@ -107,10 +107,9 @@ class AppointmentController extends Controller
    public function filter(Request $request)
 {
     date_default_timezone_set('America/Caracas');
-    Carbon::setLocale('es');
     
-    // 🟢 CORRECCIÓN: Para PostgreSQL en Supabase usamos lc_time en lugar de lc_time_names
-    DB::statement("SET lc_time = 'es_ES.UTF-8'");
+    // 🟢 ESTO ES SUFICIENTE: Carbon se encargará de traducir el día a español en memoria
+    Carbon::setLocale('es');
 
     $date_appointment = Carbon::parse($request->date_appointment)
         ->setTimezone('America/Caracas')
@@ -119,14 +118,14 @@ class AppointmentController extends Controller
     $hour = $request->hour;
     $speciality_id = $request->speciality_id;
     
-    // Carbon obtendrá el día en español gracias a Carbon::setLocale('es')
+    // Al ejecutar esto, Carbon ya devolverá "lunes", "martes", etc., en español
     $name_day = Carbon::parse($date_appointment)->dayName; 
 
-        // 🟢 SANEADO COMPATIBILIDAD MAMP: Cambiado 'ilike' por 'like' neutro
-        $doctor_query = DoctorScheduleDay::where("day", "like", "%" . $name_day . "%")
-            ->whereHas("doctor", function ($q) use ($speciality_id) {
-                $q->where("speciality_id", $speciality_id);
-            })
+    // 🟢 SANEADO COMPATIBILIDAD POSTGRES: Cambiado 'like' por 'ilike' si necesitas insensibilidad a mayúsculas/minúsculas
+    $doctor_query = DoctorScheduleDay::where("day", "ilike", "%" . $name_day . "%")
+        ->whereHas("doctor", function ($q) use ($speciality_id) {
+            $q->where("speciality_id", $speciality_id);
+        })
             ->whereHas("schedule_hours", function ($q) use ($hour) {
                 $q->whereHas("doctor_schedule_hour", function ($qs) use ($hour) {
                     $qs->where("hour", $hour);
