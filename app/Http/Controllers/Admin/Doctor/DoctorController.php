@@ -36,14 +36,6 @@ class DoctorController extends Controller
      */
     public function index(Request $request)
     {
-
-        // $this->authorize('viewAny', User::class);
-        // dd(!auth('api')->user()->can('list_appointment'));
-        // if(!auth('api')->user()->can('list_doctor')){
-        //     return response()->json(["message"=>"El usuario no esta autenticado"],403);
-        //    }
-
-
         $search = $request->search;
         $users = User::where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',users.email)"), "like", "%" . $search . "%")
             // "name", "like", "%".$search."%"
@@ -60,6 +52,34 @@ class DoctorController extends Controller
 
         ]);
     }
+
+    public function medicosclinica(Request $request)
+{
+    $search = $request->search;
+    $clinica_id = $request->clinica_id;
+
+    // 🚨 El blindaje: si no mandan el id de la clínica, retornamos vacío o error para proteger los datos
+    if (!$clinica_id) {
+        return response()->json(["users" => []]);
+    }
+
+    $users = User::where('clinica_id', $clinica_id) // 🟢 Filtro directo por la columna de la clínica
+        ->where(function($query) use ($search) {
+            $query->where(DB::raw("CONCAT(users.name,' ',COALESCE(users.surname,''),' ',users.email)"), "like", "%" . $search . "%");
+        })
+        ->whereHas("roles", function ($q) {
+            $q->where("name", "like", "%DOCTOR%");
+        })
+        ->orderBy("id", "desc")
+        ->get();
+
+    return response()->json([
+        "users" => UserCollection::make($users),
+    ]);
+}
+
+
+
     public function config()
     {
         $roles = Role::where("name", "like", "%DOCTOR%")->get();

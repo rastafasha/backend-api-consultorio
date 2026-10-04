@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('doctors', [DoctorController::class, 'index'])->name('doctor.index');
+Route::get('doctors/clinica/{clinica_id}', [DoctorController::class, 'medicosclinica'])->name('doctor.clinica');
 Route::get('doctors/config', [DoctorController::class, 'config'])->name('doctor.config');
 Route::post('doctors/store', [DoctorController::class, 'store'])->name('doctor.store');
 
