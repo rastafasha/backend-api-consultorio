@@ -6,6 +6,8 @@ use App\Http\Controllers\Patient\PatientController;
 
 Route::get('patients/verificar-documento/{n_doc}', [PatientController::class, 'verificarDocumento']);
 Route::get('patients', [PatientController::class, 'index'])->name('patient.index');
+Route::get('patients/clinica/{clinica_id}', [PatientController::class, 'pacientesClinica'])->name('patient.pacientesClinica');
+
 Route::get('patients/byDoctor/{doctor_id}/', [PatientController::class, 'patientsByDoctor'])->name('patient.patientsByDoctor');
 Route::get('patients/show/{id}', [PatientController::class, 'show'])->name('patient.show');
 Route::get('patients/profile/{id}', [PatientController::class, 'profile'])->name('patient.profile');

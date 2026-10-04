@@ -49,6 +49,30 @@ class PatientController extends Controller
         
     }
 
+    public function pacientesClinica(Request $request)
+    {
+         $search = $request->search;
+    $clinica_id = $request->clinica_id;
+
+    // 🚨 El blindaje: si no mandan el id de la clínica, retornamos vacío o error para proteger los datos
+    if (!$clinica_id) {
+        return response()->json(["patients" => []]);
+    }
+
+    $patients = Patient::where('clinica_id', $clinica_id) // 🟢 Filtro directo por la columna de la clínica
+        ->where(function($query) use ($search) {
+            $query->where(DB::raw("CONCAT(patients.name,' ',COALESCE(patients.surname,''),' ',patients.email)"), "like", "%" . $search . "%");
+        })
+        ->orderBy("id", "desc")
+        ->get();
+
+    return response()->json([
+        "patients" => PatientCollection::make($patients),
+    ]);
+
+        
+    }
+
     public function patientsByDoctor(Request $request, $doctor_id)
     {
         // Limpiamos la variable de espacios en blanco y forzamos a que si viene un "null" de Angular se vuelva falso
