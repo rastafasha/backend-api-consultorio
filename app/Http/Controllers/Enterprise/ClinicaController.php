@@ -17,16 +17,16 @@ class ClinicaController extends Controller
    
   public function getSelectorEspecialistas()
 {
-    // 1. Recuperamos el ID de la clínica actual (inyectado por el Middleware multi-tenant)
-    $clinicaId = app('current_clinica_id');
+    // 1. Recuperamos el ID y lo forzamos explícitamente a cadena de texto (String)
+    // 🟢 SOLUCIÓN CRÍTICA PARA POSTGRESQL: Evita el error de operador varchar = integer
+    $clinicaId = (string) app('current_clinica_id');
 
     // 2. 🧽 INYECCIÓN INSTITUCIONAL DIRECTA
-    // Traemos los datos físicos configurados en el panel administrativo de esta sede
-    $configuracion = Settingeneral::orderBy('created_at', 'DESC')->first(); // O ->where('clinica_id', $clinicaId)->first() si el Core ya lo aísla
+    $configuracion = Settingeneral::orderBy('created_at', 'DESC')->first(); 
 
-    // 3. Buscamos las especialidades con médicos activos (status = 2)
+    // 3. Buscamos las especialidades con médicos activos
     $especialidades = Specialitie::whereHas('activeDoctors', function ($query) use ($clinicaId) {
-        $query->where('users.clinica_id', $clinicaId);
+        $query->where('users.clinica_id', $clinicaId); // Postgres recibirá '1' en lugar de 1
     })
     ->with(['activeDoctors' => function ($query) use ($clinicaId) {
         $query->where('users.clinica_id', $clinicaId)
@@ -70,7 +70,7 @@ class ClinicaController extends Controller
         ];
     });
 
-    // 6. 🔥 RETORNO COMPACTO Y SEGURO: Inyectamos los datos del Settingeneral en la raíz del objeto
+    // 6. 🔥 RETORNO COMPACTO Y SEGURO
     return response()->json([
         'status'  => 'success',
         'tenant'  => $clinicaId,
@@ -83,4 +83,5 @@ class ClinicaController extends Controller
         'results' => $resultado
     ], 200);
 }
+
 }

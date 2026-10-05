@@ -202,94 +202,104 @@ class AppointmentController extends Controller
     }
 
 
-    public function filterByDoctor(Request $request, $doctor_id)
-    {
-        date_default_timezone_set('America/Caracas');
-        Carbon::setLocale('es');
+   public function filterByDoctor(Request $request, $doctor_id)
+{
+    date_default_timezone_set('America/Caracas');
+    Carbon::setLocale('es');
 
-        $pure_date = substr($request->date_appointment, 0, 10);
-        $date_appointment = Carbon::parse($pure_date)->format('Y-m-d');
+    $pure_date = substr($request->date_appointment, 0, 10);
+    $date_appointment = Carbon::parse($pure_date)->format('Y-m-d');
 
-        $hour = $request->hour;
-        $doctor = User::with(['speciality', 'addresses'])->find($doctor_id);
+    $hour = $request->hour;
+    
+    // 🟢 CORRECCIÓN DE TIPO: Forzamos el ID del doctor a string por si acaso con Postgres
+    $doctor_id = (string) $doctor_id;
+    $doctor = User::with(['speciality', 'addresses'])->find($doctor_id);
 
-        if (!$doctor) {
-            return response()->json([
-                "message" => "Doctor no encontrado",
-                "doctor" => null
-            ], 404);
-        }
-
-        $raw_day = Carbon::parse($date_appointment)->dayName;
-        $name_day = Str::slug($raw_day);
-
-        // 🟢 SANEADO COMPATIBILIDAD MAMP: Cambiados los dos 'ilike' por 'like' neutros universales
-        $segments = DoctorScheduleJoinHour::whereHas("doctor_schedule_day", function ($q) use ($doctor_id, $name_day) {
-            $q->where("day", "like", "%" . $name_day . "%")
-                ->where("user_id", $doctor_id)
-                ->whereNull("deleted_at");
-        })
-            ->whereHas("doctor_schedule_hour", function ($q) use ($hour) {
-                $q->where("hour", "like", "%" . $hour . "%");
-            })
-            ->with([
-                'doctor_schedule_hour',
-                'doctor_schedule_day.doctor_address',
-                'appointments' => function ($q) use ($date_appointment) {
-                    $q->whereDate("date_appointment", $date_appointment);
-                }
-            ])
-            ->get();
-
-        $segmentsData = $segments->map(function ($segment) {
-            $is_appointment = $segment->appointments->isNotEmpty();
-            $addressRelation = $segment->doctor_schedule_day->doctor_address ?? null;
-
-            return [
-                "id" => $segment->id,
-                "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
-                "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
-                "is_appointment" => $is_appointment,
-                "doctor_address_id" => $addressRelation->id ?? null,
-
-                "consultorio" => $addressRelation ? [
-                    "id" => $addressRelation->id,
-                    "name_consultorio" => $addressRelation->name_consultorio,
-                    "address" => $addressRelation->address,
-                    "is_active" => $addressRelation->is_active,
-                ] : null,
-                "format_segment" => [
-                    "id" => $segment->doctor_schedule_hour->id,
-                    "hour_start" => $segment->doctor_schedule_hour->hour_start,
-                    "hour_end" => $segment->doctor_schedule_hour->hour_end,
-                    "format_hour_start" => Carbon::parse($segment->doctor_schedule_hour->hour_start)->format("h:i A"),
-                    "format_hour_end" => Carbon::parse($segment->doctor_schedule_hour->hour_end)->format("h:i A"),
-                    "hour" => $segment->doctor_schedule_hour->hour,
-                ],
-            ];
-        });
+    if (!$doctor) {
         return response()->json([
-            "doctor" => [
-                "id" => $doctor->id,
-                "full_name" => trim($doctor->name . ' ' . $doctor->surname),
-                "precio_cita" => $doctor->precio_cita,
-                "moneda" => $doctor->moneda,
-                "speciality" => [
-                    "id" => $doctor->speciality->id ?? null,
-                    "name" => $doctor->speciality->name ?? null,
-                ],
-                "addresses" => $doctor->addresses->map(function ($address) {
-                    return [
-                        "id" => $address->id,
-                        "name_consultorio" => $address->name_consultorio,
-                        "address" => $address->address,
-                        "is_active" => $address->is_active,
-                    ];
-                }),
-            ],
-            "segments" => $segmentsData
-        ]);
+            "message" => "Doctor no encontrado",
+            "doctor" => null
+        ], 404);
     }
+
+    // 🟢 SOLUCIÓN AL FORMATO DE DÍA: Obtenemos el nombre del día (ej: "lunes")
+    $raw_day = Carbon::parse($date_appointment)->dayName;
+    // Forzamos que la primera letra sea mayúscula para que coincida exactamente con "Lunes", "Martes", etc.
+    $name_day = ucfirst($raw_day); 
+
+    // 🟢 SANEADO COMPATIBILIDAD SUPABASE: Usamos 'ilike' para evitar problemas con mayúsculas/minúsculas en Postgres
+    $segments = DoctorScheduleJoinHour::whereHas("doctor_schedule_day", function ($q) use ($doctor_id, $name_day) {
+        $q->where("day", "ilike", "%" . $name_day . "%")
+            ->where("user_id", $doctor_id)
+            ->whereNull("deleted_at");
+    })
+    ->whereHas("doctor_schedule_hour", function ($q) use ($hour) {
+        // Si no se envía hora, no filtramos por hora para traer todo el día
+        if (!empty($hour)) {
+            $q->where("hour", "ilike", "%" . $hour . "%");
+        }
+    })
+    ->with([
+        'doctor_schedule_hour',
+        'doctor_schedule_day.doctor_address',
+        'appointments' => function ($q) use ($date_appointment) {
+            $q->whereDate("date_appointment", $date_appointment);
+        }
+    ])
+    ->get();
+
+    $segmentsData = $segments->map(function ($segment) {
+        $is_appointment = $segment->appointments->isNotEmpty();
+        $addressRelation = $segment->doctor_schedule_day->doctor_address ?? null;
+
+        return [
+            "id" => $segment->id,
+            "doctor_schedule_day_id" => $segment->doctor_schedule_day_id,
+            "doctor_schedule_hour_id" => $segment->doctor_schedule_hour_id,
+            "is_appointment" => $is_appointment,
+            "doctor_address_id" => $addressRelation->id ?? null,
+
+            "consultorio" => $addressRelation ? [
+                "id" => $addressRelation->id,
+                "name_consultorio" => $addressRelation->name_consultorio,
+                "address" => $addressRelation->address,
+                "is_active" => $addressRelation->is_active,
+            ] : null,
+            "format_segment" => [
+                "id" => $segment->doctor_schedule_hour->id,
+                "hour_start" => $segment->doctor_schedule_hour->hour_start,
+                "hour_end" => $segment->doctor_schedule_hour->hour_end,
+                "format_hour_start" => Carbon::parse($segment->doctor_schedule_hour->hour_start)->format("h:i A"),
+                "format_hour_end" => Carbon::parse($segment->doctor_schedule_hour->hour_end)->format("h:i A"),
+                "hour" => $segment->doctor_schedule_hour->hour,
+            ],
+        ];
+    });
+
+    return response()->json([
+        "doctor" => [
+            "id" => $doctor->id,
+            "full_name" => trim($doctor->name . ' ' . $doctor->surname),
+            "precio_cita" => $doctor->precio_cita,
+            "moneda" => $doctor->moneda,
+            "speciality" => [
+                "id" => $doctor->speciality->id ?? null,
+                "name" => $doctor->speciality->name ?? null,
+            ],
+            "addresses" => $doctor->addresses->map(function ($address) {
+                return [
+                    "id" => $address->id,
+                    "name_consultorio" => $address->name_consultorio,
+                    "address" => $address->address,
+                    "is_active" => $address->is_active,
+                ];
+            }),
+        ],
+        "segments" => $segmentsData
+    ]);
+}
+
     public function config()
     {
         $hours = [
