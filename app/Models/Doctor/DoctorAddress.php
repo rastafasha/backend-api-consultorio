@@ -11,7 +11,8 @@ class DoctorAddress extends Model
     use SoftDeletes; 
 
     protected $fillable = [
-        'doctor_id', 
+        
+        'user_id', 
         'name_consultorio', 
         'address', 
         'is_active'
@@ -24,7 +25,7 @@ class DoctorAddress extends Model
 
     public function user() 
     { 
-        return $this->belongsTo(User::class, 'doctor_id'); 
+        return $this->belongsTo(User::class, 'user_id'); 
     } 
 
     // Relación: Un consultorio específico tiene muchos días de horario programados 
