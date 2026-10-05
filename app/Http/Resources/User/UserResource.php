@@ -66,6 +66,7 @@ class UserResource extends JsonResource
             "gender" => $this->resource->gender,
             // "location_id"=>$this->resource->location_id,
             "pais_id" => $this->resource->pais_id,
+            "clinica_id" => $this->resource->clinica_id,
             "precio_cita" => $this->resource->precio_cita,
             "moneda" => $this->resource->moneda,
             "designation" => $this->resource->designation,
