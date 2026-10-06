@@ -15,6 +15,9 @@ class CreateSettingeneralsTable extends Migration
     {
         Schema::create('settingenerals', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->unsignedBigInteger('clinica_id')->nullable(); 
+            $table->foreign('clinica_id')->references('id')->on('clinicas')->onDelete('cascade');
+
             $table->string('name', 250)->nullable();
             $table->text('address');
             $table->string('email', 250)->nullable();

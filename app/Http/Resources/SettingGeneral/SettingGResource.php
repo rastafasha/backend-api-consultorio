@@ -25,6 +25,7 @@ class SettingGResource extends JsonResource
             "country" =>$this->resource->country,
             "moneda" =>$this->resource->moneda,
             "phone" =>$this->resource->phone,
+            "clinica_id" => $this->resource->clinica_id,
             "avatar"=> $this->resource->avatar ? env("APP_URL")."storage/".$this->resource->avatar : null,
             // "avatar"=> $this->resource->avatar ? env("APP_URL").$this->resource->avatar : null,
             "created_at"=>$this->resource->created_at ? Carbon::parse($this->resource->created_at)->format("Y-m-d h:i A") : NULL,
