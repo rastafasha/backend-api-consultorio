@@ -41,6 +41,10 @@ class DashboardkpiController extends Controller
      * Display KPIs and lists for the Admin/Reception Central Dashboard.
      * (Blindado contra Nulls de clinica_id + Fallback por Cabecera)
      */
+       /**
+     * Display KPIs and lists for the Admin/Reception Central Dashboard.
+     * (Ajustado para soportar Clínicas y Consultorios Independientes)
+     */
     public function dashboard_admin(Request $request)
     {
         date_default_timezone_set('America/Caracas');
@@ -70,19 +74,14 @@ class DashboardkpiController extends Controller
             }
         }
 
-        // Si después de buscar en todas partes sigue sin haber contexto, fijamos un salvavidas
-        if (!$clinicaId) {
-            return response()->json([
-                "ok" => false,
-                "message_text" => "Error de contexto multi-tenant: No se pudo determinar el identificador de la clínica."
-            ], 400);
-        }
+        // 🟢 SOLUCIÓN AL ERROR: Si después de buscar no hay clínica, no disparamos un error 400.
+        // Asumimos de manera segura que se trata de un médico o consultorio independiente (clinica_id = null).
 
         // =========================================================================
-        // 📊 SECCIÓN A: KPI'S COMPATIBLES CON FILTRO EXPLÍCITO DE CLÍNICA
+        // 📊 SECCIÓN A: KPI'S COMPATIBLES CON FILTRO EXPLÍCITO DE CLÍNICA / INDEPENDIENTE
         // =========================================================================
         
-        // Usamos withoutGlobalScope si tu Trait está chocando, para meter el where de forma manual y limpia
+        // El filtro condicional aplicará '=' si hay id o 'whereNull' si es independiente de forma automática
         $queryAppointment = Appointment::withoutGlobalScopes()->where('clinica_id', $clinicaId);
         $queryPatient = Patient::withoutGlobalScopes()->where('clinica_id', $clinicaId);
 
@@ -145,15 +144,15 @@ class DashboardkpiController extends Controller
         $porcentajeDT = $num_appointments_total_before > 0 
             ? (($num_appointments_total_current - $num_appointments_total_before) / $num_appointments_total_before) * 100 
             : 0;
-// =========================================================================
-        // 📋 SECCIÓN B: COLECCIONES COMPATIBLES CON EL ARRANQUE DE LA RECEPCIÓN (SANEADO SEEDS)
+
+        // =========================================================================
+        // 📋 SECCIÓN B: COLECCIONES COMPATIBLES CON EL ARRANQUE DE LA RECEPCIÓN
         // =========================================================================
         
-        // 🚀 CITAS EN ESPERA: Removemos mes y año para que tus semillas viejas/futuras rendericen en local
         $appointments = Appointment::withoutGlobalScopes()
             ->with(['patient', 'doctor.speciality'])
             ->where('clinica_id', $clinicaId)
-            ->where("cron_state", 1) // 🟢 Filtra estrictamente las que están en estado Pendiente
+            ->where("cron_state", 1) 
             ->take(5)
             ->orderBy("id", "desc")
             ->get();
@@ -164,11 +163,10 @@ class DashboardkpiController extends Controller
             ->take(5)
             ->get();
 
-        // 🚀 COBROS PENDIENTES: Listado absoluto de cuentas por cobrar en la sede
         $appointmentPaysPending = Appointment::withoutGlobalScopes()
             ->with(['patient', 'doctor'])
             ->where('clinica_id', $clinicaId)
-            ->where("status_pay", 2) // 🟢 Filtra deudas (Pago Pendiente)
+            ->where("status_pay", 2) 
             ->take(5)
             ->orderBy("id", "desc")
             ->get();
@@ -222,64 +220,81 @@ class DashboardkpiController extends Controller
     }
 
 
+
     public function dashboard_admin_year(Request $request)
-    {
-        $year = $request->year;
-        $query_patients_by_gender = DB::table("appointments")->where("appointments.deleted_at", NULL)
-            ->whereYear("appointments.date_appointment", $year)
-            ->join("patients", "appointments.patient_id", "=", "patients.id")
-            ->select(
-                DB::raw("YEAR(appointments.date_appointment) as year"),
-                DB::raw("MONTH(appointments.date_appointment) as month"),
-                DB::raw("SUM(CASE WHEN patients.gender = 1 THEN 1 ELSE 0 END) as hombre"),
-                DB::raw("SUM(CASE WHEN patients.gender = 2 THEN 1 ELSE 0 END) as mujer"),
-            )->groupBy("year", "month")
-            ->orderBy("year")
-            ->orderBy("month")
-            ->get();
+{
+    $year = $request->year;
 
-        $query_patients_speciality = DB::table("appointments")->where("appointments.deleted_at", NULL)
-            ->whereYear("appointments.date_appointment", $year)
-            ->join("specialities", "appointments.speciality_id", "=", "specialities.id")
-            ->select("specialities.name as name", DB::raw("COUNT(appointments.speciality_id) as count"))
-            ->groupBy("specialities.name")
-            ->get();
-        //top especialidades
-        $query_patients_speciality_porcentaje = collect([]);
-        $total_patients_speciality = $query_patients_speciality->sum("count");
-        foreach ($query_patients_speciality as $key => $query_speciality) {
-            $count_by_speciality = $query_speciality->count;
+    // 🟢 SANEADO COMPATIBILIDAD POSTGRES: Cambiado YEAR() y MONTH() por EXTRACT()
+    $query_patients_by_gender = DB::table("appointments")
+        ->whereNull("appointments.deleted_at")
+        ->whereRaw("EXTRACT(YEAR FROM appointments.date_appointment) = ?", [$year])
+        ->join("patients", "appointments.patient_id", "=", "patients.id")
+        ->select(
+            DB::raw("CAST(EXTRACT(YEAR FROM appointments.date_appointment) AS INTEGER) as year"),
+            DB::raw("CAST(EXTRACT(MONTH FROM appointments.date_appointment) AS INTEGER) as month"),
+            DB::raw("SUM(CASE WHEN patients.gender = '1' THEN 1 ELSE 0 END) as hombre"), // Revisa si tu género es string o int, ajustado por precaución
+            DB::raw("SUM(CASE WHEN patients.gender = '2' THEN 1 ELSE 0 END) as mujer")
+        )->groupBy(
+            DB::raw("EXTRACT(YEAR FROM appointments.date_appointment)"),
+            DB::raw("EXTRACT(MONTH FROM appointments.date_appointment)")
+        )
+        ->orderBy("year")
+        ->orderBy("month")
+        ->get();
 
-            $percentage = round(($count_by_speciality / $total_patients_speciality) * 100, 2);
+    $query_patients_speciality = DB::table("appointments")
+        ->whereNull("appointments.deleted_at")
+        ->whereRaw("EXTRACT(YEAR FROM appointments.date_appointment) = ?", [$year])
+        ->join("specialities", "appointments.speciality_id", "=", "specialities.id")
+        ->select("specialities.name as name", DB::raw("COUNT(appointments.speciality_id) as count"))
+        ->groupBy("specialities.name")
+        ->get();
 
-            $query_patients_speciality_porcentaje->push([
-                "name" => $query_speciality->name,
-                "percentage" => $percentage,
-            ]);
-        }
-        //ingresos generales del año
-        $query_income_year = DB::table("appointments")->where("appointments.deleted_at", NULL)
-            ->whereYear("appointments.date_appointment", $year)
-            ->where("appointments.status_pay", 1)
-            ->select(
-                DB::raw("YEAR(appointments.date_appointment) as year"),
-                DB::raw("MONTH(appointments.date_appointment) as month"),
-                DB::raw("SUM(appointments.amount) as income ")
-            )->groupBy("year", "month")
-            ->orderBy("year")
-            ->orderBy("month")
-            ->get();
+    // Top especialidades
+    $query_patients_speciality_porcentaje = collect([]);
+    $total_patients_speciality = $query_patients_speciality->sum("count");
+    
+    foreach ($query_patients_speciality as $query_speciality) {
+        $count_by_speciality = $query_speciality->count;
+        $percentage = $total_patients_speciality > 0 
+            ? round(($count_by_speciality / $total_patients_speciality) * 100, 2) 
+            : 0;
 
-        $months_name = array("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre");
-
-        return response()->json([
-            "query_income_year" => $query_income_year,
-            "months_name" => $months_name,
-            "query_patients_speciality_porcentaje" => $query_patients_speciality_porcentaje,
-            "query_patients_speciality" => $query_patients_speciality,
-            "query_patients_by_gender" => $query_patients_by_gender,
+        $query_patients_speciality_porcentaje->push([
+            "name" => $query_speciality->name,
+            "percentage" => $percentage,
         ]);
     }
+
+    // 🟢 SANEADO COMPATIBILIDAD POSTGRES: Ingresos generales del año con EXTRACT
+    $query_income_year = DB::table("appointments")
+        ->whereNull("appointments.deleted_at")
+        ->whereRaw("EXTRACT(YEAR FROM appointments.date_appointment) = ?", [$year])
+        ->where("appointments.status_pay", 1)
+        ->select(
+            DB::raw("CAST(EXTRACT(YEAR FROM appointments.date_appointment) AS INTEGER) as year"),
+            DB::raw("CAST(EXTRACT(MONTH FROM appointments.date_appointment) AS INTEGER) as month"),
+            DB::raw("SUM(appointments.amount) as income")
+        )->groupBy(
+            DB::raw("EXTRACT(YEAR FROM appointments.date_appointment)"),
+            DB::raw("EXTRACT(MONTH FROM appointments.date_appointment)")
+        )
+        ->orderBy("year")
+        ->orderBy("month")
+        ->get();
+
+    $months_name = array("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre");
+
+    return response()->json([
+        "query_income_year" => $query_income_year,
+        "months_name" => $months_name,
+        "query_patients_speciality_porcentaje" => $query_patients_speciality_porcentaje,
+        "query_patients_speciality" => $query_patients_speciality,
+        "query_patients_by_gender" => $query_patients_by_gender,
+    ]);
+}
+
 
     public function dashboard_doctor(Request $request)
 {
