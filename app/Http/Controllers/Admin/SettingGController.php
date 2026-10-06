@@ -18,22 +18,24 @@ class SettingGController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
-    {
-        $user = auth()->user();
+    public function index(Request $request)
+{
+    // 🟢 FLEXIBILIDAD EN LA BÚSQUEDA:
+    // 1. Intentamos obtener el clinica_id enviado explícitamente desde el Frontend (ej. ?clinica_id=5)
+    // 2. Si no viene, intentamos ver si hay un usuario logueado que pertenezca a una clínica
+    // 3. Si ninguna de las anteriores se cumple, asumimos que es un contexto independiente (null)
+    $clinica_id = $request->get('clinica_id') ?? (auth()->user()->clinica_id ?? null);
 
-        // Si el usuario tiene clinica_id, filtramos estrictamente por esa clínica.
-        // Si no tiene, es independiente y buscamos registros donde clinica_id sea null.
-        $settings = Settingeneral::orderBy('created_at', 'DESC')
-            ->where('clinica_id', $user->clinica_id) 
-            ->get();
+    $settings = Settingeneral::orderBy('created_at', 'DESC')
+        ->where('clinica_id', $clinica_id) 
+        ->get();
 
-        return response()->json([
-            'code' => 200,
-            'status' => 'Listar configuraciones',
-            "settings" => SettingGCollection::make($settings),
-        ], 200);
-    }
+    return response()->json([
+        'code' => 200,
+        'status' => 'Listar configuraciones',
+        "settings" => SettingGCollection::make($settings),
+    ], 200);
+}
 
 
     /**
@@ -74,17 +76,29 @@ class SettingGController extends Controller
     /**
      * Mostrar configuración validando pertenencia
      */
-    public function settingShow($id)
-    {
-        $user = auth()->user();
-        
-        $setting = Settingeneral::where('clinica_id', $user->clinica_id)
-            ->findOrFail($id);
+    public function settingShow($clinica_id)
+{
+    // 🟢 SANEADO: Si el frontend envía el string "null" o viene vacío, lo convertimos a un null real
+    $id = ($clinica_id === 'null' || $clinica_id === '') ? null : $clinica_id;
 
+    // Buscamos la configuración directamente por el ID de la clínica
+    $setting = Settingeneral::where('clinica_id', $id)
+        ->orderBy('created_at', 'DESC')
+        ->first(); // Usamos first() porque cada clínica debería tener un solo registro activo de configuración
+
+    // Si no existe una configuración para esa clínica, retornamos un 404 controlado en vez de romper la app
+    if (!$setting) {
         return response()->json([
-            "setting" => SettingGResource::make($setting),
-        ]);
+            'code' => 404,
+            'status' => 'Not Found',
+            'message' => 'No se encontró ninguna configuración para la clínica especificada.'
+        ], 404);
     }
+
+    return response()->json([
+        "setting" => SettingGResource::make($setting),
+    ]);
+}
     /**
      * Update the specified resource in storage.
      *

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Appointment;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Appointment\AppointmentCollection;
 use App\Http\Resources\Appointment\AppointmentResource;
-// use App\Jobs\NewAppointmentRegisterJob;
 use App\Mail\CancellationAppointmentMail;
 use App\Models\Appointment\Appointment;
 use App\Models\Appointment\AppointmentPay;
@@ -14,6 +13,7 @@ use App\Models\Doctor\DoctorScheduleJoinHour;
 use App\Models\Doctor\Specialitie;
 use App\Models\Patient\Patient;
 use App\Models\Patient\PatientPerson;
+use App\Models\Settingeneral;
 use App\Models\User;
 use App\Services\NotificacionService;
 use Carbon\Carbon;
@@ -105,7 +105,7 @@ class AppointmentController extends Controller
     }
 
   
-    public function filter(Request $request)
+   public function filter(Request $request)
 {
     date_default_timezone_set('America/Caracas');
     
@@ -148,6 +148,14 @@ class AppointmentController extends Controller
         ])
         ->get();
 
+    // 🟢 OPTIMIZACIÓN DE RENDIMIENTO:
+    // Extraemos todos los clinica_id únicos de los doctores encontrados para traer sus monedas en una sola consulta
+    $clinica_ids = $doctor_query->pluck('doctor.clinica_id')->filter()->unique();
+    
+    $clinica_settings = Settingeneral::whereIn('clinica_id', $clinica_ids)
+        ->get()
+        ->pluck('moneda', 'clinica_id'); // Crea un mapa clave-valor [clinica_id => moneda]
+
     $doctors = collect([]);
 
     foreach ($doctor_query as $doctor_q) {
@@ -177,17 +185,23 @@ class AppointmentController extends Controller
         });
 
         // 🔵 LÓGICA DE PRECIO DINÁMICO
-        // Si el médico tiene clinica_id, usa el precio de la especialidad. Si no, usa su precio_cita.
+        // Si el médico tiene clinica_id, usa el precio de la especialidad (asumiendo campo 'price' según tu JSON). Si no, usa su precio_cita.
         $precio_final = !empty($doctor->clinica_id) && isset($doctor->speciality)
-            ? ($doctor->speciality->precio ?? $doctor->precio_cita) 
+            ? ($doctor->speciality->price ?? $doctor->precio_cita) 
             : $doctor->precio_cita;
+
+        // 🔵 LÓGICA DE MONEDA CENTRALIZADA
+        // Si tiene clínica, busca la moneda en el mapa indexado de settings. Si no la encuentra o es independiente, usa $doctor->moneda.
+        $moneda_final = !empty($doctor->clinica_id) 
+            ? ($clinica_settings[$doctor->clinica_id] ?? $doctor->moneda) 
+            : $doctor->moneda;
 
         $doctors->push([
             "doctor" => [
                 "id" => $doctor->id,
                 "full_name" => trim($doctor->name . ' ' . $doctor->surname),
-                "precio_cita" => $precio_final, // 🟢 Aplicado aquí
-                "moneda" => $doctor->moneda,
+                "precio_cita" => $precio_final,
+                "moneda" => $moneda_final, // 🟢 Asignación de moneda dinámica
                 "speciality" => [
                     "id" => $doctor->speciality->id ?? null,
                     "name" => $doctor->speciality->name ?? null,
@@ -196,7 +210,7 @@ class AppointmentController extends Controller
                 "consultorio" => $address ? [
                     "id" => $address->id,
                     "name_consultorio" => $address->name_consultorio,
-                    "moneda" => $address->moneda,
+                    "moneda" => $moneda_final, // 🟢 Mantenemos consistencia con la moneda centralizada
                     "address" => $address->address,
                     "is_active" => $address->is_active,
                 ] : null,
@@ -209,6 +223,7 @@ class AppointmentController extends Controller
         "doctors" => $doctors
     ]);
 }
+
 
 
    public function filterByDoctor(Request $request, $doctor_id)
